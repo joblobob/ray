@@ -1,0 +1,30 @@
+QT += gui widgets concurrent
+
+CONFIG += c++1z optimize_full
+CONFIG -= app_bundle
+
+# You can make your code fail to compile if it uses deprecated APIs.
+# In order to do so, uncomment the following line.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+SOURCES += \
+        main.cpp \
+        rayview.cpp \
+	calc.cpp
+
+# Default rules for deployment.
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+
+FORMS += \
+	rayview.ui
+
+HEADERS += \
+	Ray.h \
+	calc.h \
+	camera.h \
+	hitPosition.h \
+	rayview.h \
+	shapes.h
+	
