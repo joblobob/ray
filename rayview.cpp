@@ -9,8 +9,7 @@ RayView::RayView(QWidget* parent)
     : QDialog(parent)
     , ui(new Ui::RayView)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
-    , m_default_pixel_color(0.0f, 0.0f, 0.0f)
-    , m_bgColor(1.0f, 1.0f, 1.0f)
+    , m_default_pixel_color(img::defaultVec)
     , m_sceneItem(nullptr)
 {
     ui->setupUi(this);
@@ -41,60 +40,6 @@ RayView::RayView(QWidget* parent)
 RayView::~RayView()
 {
     delete ui;
-}
-
-// couleur
-QVector3D
-RayView::ray_color(const Ray& r,
-    const std::vector<std::unique_ptr<shape>>& worldObjects,
-    int depth)
-{
-    // If we've exceeded the ray bounce limit, no more light is gathered.
-    if (depth <= 0.0f)
-        return { 0.0f, 0.0f, 0.0f };
-
-    std::optional<hitPosition> hitRecord = hitFromList(worldObjects, r, 0.001f, calc::infinity);
-
-    if (m_isColorOnly) {
-        // juste couleur
-        if (hitRecord.has_value()) {
-            QVector3D N = (r.at(hitRecord.value().t) - QVector3D(0.0f, 0.0f, -1.0f)).normalized();
-            return 0.5f * QVector3D(N.x() + 1.0f, N.y() + 1.0f, N.z() + 1.0f);
-        }
-    } else {
-        // recursive bounce
-        if (hitRecord.has_value()) {
-            QVector3D target = hitRecord->point + calc::random_in_hemisphere(hitRecord->normal);
-            return 0.5f * ray_color({ hitRecord->point, target - hitRecord->point }, worldObjects, depth - 1);
-        }
-    }
-
-    // pas de hit, background gradient
-    QVector3D unit_direction = r.direction.normalized();
-    float t = 0.5f * (unit_direction.y() + 1.0f);
-    return (1.0f - t) * m_bgColor + t * QVector3D(0.5f, 0.7f, 1.0f);
-}
-
-std::optional<hitPosition>
-RayView::hitFromList(const std::vector<std::unique_ptr<shape>>& sphereList,
-    const Ray& ray,
-    double t_min,
-    double t_max)
-{
-    bool hit_anything = false;
-    auto closest_so_far = t_max;
-    std::optional<hitPosition> retVal;
-
-    for (const auto& object : sphereList) {
-        std::optional<hitPosition> didHit = object->hit(ray, t_min, closest_so_far);
-        if (didHit.has_value()) {
-            hit_anything = true;
-            closest_so_far = didHit->t;
-            retVal = didHit.value();
-        }
-    }
-
-    return retVal;
 }
 
 void RayView::writeToStream(QTextStream& stream, const QVector3D& pixel, int samples)
@@ -147,7 +92,7 @@ void RayView::renderOneByOne(int width, int height, int samples, const camera& c
                 auto u = (row + calc::random_double()) / (width - 1);
                 auto v = (col + calc::random_double()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, worldObjects, max_depth);
+                pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
             }
             RayView::writeToStream(stream, pixel_color, samples);
         }
@@ -168,24 +113,34 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
 {
     QElapsedTimer processTimer;
     processTimer.start();
-    for (int col = height + 2; col >= 0; --col) {
+    bool skip = false;
+    int skipped = 0;
+    for (int col = height; col >= 0; --col) {
         for (int row = 0; row < width; ++row) {
+            skip = false;
             m_default_pixel_color.setX(0.0f);
             m_default_pixel_color.setY(0.0f);
             m_default_pixel_color.setZ(0.0f);
-            for (int s = 0; s < samples; ++s) {
+            int x = width - row - 1;
+            int y = height - col;
+            for (int s = 0; s < samples && !skip; ++s) {
                 auto u = (row + calc::random_double()) / (width - 1);
                 auto v = (col + calc::random_double()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
-                m_default_pixel_color += ray_color(r, worldObjects, max_depth);
+                m_default_pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
+                if (x < m_imageCanvas.width() && y < m_imageCanvas.height() && x >= 0 && y >= 0)
+                    if (m_imageCanvas.pixelColor(x, y).red() == m_default_pixel_color.x() && m_imageCanvas.pixelColor(x, y).green() == m_default_pixel_color.y() && m_imageCanvas.pixelColor(x, y).blue() == m_default_pixel_color.z())
+                        skip = true;
             }
-
-            RayView::writeToImg(m_imageCanvas, width - row - 1, height - col, m_default_pixel_color, samples);
+            if (!skip)
+                RayView::writeToImg(m_imageCanvas, x, y, m_default_pixel_color, samples);
+            else
+                skipped++;
         }
     }
 
     ui->m_tempsProcess->setText("Process: " + QString::number(processTimer.elapsed()) + " ms");
-
+    qCritical() << skipped;
     QElapsedTimer imageTimer;
     imageTimer.start();
     if (m_sceneItem == nullptr) {
@@ -197,29 +152,57 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
     ui->m_tempsImage->setText("Image: " + QString::number(imageTimer.elapsed()) + " ms");
 }
 
+void RayView::renderOneRay()
+{
+    int randX = calc::random_double(0.0f, img::height + 2);
+    int randY = calc::random_double(0.0f, img::width - 1);
+    m_default_pixel_color.setX(0.0f);
+    m_default_pixel_color.setY(0.0f);
+    m_default_pixel_color.setZ(0.0f);
+    for (int s = 0; s < m_numSamples; ++s) {
+        auto u = (randY + calc::random_double()) / (img::width - 1);
+        auto v = (randX + calc::random_double()) / (img::height - 1);
+        m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), m_worldObjects, m_depth, m_isColorOnly);
+    }
+    RayView::writeToImg(m_imageCanvas, img::width - randY - 1, img::height - randX, m_default_pixel_color, m_numSamples);
+}
+
 void RayView::go()
 {
     QElapsedTimer timer;
     timer.start();
+    int rays = 0;
     // render
     if (m_isStyleNormal) {
         renderOneByOne(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
     } else {
-        renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
+        //renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
+
+        while (timer.elapsed() < 16.666) {
+            renderOneRay();
+            rays++;
+        }
+        if (m_sceneItem == nullptr) {
+            m_sceneItem = scene->addPixmap(QPixmap::fromImage(m_imageCanvas));
+            scene->setSceneRect(m_imageCanvas.rect());
+        } else
+            m_sceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
+
+        QTimer::singleShot(0, this, &RayView::go);
     }
-    ui->m_tempsTotal->setText("Total: " + QString::number(timer.elapsed()) + " ms");
+    ui->m_tempsTotal->setText("Total: " + QString::number(timer.elapsed()) + " ms " + QString::number(rays));
 }
 
 void RayView::on_dSpin1_valueChanged(double arg1)
 {
     m_shpereY = arg1;
-    go();
+    // go();
 }
 
 void RayView::on_dSpin2_valueChanged(double arg1)
 {
     m_testVal2 = arg1;
-    go();
+    //  go();
 }
 
 //sphereY
@@ -232,25 +215,25 @@ void RayView::on_horizontalSlider_valueChanged(int value)
     ui->dSpin1->setValue(m_shpereY);
     ui->dSpin1->blockSignals(false);
 
-    go();
+    //   go();
 }
 
 void RayView::on_horizontalSlider_4_valueChanged(int value)
 {
     m_numSamples = value;
-    go();
+    //   go();
 }
 
 void RayView::on_horizontalSlider_3_valueChanged(int value)
 {
     m_depth = value;
-    go();
+    //   go();
 }
 
 void RayView::on_chkColor_stateChanged(int arg1)
 {
     m_isColorOnly = (bool)arg1;
-    go();
+    //  go();
 }
 
 void RayView::on_chkStyle_stateChanged(int arg1)

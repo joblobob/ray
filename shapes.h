@@ -20,7 +20,8 @@ struct shape {
 struct sphere : public shape {
     sphere(QVector3D center, float radius)
         : shape(center)
-        , radius(radius) {};
+        , radius(radius)
+        , radiusSquared(radius * radius) {};
 
     // shpere hit code
     std::optional<hitPosition> hit(const Ray& ray, double t_min,
@@ -30,7 +31,7 @@ struct sphere : public shape {
 
         float a = ray.direction.lengthSquared();
         float b = QVector3D::dotProduct(originCenter, ray.direction);
-        float c = originCenter.lengthSquared() - radius * radius;
+        float c = originCenter.lengthSquared() - radiusSquared;
 
         float d = b * b - a * c; // sphere
 
@@ -53,6 +54,7 @@ struct sphere : public shape {
     };
 
     float radius;
+    float radiusSquared;
 };
 
 struct rectangle : public shape {

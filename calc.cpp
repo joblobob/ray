@@ -56,4 +56,55 @@ QVector3D random_in_hemisphere(const QVector3D& normal)
         return -in_unit_sphere;
 }
 
+// couleur
+QVector3D
+ray_color(const Ray& r,
+    const std::vector<std::unique_ptr<shape>>& worldObjects,
+    int depth, bool drawOnlyColors)
+{
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0.0f)
+        return img::defaultVec;
+
+    std::optional<hitPosition> hitRecord = calc::hitFromList(worldObjects, r, 0.001f, calc::infinity);
+    if (!hitRecord.has_value()) {
+        // pas de hit, background gradient
+        QVector3D unit_direction = r.direction.normalized();
+        float t = 0.5f * (unit_direction.y() + 1.0f);
+        return (1.0f - t) * img::bgColor + t * img::gradientBgVec;
+    }
+
+    if (drawOnlyColors) {
+        // juste couleur
+        QVector3D N = QVector3D { r.at(hitRecord.value().t) - img::infiniteZ }.normalized();
+        return 0.5f * QVector3D { N.x() + 1.0f, N.y() + 1.0f, N.z() + 1.0f };
+    }
+
+    // recursive bounce
+    QVector3D target = hitRecord->point + calc::random_in_hemisphere(hitRecord->normal);
+    return 0.5f * calc::ray_color({ hitRecord->point, target - hitRecord->point }, worldObjects, depth - 1, drawOnlyColors);
+}
+
+std::optional<hitPosition>
+hitFromList(const std::vector<std::unique_ptr<shape>>& sphereList,
+    const Ray& ray,
+    double t_min,
+    double t_max)
+{
+    bool hit_anything = false;
+    auto closest_so_far = t_max;
+    std::optional<hitPosition> retVal;
+
+    for (const auto& object : sphereList) {
+        std::optional<hitPosition> didHit = object->hit(ray, t_min, closest_so_far);
+        if (didHit.has_value()) {
+            hit_anything = true;
+            closest_so_far = didHit->t;
+            retVal = didHit.value();
+        }
+    }
+
+    return retVal;
+}
+
 } // namespace calc
