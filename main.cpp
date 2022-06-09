@@ -6,12 +6,17 @@
 #include <iostream>
 
 #include <rayview.h>
+#include <rayview_rtiow.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
 
-  QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
-  RayView *view = new RayView();
-  view->show();
-  app.exec();
+    RayView* view = new RayView();
+    view->show();
+
+    RayView_rtiow* view_rtiow = new RayView_rtiow();
+    view_rtiow->show();
+    app.exec();
 }

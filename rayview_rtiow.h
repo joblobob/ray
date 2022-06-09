@@ -1,5 +1,5 @@
-#ifndef RAYVIEW_H
-#define RAYVIEW_H
+#ifndef RayView_rtiow_H
+#define RayView_rtiow_H
 
 #include <QDialog>
 #include <QFile>
@@ -15,36 +15,36 @@
 #include <shapes.h>
 
 namespace Ui {
-class RayView;
+class RayView_rtiow;
 }
 
-class RayView : public QDialog {
+class RayView_rtiow : public QDialog {
     Q_OBJECT
 
 public:
-    explicit RayView(QWidget* parent = nullptr);
-    ~RayView();
+    explicit RayView_rtiow(QWidget* parent = nullptr);
+    ~RayView_rtiow();
 
     double hit_object(const QVector3D& centerPoint, const Ray& ray);
 
-    void writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples);
+    void writeToStream(QTextStream& stream, const QVector3D& pixel, int samples);
 
-    void renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
-    void renderOneRay();
+    void renderOneByOne(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
 
 private slots:
     void on_dSpin1_valueChanged(double arg1);
     void on_dSpin2_valueChanged(double arg1);
     void on_chkColor_stateChanged(int arg1);
-    void on_chkStyle_stateChanged(int arg1);
 
     void on_horizontalSlider_valueChanged(int value); //shpereY
     void on_horizontalSlider_4_valueChanged(int value);
     void on_horizontalSlider_3_valueChanged(int value);
     void go();
 
+    void on_btnGo_clicked();
+
 private:
-    Ui::RayView* ui;
+    Ui::RayView_rtiow* ui;
     QGraphicsScene* scene;
 
     float m_shpereY;
@@ -52,7 +52,6 @@ private:
     int m_numSamples;
     int m_depth;
     bool m_isColorOnly;
-    bool m_isStyleNormal;
 
     std::vector<std::unique_ptr<shape>> m_worldObjects;
 
@@ -61,13 +60,8 @@ private:
 
     QGraphicsPixmapItem* m_sceneItem;
 
-    int m_nextFrameX;
-    int m_nextFrameY;
-
-    bool m_stopLoop;
-
     // camera
     camera cam;
 };
 
-#endif // RAYVIEW_H
+#endif // RayView_rtiow_H

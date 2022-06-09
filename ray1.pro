@@ -9,6 +9,7 @@ CONFIG -= app_bundle
 
 SOURCES += \
         main.cpp \
+	rayview_rtiow.cpp \
         rayview.cpp \
 	calc.cpp
 
@@ -18,6 +19,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 FORMS += \
+	rayview_rtiow.ui \
 	rayview.ui
 
 HEADERS += \
@@ -25,6 +27,7 @@ HEADERS += \
 	calc.h \
 	camera.h \
 	hitPosition.h \
+	rayview_rtiow.h \
 	rayview.h \
 	shapes.h
 	

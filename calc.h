@@ -49,6 +49,8 @@ inline std::optional<hitPosition> hitFromList(const std::vector<std::unique_ptr<
     const Ray& ray, double t_min,
     double t_max);
 
+QVector3D rgbPerSamples(const QVector3D& pixel, int samples);
+
 } // namespace calc
 
 #endif // CALC_H

@@ -58,7 +58,7 @@ QVector3D random_in_hemisphere(const QVector3D& normal)
 
 // couleur
 QVector3D
-ray_color(const Ray& r,
+ray_color(const Ray& inboundRay,
     const std::vector<std::unique_ptr<shape>>& worldObjects,
     int depth, bool drawOnlyColors)
 {
@@ -66,17 +66,17 @@ ray_color(const Ray& r,
     if (depth <= 0.0f)
         return img::defaultVec;
 
-    std::optional<hitPosition> hitRecord = calc::hitFromList(worldObjects, r, 0.001f, calc::infinity);
+    std::optional<hitPosition> hitRecord = calc::hitFromList(worldObjects, inboundRay, 0.001f, calc::infinity);
     if (!hitRecord.has_value()) {
         // pas de hit, background gradient
-        QVector3D unit_direction = r.direction.normalized();
+        QVector3D unit_direction = inboundRay.direction.normalized();
         float t = 0.5f * (unit_direction.y() + 1.0f);
         return (1.0f - t) * img::bgColor + t * img::gradientBgVec;
     }
 
     if (drawOnlyColors) {
         // juste couleur
-        QVector3D N = QVector3D { r.at(hitRecord.value().t) - img::infiniteZ }.normalized();
+        QVector3D N = QVector3D { inboundRay.at(hitRecord.value().t) - img::infiniteZ }.normalized();
         return 0.5f * QVector3D { N.x() + 1.0f, N.y() + 1.0f, N.z() + 1.0f };
     }
 
@@ -105,6 +105,17 @@ hitFromList(const std::vector<std::unique_ptr<shape>>& sphereList,
     }
 
     return retVal;
+}
+
+QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
+{
+    // Divide the color by the number of samples. and gamma-correct for gamma=2.0.
+    auto scale = 1.0f / samples;
+    auto r = sqrt(scale * pixel.x());
+    auto g = sqrt(scale * pixel.y());
+    auto b = sqrt(scale * pixel.z());
+
+    return { 255.0f * std::clamp(r, 0.0f, 0.999f), 255.0f * std::clamp(g, 0.0f, 0.999f), 255.0f * std::clamp(b, 0.0f, 0.999f) };
 }
 
 } // namespace calc
