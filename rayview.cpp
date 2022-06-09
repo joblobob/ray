@@ -99,17 +99,21 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
 
 void RayView::renderOneRay()
 {
-    int randX = calc::random_double(0.0f, img::height + 2);
-    int randY = calc::random_double(0.0f, img::width - 1);
+    int randX = calc::random_double(0.0f, img::width);
+    int randY = calc::random_double(0.0f, img::height);
+
     m_default_pixel_color.setX(0.0f);
     m_default_pixel_color.setY(0.0f);
     m_default_pixel_color.setZ(0.0f);
+
     for (int s = 0; s < m_numSamples; ++s) {
-        float u = (randY + calc::random_double()) / (img::width - 1);
-        float v = (randX + calc::random_double()) / (img::height - 1);
+        float u = (randX + calc::random_double()) / img::width;
+        float v = (randY + calc::random_double()) / img::height;
+
         m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), m_worldObjects, m_depth, m_isColorOnly);
     }
-    RayView::writeToImg(m_imageCanvas, img::width - randY - 1, img::height - randX, m_default_pixel_color, m_numSamples);
+
+    RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, m_numSamples);
 }
 
 void RayView::go()
@@ -126,6 +130,7 @@ void RayView::go()
             renderOneRay();
             rays++;
         }
+
         if (m_sceneItem == nullptr) {
             m_sceneItem = scene->addPixmap(QPixmap::fromImage(m_imageCanvas));
             scene->setSceneRect(m_imageCanvas.rect());

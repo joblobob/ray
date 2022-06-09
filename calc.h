@@ -14,7 +14,7 @@
 namespace img {
 // img
 constexpr float aspect_ratio = 16.0f / 9.0f;
-constexpr int width = 600;
+constexpr int width = 700;
 constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D infiniteZ { 0.0f, 0.0f, -1.0f };
