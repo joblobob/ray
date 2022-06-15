@@ -7,7 +7,6 @@
 #include <QGraphicsScene>
 #include <QImage>
 #include <QTextStream>
-
 #include <Ray.h>
 #include <calc.h>
 #include <camera.h>
@@ -31,6 +30,8 @@ public:
 
     void renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
     void renderOneRay();
+
+    void resetDone();
 
 private slots:
     void on_dSpin1_valueChanged(double arg1);
@@ -65,6 +66,13 @@ private:
     int m_nextFrameY;
 
     bool m_stopLoop;
+
+    int m_raysSinceEpoch;
+
+    QVector<QPoint> m_allPixels;
+    bool m_allisDone;
+
+    QVector<QVector<bool>> m_allPixelsMaps;
 
     // camera
     camera cam;
