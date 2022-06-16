@@ -10,7 +10,7 @@ constexpr double degrees_to_radians(double degrees)
 
 float random_double(float min, float max)
 {
-    const std::uniform_real_distribution<float> distribution(min, max);
+    std::uniform_real_distribution<float> distribution(min, max);
     return distribution(gen);
 }
 

@@ -57,7 +57,7 @@ static std::random_device rd; // Will be used to obtain a seed for the random nu
 static std::minstd_rand0 gen(rd());
 static std::random_device rd01; // Will be used to obtain a seed for the random number engine
 static std::minstd_rand0 gen01(rd01());
-static const std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
+static std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
 
 } // namespace calc
 
