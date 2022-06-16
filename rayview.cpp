@@ -36,7 +36,7 @@ RayView::RayView(QWidget* parent)
     , m_nextFrameY(0)
     , m_raysSinceEpoch(0)
     , m_allisDone(false)
-    , m_allPixelsMaps { img::width, QVector<bool>(img::height, false) }
+    , m_allPixelsMaps { img::width + 1, QVector<bool>(img::height + 1, false) }
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -75,6 +75,7 @@ RayView::~RayView()
 void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples)
 {
     if (x < img.width() && y < img.height() && x >= 0 && y >= 0) {
+        m_allPixelsMaps[x][y] = true;
         QVector3D newCol = calc::rgbPerSamples(pixel, samples);
         // Write the translated [0,255] value of each color component.
 
@@ -97,8 +98,8 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
             int x = width - row - 1;
             int y = height - col;
             for (int s = 0; s < samples && !skip; ++s) {
-                auto u = (row + calc::random_double()) / (width - 1);
-                auto v = (col + calc::random_double()) / (height - 1);
+                auto u = (row + calc::random_double01()) / (width - 1);
+                auto v = (col + calc::random_double01()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
                 m_default_pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
                 if (x < m_imageCanvas.width() && y < m_imageCanvas.height() && x >= 0 && y >= 0)
@@ -136,12 +137,12 @@ void RayView::renderOneRay()
 
     //random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
     for (int s = 0; s < m_numSamples; ++s) {
-        float u = (randX + calc::random_double()) / img::width;
-        float v = (randY + calc::random_double()) / img::height;
+        float u = (randX + calc::random_double01()) / img::width;
+        float v = (randY + calc::random_double01()) / img::height;
 
         m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), m_worldObjects, m_depth, m_isColorOnly);
     }
-    m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1] = true;
+
     RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, m_numSamples);
 }
 

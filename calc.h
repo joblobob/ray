@@ -34,7 +34,8 @@ constexpr double pi = 3.1415926535897932385;
 
 inline constexpr double degrees_to_radians(double degrees);
 
-inline float random_double(float min = 0.0, float max = 1.0);
+float random_double(float min, float max);
+float random_double01();
 
 inline QVector3D randomVec();
 inline QVector3D randomVec(float min, float max);
@@ -51,6 +52,12 @@ inline std::optional<hitPosition> hitFromList(const std::vector<std::unique_ptr<
     double t_max);
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples);
+
+static std::random_device rd; // Will be used to obtain a seed for the random number engine
+static std::minstd_rand0 gen(rd());
+static std::random_device rd01; // Will be used to obtain a seed for the random number engine
+static std::minstd_rand0 gen01(rd01());
+static const std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
 
 } // namespace calc
 

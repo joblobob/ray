@@ -67,8 +67,8 @@ void RayView_rtiow::renderOneByOne(int width, int height, int samples, const cam
             pixel_color.setY(0);
             pixel_color.setZ(0);
             for (int s = 0; s < samples; ++s) {
-                auto u = (row + calc::random_double()) / (width - 1);
-                auto v = (col + calc::random_double()) / (height - 1);
+                auto u = (row + calc::random_double01()) / (width - 1);
+                auto v = (col + calc::random_double01()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
                 pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
             }

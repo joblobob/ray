@@ -10,19 +10,18 @@ constexpr double degrees_to_radians(double degrees)
 
 float random_double(float min, float max)
 {
-    std::random_device
-        rd; // Will be used to obtain a seed for the random number engine
-    /*std::mt19937 gen(rd());*/ // Standard mersenne_twister_engine seeded with
-    // rd()
-    // Changing mt19937 to minstd_rand makes the code run 88 times faster!
-    std::minstd_rand gen(rd());
-    std::uniform_real_distribution<> distribution(min, max);
+    const std::uniform_real_distribution<float> distribution(min, max);
     return distribution(gen);
+}
+
+float random_double01()
+{
+    return simple_distribution(gen01);
 }
 
 QVector3D randomVec()
 {
-    return { random_double(), random_double(), random_double() };
+    return { random_double01(), random_double01(), random_double01() };
 }
 
 QVector3D randomVec(float min, float max)
