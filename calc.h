@@ -28,6 +28,7 @@ namespace calc {
 
 constexpr double infinity = std::numeric_limits<double>::infinity();
 constexpr double pi = 3.1415926535897932385;
+constexpr float smallestVal = 0.001f;
 
 // Utility Functions
 
@@ -35,8 +36,11 @@ inline constexpr double degrees_to_radians(double degrees);
 
 float random_double(float min, float max);
 float random_double01();
+float random_double11();
+
 
 inline QVector3D randomVec();
+inline QVector3D randomVec11();
 inline QVector3D randomVec(float min, float max);
 
 QVector3D random_in_unit_sphere();
@@ -58,7 +62,12 @@ static std::random_device rd; // Will be used to obtain a seed for the random nu
 static std::minstd_rand0 gen(rd());
 static std::random_device rd01; // Will be used to obtain a seed for the random number engine
 static std::minstd_rand0 gen01(rd01());
+static std::random_device rd11; // Will be used to obtain a seed for the random number engine
+static std::minstd_rand0 gen11(rd11());
 static std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
+
+static std::uniform_real_distribution<float> simple_distributionMinusOneToOne(-1.0f, 1.0f);
+
 
 } // namespace calc
 

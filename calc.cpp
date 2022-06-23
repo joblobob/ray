@@ -22,9 +22,19 @@ float random_double01()
     return simple_distribution(gen01);
 }
 
+float random_double11()
+{
+    return simple_distributionMinusOneToOne(gen11);
+}
+
 QVector3D randomVec()
 {
     return { random_double01(), random_double01(), random_double01() };
+}
+
+QVector3D randomVec11()
+{
+    return { random_double11(), random_double11(), random_double11() };
 }
 
 QVector3D randomVec(float min, float max)
@@ -38,7 +48,7 @@ random_in_unit_sphere()
 {
     QVector3D point { -1.0f, -1.0f, -1.0f };
     while (point.lengthSquared() >= 1.0f) {
-        point = calc::randomVec(-1.0f, 1.0f);
+        point = calc::randomVec11();
     }
     return point;
 }
@@ -68,7 +78,7 @@ ray_color(const Ray& inboundRay,
     if (depth <= 0.0f)
         return img::defaultVec;
 
-    std::optional<hit_record> hitRecord = hitFromList(worldObjects, inboundRay, 0.001f, calc::infinity);
+    std::optional<hit_record> hitRecord = hitFromList(worldObjects, inboundRay, calc::smallestVal, calc::infinity);
     if (!hitRecord.has_value()) {
         // pas de hit, background gradient
         QVector3D unit_direction = inboundRay.direction.normalized();
