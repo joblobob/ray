@@ -4,6 +4,11 @@
 #include <algorithm>
 #include <execution>
 
+#include <hitPosition.h>
+
+#include <calc.h>
+
+
 #include "ui_rayview.h"
 
 
@@ -36,11 +41,18 @@ RayView::RayView(QWidget* parent)
 
     ui->graphicsView->setScene(scene);
 
+    // materials
+
+    auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
+        auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
+        auto material_left   = std::make_shared<metal>(QVector3D(0.8, 0.8, 0.8));
+        auto material_right  = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2));
+
     // objects
 
-    std::unique_ptr<shape> sph1(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.6f });
-    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.5f }, 0.1f });
-    std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f });
+    std::unique_ptr<shape> sph1(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.6f, material_right });
+    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.5f }, 0.1f, material_center });
+    std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
     // std::unique_ptr<shape> rect1(new rectangle { { 0.0f, m_testVal, -20.0f }, 1.0f, 1.0f, 1.0f });
     m_worldObjects.push_back(std::move(sph1));
     m_worldObjects.push_back(std::move(sph2));

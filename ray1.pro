@@ -11,6 +11,7 @@ SOURCES += \
         main.cpp \
 	rayview_rtiow.cpp \
         rayview.cpp \
+        hitPosition.cpp \
 	calc.cpp
 
 # Default rules for deployment.

@@ -1,6 +1,9 @@
 
 #include <calc.h>
 
+#include <shapes.h>
+#include <hitPosition.h>
+
 namespace calc {
 
 constexpr double degrees_to_radians(double degrees)
@@ -65,7 +68,7 @@ ray_color(const Ray& inboundRay,
     if (depth <= 0.0f)
         return img::defaultVec;
 
-    std::optional<hitPosition> hitRecord = calc::hitFromList(worldObjects, inboundRay, 0.001f, calc::infinity);
+    std::optional<hit_record> hitRecord = hitFromList(worldObjects, inboundRay, 0.001f, calc::infinity);
     if (!hitRecord.has_value()) {
         // pas de hit, background gradient
         QVector3D unit_direction = inboundRay.direction.normalized();
@@ -80,30 +83,11 @@ ray_color(const Ray& inboundRay,
     }
 
     // recursive bounce
-    QVector3D target = hitRecord->point + calc::random_in_hemisphere(hitRecord->normal);
-    return 0.5f * calc::ray_color({ hitRecord->point, target - hitRecord->point }, worldObjects, depth - 1, drawOnlyColors);
-}
-
-std::optional<hitPosition>
-hitFromList(const std::vector<std::unique_ptr<shape>>& sphereList,
-    const Ray& ray,
-    double t_min,
-    double t_max)
-{
-    bool hit_anything = false;
-    auto closest_so_far = t_max;
-    std::optional<hitPosition> retVal;
-
-    for (const auto& object : sphereList) {
-        std::optional<hitPosition> didHit = object->hit(ray, t_min, closest_so_far);
-        if (didHit.has_value()) {
-            hit_anything = true;
-            closest_so_far = didHit->t;
-            retVal = didHit.value();
-        }
-    }
-
-    return retVal;
+    Ray scattered;
+    QVector3D attenuation;
+    if (hitRecord.value().mat_ptr->scatter(inboundRay, hitRecord.value(), attenuation, scattered))
+        return attenuation * ray_color(scattered, worldObjects, depth-1, drawOnlyColors);
+    return img::defaultVec;
 }
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
@@ -115,6 +99,16 @@ QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
     auto b = sqrt(scale * pixel.z());
 
     return { 255.0f * std::clamp(r, 0.0f, 0.999f), 255.0f * std::clamp(g, 0.0f, 0.999f), 255.0f * std::clamp(b, 0.0f, 0.999f) };
+}
+
+bool near_zero(const QVector3D& vec)  {
+        // Return true if the vector is close to zero in all dimensions.
+        const auto s = 1e-8;
+        return (fabs(vec[0]) < s) && (fabs(vec[1]) < s) && (fabs(vec[2]) < s);
+}
+
+QVector3D reflect(const QVector3D &v, const QVector3D &n) {
+    return v - 2*QVector3D::dotProduct(v,n)*n;
 }
 
 } // namespace calc

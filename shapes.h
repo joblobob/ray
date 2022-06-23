@@ -12,19 +12,20 @@ struct shape {
     {
     }
 
-    virtual std::optional<hitPosition> hit(const Ray& r, double t_min, double t_max) const = 0;
+    virtual std::optional<hit_record> hit(const Ray& r, double t_min, double t_max) const = 0;
 
     QVector3D center;
 };
 
 struct sphere : public shape {
-    sphere(QVector3D center, float radius)
+    sphere(QVector3D center, float radius, std::shared_ptr<material> material)
         : shape(center)
         , radius(radius)
-        , radiusSquared(radius * radius) {};
+        , radiusSquared(radius * radius),
+          material(material) {};
 
     // shpere hit code
-    std::optional<hitPosition> hit(const Ray& ray, double t_min,
+    std::optional<hit_record> hit(const Ray& ray, double t_min,
         double t_max) const override
     {
         QVector3D originCenter = ray.pointOfOrigin - center;
@@ -47,14 +48,18 @@ struct sphere : public shape {
         }
         auto at = ray.at(root);
         QVector3D outwardNormal = (at - center) / radius;
-        auto retVal = hitPosition { at, outwardNormal, root };
+        hit_record retVal;
+        retVal.t = root;
+        retVal.p = at;
+        retVal.mat_ptr = material;
+        //auto retVal = hitPosition { at, outwardNormal, root };
         retVal.setFaceNormal(ray, outwardNormal);
-
         return retVal;
     };
 
     float radius;
     float radiusSquared;
+    std::shared_ptr<material> material;
 };
 
 struct rectangle : public shape {
@@ -65,11 +70,11 @@ struct rectangle : public shape {
         , depth(d) {};
 
     //  hit code
-    std::optional<hitPosition> hit(const Ray& ray, double t_min,
+    std::optional<hit_record> hit(const Ray& ray, double t_min,
         double t_max) const override
     {
 
-        auto retVal = hitPosition { center, center * 2, 0.5 };
+        auto retVal = hit_record() ;
 
         return retVal;
     };

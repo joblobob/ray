@@ -8,9 +8,7 @@
 #include <QImage>
 #include <QTextStream>
 #include <Ray.h>
-#include <calc.h>
 #include <camera.h>
-#include <hitPosition.h>
 #include <shapes.h>
 
 namespace Ui {
