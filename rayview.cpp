@@ -6,25 +6,7 @@
 
 #include "ui_rayview.h"
 
-void RayView::resetDone()
-{
-    bool isDone = true;
-    for (int y = img::height - 1; y > 0 && isDone; y--) {
-        for (int x = 0; x <= img::width - 1 && isDone; x++) {
-            if (m_allPixelsMaps[x][y] == false) {
-                isDone = false;
-            }
-        }
-    }
-    if (isDone) {
-        for (int y = img::height - 1; y > 0 && isDone; y--) {
-            for (int x = 0; x <= img::width - 1 && isDone; x++) {
-                m_allPixelsMaps[x][y] = false;
-            }
-        }
-        m_numSamples++;
-    }
-}
+
 
 RayView::RayView(QWidget* parent)
     : QDialog(parent)
@@ -36,7 +18,7 @@ RayView::RayView(QWidget* parent)
     , m_nextFrameY(0)
     , m_raysSinceEpoch(0)
     , m_allisDone(false)
-    , m_allPixelsMaps { img::width + 1, QVector<bool>(img::height + 1, false) }
+    , m_allPixelsMaps { img::width + 1, QVector<int>(img::height + 1, 1) }
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -46,7 +28,6 @@ RayView::RayView(QWidget* parent)
     m_imageCanvas.fill(Qt::black);
 
     m_allPixels.reserve(img::width * img::height);
-    resetDone();
 
     m_numSamples = 1;
     m_depth = 10;
@@ -75,7 +56,10 @@ RayView::~RayView()
 void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples)
 {
     if (x < img.width() && y < img.height() && x >= 0 && y >= 0) {
-        m_allPixelsMaps[x][y] = true;
+        if(m_allPixelsMaps[x][y] < m_numSamples)
+            m_allPixelsMaps[x][y]++;
+        if(m_allPixelsMaps[x][y] >= m_numSamples)
+            m_allPixelsMaps[x][y] = 1;
         QVector3D newCol = calc::rgbPerSamples(pixel, samples);
         // Write the translated [0,255] value of each color component.
 
@@ -117,11 +101,8 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
     qCritical() << skipped;
     QElapsedTimer imageTimer;
     imageTimer.start();
-    if (m_sceneItem == nullptr) {
-        m_sceneItem = scene->addPixmap(QPixmap::fromImage(m_imageCanvas));
-        scene->setSceneRect(m_imageCanvas.rect());
-    } else
-        m_sceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
+
+    drawImageToScene();
 
     ui->m_tempsImage->setText("Image: " + QString::number(imageTimer.elapsed()) + " ms");
 }
@@ -135,15 +116,28 @@ void RayView::renderOneRay()
     m_default_pixel_color.setY(0);
     m_default_pixel_color.setZ(0);
 
+    int numSamples = 1;
+    if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 && img::height - randY - 1 >= 0)
+     numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
+
     //random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
-    for (int s = 0; s < m_numSamples; ++s) {
+    for (int s = 0; s < numSamples; ++s) {
         float u = (randX + calc::random_double01()) / img::width;
         float v = (randY + calc::random_double01()) / img::height;
 
         m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), m_worldObjects, m_depth, m_isColorOnly);
     }
 
-    RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, m_numSamples);
+    RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, numSamples);
+}
+
+void RayView::drawImageToScene()
+{
+    if (m_sceneItem == nullptr) {
+        m_sceneItem = scene->addPixmap(QPixmap::fromImage(m_imageCanvas));
+        scene->setSceneRect(m_imageCanvas.rect());
+    } else
+        m_sceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
 }
 
 void RayView::go()
@@ -154,6 +148,7 @@ void RayView::go()
     // render
     if (m_isStyleNormal) {
         renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
+        QTimer::singleShot(timer.elapsed(), this, &RayView::go);
     } else {
 
         while (timer.elapsed() < 16) {
@@ -161,13 +156,7 @@ void RayView::go()
             rays++;
         }
 
-        resetDone();
-
-        if (m_sceneItem == nullptr) {
-            m_sceneItem = scene->addPixmap(QPixmap::fromImage(m_imageCanvas));
-            scene->setSceneRect(m_imageCanvas.rect());
-        } else
-            m_sceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
+        drawImageToScene();
 
         QTimer::singleShot(0, this, &RayView::go);
     }
@@ -199,6 +188,7 @@ void RayView::on_horizontalSlider_valueChanged(int value)
 void RayView::on_horizontalSlider_4_valueChanged(int value)
 {
     m_numSamples = value;
+    ui->lblNumSamples->setText("NumSamples: " + QString::number(m_numSamples));
 }
 
 void RayView::on_horizontalSlider_3_valueChanged(int value)

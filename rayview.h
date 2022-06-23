@@ -31,7 +31,7 @@ public:
     void renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
     void renderOneRay();
 
-    void resetDone();
+    void drawImageToScene();
 
 private slots:
     void on_dSpin1_valueChanged(double arg1);
@@ -72,7 +72,7 @@ private:
     QVector<QPoint> m_allPixels;
     bool m_allisDone;
 
-    QVector<QVector<bool>> m_allPixelsMaps;
+    QVector<QVector<int>> m_allPixelsMaps;
 
     // camera
     camera cam;
