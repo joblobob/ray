@@ -50,13 +50,17 @@ RayView::RayView(QWidget* parent)
 
     // objects
 
-    std::unique_ptr<shape> sph1(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.6f, material_right });
-    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.5f }, 0.1f, material_center });
+    std::unique_ptr<shape> sph1(new sphere { { 1.0f, 0.0f, -1.0f }, 0.6f, material_right });
+    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center });
+    std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
     std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
+
+
     // std::unique_ptr<shape> rect1(new rectangle { { 0.0f, m_testVal, -20.0f }, 1.0f, 1.0f, 1.0f });
-    m_worldObjects.push_back(std::move(sph1));
-    m_worldObjects.push_back(std::move(sph2));
     m_worldObjects.push_back(std::move(sph3));
+    m_worldObjects.push_back(std::move(sph2));
+    m_worldObjects.push_back(std::move(sph1));
+    m_worldObjects.push_back(std::move(sph4));
     //worldObjects.push_back(std::move(rect1));
 }
 
