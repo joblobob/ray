@@ -3,6 +3,7 @@
 
 #include <calc.h>
 #include <Ray.h>
+#include <optional>
 
 struct shape;
 
