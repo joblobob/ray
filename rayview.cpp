@@ -8,10 +8,7 @@
 
 #include <calc.h>
 
-
 #include "ui_rayview.h"
-
-
 
 RayView::RayView(QWidget* parent)
     : QDialog(parent)
@@ -24,6 +21,7 @@ RayView::RayView(QWidget* parent)
     , m_raysSinceEpoch(0)
     , m_allisDone(false)
     , m_allPixelsMaps { img::width + 1, QVector<int>(img::height + 1, 1) }
+    , cam(QVector3D(-2, 2, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), 90, img::aspect_ratio)
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -44,9 +42,11 @@ RayView::RayView(QWidget* parent)
     // materials
 
     auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
-        auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
-        auto material_left   = std::make_shared<metal>(QVector3D(0.8, 0.8, 0.8));
-        auto material_right  = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2));
+    auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
+    // auto material_left = std::make_shared<metal>(QVector3D(0.8, 0.8, 0.8), 0.3);
+    //  auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 1.0);
+    auto material_left = std::make_shared<dielectric>(1.5);
+    auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 0.0);
 
     // objects
 
@@ -54,7 +54,6 @@ RayView::RayView(QWidget* parent)
     std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center });
     std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
     std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
-
 
     // std::unique_ptr<shape> rect1(new rectangle { { 0.0f, m_testVal, -20.0f }, 1.0f, 1.0f, 1.0f });
     m_worldObjects.push_back(std::move(sph3));
@@ -72,9 +71,9 @@ RayView::~RayView()
 void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples)
 {
     if (x < img.width() && y < img.height() && x >= 0 && y >= 0) {
-        if(m_allPixelsMaps[x][y] < m_numSamples)
+        if (m_allPixelsMaps[x][y] < m_numSamples)
             m_allPixelsMaps[x][y]++;
-        if(m_allPixelsMaps[x][y] >= m_numSamples)
+        if (m_allPixelsMaps[x][y] >= m_numSamples)
             m_allPixelsMaps[x][y] = 1;
         QVector3D newCol = calc::rgbPerSamples(pixel, samples);
         // Write the translated [0,255] value of each color component.
@@ -134,7 +133,7 @@ void RayView::renderOneRay()
 
     int numSamples = 1;
     if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 && img::height - randY - 1 >= 0)
-     numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
+        numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
 
     //random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
     for (int s = 0; s < numSamples; ++s) {

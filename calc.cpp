@@ -1,15 +1,10 @@
 
 #include <calc.h>
 
-#include <shapes.h>
 #include <hitPosition.h>
+#include <shapes.h>
 
 namespace calc {
-
-constexpr double degrees_to_radians(double degrees)
-{
-    return degrees * pi / 180.0;
-}
 
 float random_double(float min, float max)
 {
@@ -96,7 +91,7 @@ ray_color(const Ray& inboundRay,
     Ray scattered;
     QVector3D attenuation;
     if (hitRecord.value().mat_ptr->scatter(inboundRay, hitRecord.value(), attenuation, scattered))
-        return attenuation * ray_color(scattered, worldObjects, depth-1, drawOnlyColors);
+        return attenuation * ray_color(scattered, worldObjects, depth - 1, drawOnlyColors);
     return img::defaultVec;
 }
 
@@ -111,14 +106,24 @@ QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
     return { 255.0f * std::clamp(r, 0.0f, 0.999f), 255.0f * std::clamp(g, 0.0f, 0.999f), 255.0f * std::clamp(b, 0.0f, 0.999f) };
 }
 
-bool near_zero(const QVector3D& vec)  {
-        // Return true if the vector is close to zero in all dimensions.
-        const auto s = 1e-8;
-        return (fabs(vec[0]) < s) && (fabs(vec[1]) < s) && (fabs(vec[2]) < s);
+bool near_zero(const QVector3D& vec)
+{
+    // Return true if the vector is close to zero in all dimensions.
+    const auto s = 1e-8;
+    return (fabs(vec[0]) < s) && (fabs(vec[1]) < s) && (fabs(vec[2]) < s);
 }
 
-QVector3D reflect(const QVector3D &v, const QVector3D &n) {
-    return v - 2*QVector3D::dotProduct(v,n)*n;
+QVector3D reflect(const QVector3D& v, const QVector3D& n)
+{
+    return v - 2 * QVector3D::dotProduct(v, n) * n;
+}
+
+QVector3D refract(const QVector3D& uv, const QVector3D& n, double etai_over_etat)
+{
+    auto cos_theta = fmin(QVector3D::dotProduct(-uv, n), 1.0);
+    QVector3D r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    QVector3D r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.lengthSquared())) * n;
+    return r_out_perp + r_out_parallel;
 }
 
 } // namespace calc

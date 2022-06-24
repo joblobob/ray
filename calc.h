@@ -32,12 +32,14 @@ constexpr float smallestVal = 0.001f;
 
 // Utility Functions
 
-inline constexpr double degrees_to_radians(double degrees);
+inline constexpr double degrees_to_radians(double degrees)
+{
+    return degrees * pi / 180.0;
+}
 
 float random_double(float min, float max);
 float random_double01();
 float random_double11();
-
 
 inline QVector3D randomVec();
 inline QVector3D randomVec11();
@@ -51,10 +53,10 @@ inline QVector3D random_in_hemisphere(const QVector3D& normal);
 QVector3D ray_color(const Ray& r, const std::vector<std::unique_ptr<shape>>& worldObjects,
     int depth, bool drawOnlyColors = false);
 
-
 QVector3D reflect(const QVector3D& v, const QVector3D& n);
+QVector3D refract(const QVector3D& uv, const QVector3D& n, double etai_over_etat);
 
-bool near_zero(const QVector3D& vec) ;
+bool near_zero(const QVector3D& vec);
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples);
 
@@ -67,7 +69,6 @@ static std::minstd_rand0 gen11(rd11());
 static std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
 
 static std::uniform_real_distribution<float> simple_distributionMinusOneToOne(-1.0f, 1.0f);
-
 
 } // namespace calc
 
