@@ -70,6 +70,9 @@
        <property name="tickPosition">
         <enum>QSlider::TicksAbove</enum>
        </property>
+       <property name="tickInterval">
+        <number>10</number>
+       </property>
       </widget>
      </item>
      <item row="0" column="0">
@@ -184,9 +187,9 @@
       </widget>
      </item>
      <item row="3" column="0">
-      <widget class="QLabel" name="label_4">
+      <widget class="QLabel" name="lblNumSamples">
        <property name="text">
-        <string>NumSamples</string>
+        <string>NumSamples: 1</string>
        </property>
       </widget>
      </item>

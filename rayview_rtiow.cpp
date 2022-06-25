@@ -135,6 +135,7 @@ void RayView_rtiow::on_horizontalSlider_valueChanged(int value)
 void RayView_rtiow::on_horizontalSlider_4_valueChanged(int value)
 {
     m_numSamples = value;
+    ui->lblNumSamples->setText("NumSamples: " + QString::number(m_numSamples));
 }
 
 void RayView_rtiow::on_horizontalSlider_3_valueChanged(int value)

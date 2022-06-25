@@ -15,13 +15,16 @@ RayView::RayView(QWidget* parent)
     , ui(new Ui::RayView)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
+    , m_lookAt(0.0f, 0.0f, -1.0f)
+    , m_lookFrom(0.0f, 0.0f, 1.0f)
+    , m_vup(0.0f, 1.0f, 0.0f)
     , m_sceneItem(nullptr)
     , m_nextFrameX(0)
     , m_nextFrameY(0)
     , m_raysSinceEpoch(0)
     , m_allisDone(false)
     , m_allPixelsMaps { img::width + 1, QVector<int>(img::height + 1, 1) }
-    , cam(QVector3D(-2, 2, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), 90, img::aspect_ratio)
+    , cam(m_lookFrom, m_lookAt, m_vup)
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -223,4 +226,24 @@ void RayView::on_chkStyle_stateChanged(int arg1)
         m_sceneItem = nullptr;
     }
     go();
+}
+
+void RayView::keyPressEvent(QKeyEvent* keyEvent)
+{
+    switch (keyEvent->key()) {
+    case Qt::Key_W:
+        m_lookFrom -= { 0.0f, 0.0f, 0.1f };
+        break;
+    case Qt::Key_A:
+        m_lookFrom += { 0.1f, 0.0f, 0.0f };
+        break;
+    case Qt::Key_S:
+        m_lookFrom += { 0.0f, 0.0f, 0.1f };
+        break;
+    case Qt::Key_D:
+        m_lookFrom -= { 0.1f, 0.0f, 0.0f };
+        break;
+    }
+
+    cam.resetCam(m_lookFrom, m_lookAt, m_vup);
 }

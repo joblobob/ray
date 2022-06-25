@@ -6,7 +6,9 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
 #include <QImage>
+#include <QKeyEvent>
 #include <QTextStream>
+
 #include <Ray.h>
 #include <camera.h>
 #include <shapes.h>
@@ -30,6 +32,9 @@ public:
     void renderOneRay();
 
     void drawImageToScene();
+
+protected:
+    void keyPressEvent(QKeyEvent* keyEvent);
 
 private slots:
     void on_dSpin1_valueChanged(double arg1);
@@ -57,6 +62,9 @@ private:
 
     QImage m_imageCanvas;
     QVector3D m_default_pixel_color;
+    QVector3D m_lookAt;
+    QVector3D m_lookFrom;
+    QVector3D m_vup;
 
     QGraphicsPixmapItem* m_sceneItem;
 
