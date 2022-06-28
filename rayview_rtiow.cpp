@@ -11,7 +11,7 @@ RayView_rtiow::RayView_rtiow(QWidget* parent)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
     , m_sceneItem(nullptr)
-    , cam(QVector3D(-2, 2, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), 90, img::aspect_ratio)
+    , cam(QVector3D(0, 0, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), 90, img::aspect_ratio)
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -24,14 +24,13 @@ RayView_rtiow::RayView_rtiow(QWidget* parent)
     scene = new QGraphicsScene(this);
 
     ui->graphicsView->setScene(scene);
+
     // materials
 
     auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
     auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
-    // auto material_left = std::make_shared<metal>(QVector3D(0.8, 0.8, 0.8), 0.3);
-    //  auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 1.0);
     auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 0.0);
+    auto material_right = std::make_shared<metal>(QVector3D(0.6, 0.6, 0.6), 0.0);
 
     // objects
 
@@ -40,12 +39,10 @@ RayView_rtiow::RayView_rtiow(QWidget* parent)
     std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
     std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
 
-    // std::unique_ptr<shape> rect1(new rectangle { { 0.0f, m_testVal, -20.0f }, 1.0f, 1.0f, 1.0f });
     m_worldObjects.push_back(std::move(sph3));
     m_worldObjects.push_back(std::move(sph2));
     m_worldObjects.push_back(std::move(sph1));
     m_worldObjects.push_back(std::move(sph4));
-    //worldObjects.push_back(std::move(rect1));
 }
 
 RayView_rtiow::~RayView_rtiow()

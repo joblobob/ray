@@ -46,10 +46,8 @@ RayView::RayView(QWidget* parent)
 
     auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
     auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
-    // auto material_left = std::make_shared<metal>(QVector3D(0.8, 0.8, 0.8), 0.3);
-    //  auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 1.0);
     auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(QVector3D(0.8, 0.6, 0.2), 0.0);
+    auto material_right = std::make_shared<metal>(QVector3D(0.6, 0.6, 0.6), 0.0);
 
     // objects
 
@@ -58,12 +56,10 @@ RayView::RayView(QWidget* parent)
     std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
     std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
 
-    // std::unique_ptr<shape> rect1(new rectangle { { 0.0f, m_testVal, -20.0f }, 1.0f, 1.0f, 1.0f });
     m_worldObjects.push_back(std::move(sph3));
     m_worldObjects.push_back(std::move(sph2));
     m_worldObjects.push_back(std::move(sph1));
     m_worldObjects.push_back(std::move(sph4));
-    //worldObjects.push_back(std::move(rect1));
 }
 
 RayView::~RayView()
