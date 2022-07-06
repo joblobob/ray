@@ -11,7 +11,7 @@ RayView_rtiow::RayView_rtiow(QWidget* parent)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
     , m_sceneItem(nullptr)
-    , cam(QVector3D(0, 0, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), 90, img::aspect_ratio)
+    , cam(QVector3D(0, 0, 1), QVector3D(0, 0, -1), QVector3D(0, 1, 0), (QVector3D(0, 0, 1) - QVector3D(0, 0, -1)).length(), 90, img::aspect_ratio)
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -34,10 +34,10 @@ RayView_rtiow::RayView_rtiow(QWidget* parent)
 
     // objects
 
-    std::unique_ptr<shape> sph1(new sphere { { 1.0f, 0.0f, -1.0f }, 0.6f, material_right });
-    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center });
-    std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
-    std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
+    std::shared_ptr<shape> sph1(new sphere { { 1.0f, 0.0f, -1.0f }, 0.6f, material_right });
+    std::shared_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center });
+    std::shared_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
+    std::shared_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
 
     m_worldObjects.push_back(std::move(sph3));
     m_worldObjects.push_back(std::move(sph2));
@@ -60,7 +60,7 @@ void RayView_rtiow::writeToStream(QTextStream& stream, const QVector3D& pixel, i
            << (int)newCol.z() << '\n';
 }
 
-void RayView_rtiow::renderOneByOne(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth)
+void RayView_rtiow::renderOneByOne(int width, int height, int samples, const camera& cam, const std::vector<std::shared_ptr<shape>>& worldObjects, int max_depth)
 {
     QElapsedTimer processTimer;
     processTimer.start();
@@ -79,7 +79,7 @@ void RayView_rtiow::renderOneByOne(int width, int height, int samples, const cam
                 auto u = (row + calc::random_double01()) / (width - 1);
                 auto v = (col + calc::random_double01()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
-                pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
+                pixel_color += calc::ray_color(r, img::gradientBgVec, worldObjects, max_depth, m_isColorOnly);
             }
             RayView_rtiow::writeToStream(stream, pixel_color, samples);
         }

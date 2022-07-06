@@ -28,7 +28,7 @@ public:
 
     void writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples);
 
-    void renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
+    void renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::shared_ptr<shape>>& worldObjects, int max_depth);
     void renderOneRay();
 
     void drawImageToScene();
@@ -58,7 +58,7 @@ private:
     bool m_isColorOnly;
     bool m_isStyleNormal;
 
-    std::vector<std::unique_ptr<shape>> m_worldObjects;
+    std::vector<std::shared_ptr<shape>> m_worldObjects;
 
     QImage m_imageCanvas;
     QVector3D m_default_pixel_color;
@@ -82,6 +82,13 @@ private:
 
     // camera
     camera cam;
+
+    std::vector<std::shared_ptr<shape>> random_scene();
+    std::vector<std::shared_ptr<shape>> normal_scene();
+
+    std::vector<std::shared_ptr<shape>> box_scene();
+
+    std::vector<std::shared_ptr<shape>> bvh_scene();
 };
 
 #endif // RAYVIEW_H

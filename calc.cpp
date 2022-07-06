@@ -49,6 +49,16 @@ random_in_unit_sphere()
 }
 
 QVector3D
+random_in_unit_disk()
+{
+    auto p = QVector3D(random_double11(), random_double11(), 0.0f);
+    while (p.lengthSquared() >= 1.0f) {
+        p = QVector3D(random_double11(), random_double11(), 0.0f);
+    }
+    return p;
+}
+
+QVector3D
 random_unit_vector()
 {
     return random_in_unit_sphere().normalized();
@@ -65,8 +75,8 @@ QVector3D random_in_hemisphere(const QVector3D& normal)
 
 // couleur
 QVector3D
-ray_color(const Ray& inboundRay,
-    const std::vector<std::unique_ptr<shape>>& worldObjects,
+ray_color(const Ray& inboundRay, const QVector3D& background,
+    const std::vector<std::shared_ptr<shape>>& worldObjects,
     int depth, bool drawOnlyColors)
 {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -75,10 +85,12 @@ ray_color(const Ray& inboundRay,
 
     std::optional<hit_record> hitRecord = hitFromList(worldObjects, inboundRay, calc::smallestVal, calc::infinity);
     if (!hitRecord.has_value()) {
-        // pas de hit, background gradient
+        /*// pas de hit, background gradient
         QVector3D unit_direction = inboundRay.direction.normalized();
         float t = 0.5f * (unit_direction.y() + 1.0f);
-        return (1.0f - t) * img::bgColor + t * img::gradientBgVec;
+        return (1.0f - t) * img::bgColor + t * img::gradientBgVec;*/
+        // pas de hit, background
+        return background;
     }
 
     if (drawOnlyColors) {
@@ -90,9 +102,11 @@ ray_color(const Ray& inboundRay,
     // recursive bounce
     Ray scattered;
     QVector3D attenuation;
-    if (hitRecord.value().mat_ptr->scatter(inboundRay, hitRecord.value(), attenuation, scattered))
-        return attenuation * ray_color(scattered, worldObjects, depth - 1, drawOnlyColors);
-    return img::defaultVec;
+    QVector3D emitted = hitRecord.value().mat_ptr->emitted(hitRecord.value().u, hitRecord.value().v, hitRecord.value().p);
+    if (!hitRecord.value().mat_ptr->scatter(inboundRay, hitRecord.value(), attenuation, scattered))
+        return emitted;
+
+    return emitted + attenuation * ray_color(scattered, background, worldObjects, depth - 1);
 }
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples)

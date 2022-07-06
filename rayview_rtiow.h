@@ -29,7 +29,7 @@ public:
 
     void writeToStream(QTextStream& stream, const QVector3D& pixel, int samples);
 
-    void renderOneByOne(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth);
+    void renderOneByOne(int width, int height, int samples, const camera& cam, const std::vector<std::shared_ptr<shape>>& worldObjects, int max_depth);
 
 private slots:
     void on_dSpin1_valueChanged(double arg1);
@@ -53,7 +53,7 @@ private:
     int m_depth;
     bool m_isColorOnly;
 
-    std::vector<std::unique_ptr<shape>> m_worldObjects;
+    std::vector<std::shared_ptr<shape>> m_worldObjects;
 
     QImage m_imageCanvas;
     QVector3D m_default_pixel_color;

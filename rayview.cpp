@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <execution>
 
+#include <bvh_node.h>
 #include <hitPosition.h>
 
 #include <calc.h>
@@ -15,8 +16,8 @@ RayView::RayView(QWidget* parent)
     , ui(new Ui::RayView)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
-    , m_lookAt(0.0f, 0.0f, -1.0f)
-    , m_lookFrom(0.0f, 0.0f, 1.0f)
+    , m_lookAt(278, 278, 0)
+    , m_lookFrom(478, 278, -600)
     , m_vup(0.0f, 1.0f, 0.0f)
     , m_sceneItem(nullptr)
     , m_nextFrameX(0)
@@ -24,7 +25,7 @@ RayView::RayView(QWidget* parent)
     , m_raysSinceEpoch(0)
     , m_allisDone(false)
     , m_allPixelsMaps { img::width + 1, QVector<int>(img::height + 1, 1) }
-    , cam(m_lookFrom, m_lookAt, m_vup)
+    , cam(m_lookFrom, m_lookAt, m_vup, (m_lookFrom - m_lookAt).length())
 {
     ui->setupUi(this);
     m_isColorOnly = false;
@@ -42,24 +43,9 @@ RayView::RayView(QWidget* parent)
 
     ui->graphicsView->setScene(scene);
 
-    // materials
-
-    auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
-    auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
-    auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(QVector3D(0.6, 0.6, 0.6), 0.0);
-
-    // objects
-
-    std::unique_ptr<shape> sph1(new sphere { { 1.0f, 0.0f, -1.0f }, 0.6f, material_right });
-    std::unique_ptr<shape> sph3(new sphere { { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center });
-    std::unique_ptr<shape> sph4(new sphere { { -1.0f, 0.0f, -1.0f }, 0.6f, material_left });
-    std::unique_ptr<shape> sph2(new sphere { { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground });
-
-    m_worldObjects.push_back(std::move(sph3));
-    m_worldObjects.push_back(std::move(sph2));
-    m_worldObjects.push_back(std::move(sph1));
-    m_worldObjects.push_back(std::move(sph4));
+    //m_worldObjects = random_scene();
+    m_worldObjects = normal_scene();
+    m_worldObjects = bvh_scene();
 }
 
 RayView::~RayView()
@@ -81,7 +67,7 @@ void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int 
     }
 }
 
-void RayView::renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::unique_ptr<shape>>& worldObjects, int max_depth)
+void RayView::renderAll(int width, int height, int samples, const camera& cam, const std::vector<std::shared_ptr<shape>>& worldObjects, int max_depth)
 {
     QElapsedTimer processTimer;
     processTimer.start();
@@ -99,7 +85,7 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
                 auto u = (row + calc::random_double01()) / (width - 1);
                 auto v = (col + calc::random_double01()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
-                m_default_pixel_color += calc::ray_color(r, worldObjects, max_depth, m_isColorOnly);
+                m_default_pixel_color += calc::ray_color(r, img::gradientBgVec, worldObjects, max_depth, m_isColorOnly);
                 if (x < m_imageCanvas.width() && y < m_imageCanvas.height() && x >= 0 && y >= 0)
                     if (m_imageCanvas.pixelColor(x, y).red() == m_default_pixel_color.x() && m_imageCanvas.pixelColor(x, y).green() == m_default_pixel_color.y() && m_imageCanvas.pixelColor(x, y).blue() == m_default_pixel_color.z())
                         skip = true;
@@ -139,7 +125,7 @@ void RayView::renderOneRay()
         float u = (randX + calc::random_double01()) / img::width;
         float v = (randY + calc::random_double01()) / img::height;
 
-        m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), m_worldObjects, m_depth, m_isColorOnly);
+        m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), img::gradientBgVec, m_worldObjects, m_depth, m_isColorOnly);
     }
 
     RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, numSamples);
@@ -228,18 +214,166 @@ void RayView::keyPressEvent(QKeyEvent* keyEvent)
 {
     switch (keyEvent->key()) {
     case Qt::Key_W:
-        m_lookFrom -= { 0.0f, 0.0f, 0.1f };
+        m_lookFrom -= { 0.0f, 0.0f, 1.1f };
         break;
     case Qt::Key_A:
-        m_lookFrom += { 0.1f, 0.0f, 0.0f };
+        m_lookFrom += { 1.1f, 0.0f, 0.0f };
         break;
     case Qt::Key_S:
-        m_lookFrom += { 0.0f, 0.0f, 0.1f };
+        m_lookFrom += { 0.0f, 0.0f, 1.1f };
         break;
     case Qt::Key_D:
-        m_lookFrom -= { 0.1f, 0.0f, 0.0f };
+        m_lookFrom -= { 1.1f, 0.0f, 0.0f };
         break;
     }
 
-    cam.resetCam(m_lookFrom, m_lookAt, m_vup);
+    cam.resetCam(m_lookFrom, m_lookAt, m_vup, (m_lookFrom - m_lookAt).length());
+}
+
+std::vector<std::shared_ptr<shape>> RayView::random_scene()
+{
+    std::vector<std::shared_ptr<shape>> world;
+
+    auto ground_material = std::make_shared<lambertian>(QVector3D(0.5, 0.5, 0.5));
+    world.push_back(std::make_shared<sphere>(QVector3D(0, -1000, 0), 1000, ground_material));
+
+    for (int a = -5; a < 5; a++) {
+        for (int b = -5; b < 5; b++) {
+            auto choose_mat = calc::random_double01();
+            QVector3D center(a + 0.9f * calc::random_double01(), 0.2f, b + 0.9f * calc::random_double01());
+
+            if ((center - QVector3D(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
+                std::shared_ptr<material> sphere_material;
+
+                if (choose_mat < 0.8f) {
+                    // diffuse
+                    auto albedo = calc::randomVec() * calc::randomVec();
+                    sphere_material = std::make_shared<lambertian>(albedo);
+                    world.push_back(std::make_shared<sphere>(center, 0.2f, sphere_material));
+                } else if (choose_mat < 0.95f) {
+                    // metal
+                    auto albedo = calc::randomVec(0.5, 1);
+                    auto fuzz = calc::random_double(0, 0.5);
+                    sphere_material = std::make_shared<metal>(albedo, fuzz);
+                    world.push_back(std::make_shared<sphere>(center, 0.2f, sphere_material));
+                } else {
+                    // glass
+                    sphere_material = std::make_shared<dielectric>(1.5);
+                    world.push_back(std::make_shared<sphere>(center, 0.2f, sphere_material));
+                }
+            }
+        }
+    }
+
+    auto material1 = std::make_shared<dielectric>(1.5);
+    world.push_back(std::make_shared<sphere>(QVector3D(0, 1, 0), 1.0, material1));
+
+    auto material2 = std::make_shared<lambertian>(QVector3D(0.4, 0.2, 0.1));
+    world.push_back(std::make_shared<sphere>(QVector3D(-4, 1, 0), 1.0, material2));
+
+    auto material3 = std::make_shared<metal>(QVector3D(0.7, 0.6, 0.5), 0.0);
+    world.push_back(std::make_shared<sphere>(QVector3D(4, 1, 0), 1.0, material3));
+
+    return world;
+}
+
+std::vector<std::shared_ptr<shape>> RayView::normal_scene()
+{
+    std::vector<std::shared_ptr<shape>> world;
+
+    // materials
+
+    auto material_ground = std::make_shared<lambertian>(QVector3D(0.8, 0.8, 0.0));
+    auto material_center = std::make_shared<lambertian>(QVector3D(0.7, 0.3, 0.3));
+    auto material_left = std::make_shared<dielectric>(1.5);
+    auto material_right = std::make_shared<metal>(QVector3D(0.6, 0.6, 0.6), 0.0);
+    auto difflight = std::make_shared<diffuse_light>(QVector3D(2, 2, 2));
+
+    // objects
+
+    std::shared_ptr<shape> sph1(std::make_shared<sphere>(QVector3D { 1.0f, 0.0f, -1.0f }, 0.6f, material_right));
+    std::shared_ptr<shape> sph3(std::make_shared<sphere>(QVector3D { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center));
+    std::shared_ptr<shape> sph4(std::make_shared<sphere>(QVector3D { -1.0f, 0.0f, -1.0f }, 0.6f, material_left));
+    std::shared_ptr<shape> sph2(std::make_shared<sphere>(QVector3D { 0.0f, -100.2f, -1.0f }, 100.0f, material_ground));
+
+    world.push_back(std::make_shared<sphere>(QVector3D { 0.0f, m_shpereY, -1.0f }, 0.5f, material_center));
+
+    world.push_back(std::move(sph2));
+    world.push_back(std::move(sph1));
+    world.push_back(std::move(sph4));
+
+    world.push_back(std::make_shared<rectangle>(3, 5, 1, 3, -2, difflight));
+    return world;
+}
+
+std::vector<std::shared_ptr<shape>> RayView::box_scene()
+{
+    std::vector<std::shared_ptr<shape>> world;
+
+    auto red = std::make_shared<lambertian>(QVector3D(.65, .05, .05));
+    auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
+    auto green = std::make_shared<lambertian>(QVector3D(.12, .45, .15));
+    auto light = std::make_shared<diffuse_light>(QVector3D(7, 7, 7));
+
+    world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 555, green));
+    world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    world.push_back(std::make_shared<xz_rect>(113, 443, 127, 432, 554, light));
+    world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 0, white));
+    world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 555, white));
+    world.push_back(std::make_shared<rectangle>(0, 555, 0, 555, 555, white));
+
+    world.push_back(std::make_shared<box>(QVector3D(130, m_shpereY, 65), QVector3D(295, 165, 230), white));
+    world.push_back(std::make_shared<box>(QVector3D(265, m_shpereY, 295), QVector3D(430, 330, 460), white));
+
+    return world;
+}
+
+std::vector<std::shared_ptr<shape>> RayView::bvh_scene()
+{
+    std::vector<std::shared_ptr<shape>> world {};
+    std::vector<std::shared_ptr<shape>> boxes {};
+    auto ground = std::make_shared<lambertian>(QVector3D(0.48, 0.83, 0.53));
+
+    const int boxes_per_side = 10;
+    for (int i = 0; i < boxes_per_side; i++) {
+        for (int j = 0; j < boxes_per_side; j++) {
+            auto w = 100.0;
+            auto x0 = -1000.0 + i * w;
+            auto z0 = -1000.0 + j * w;
+            auto y0 = 0.0;
+            auto x1 = x0 + w;
+            auto y1 = calc::random_double(1, 101);
+            auto z1 = z0 + w;
+
+            boxes.push_back(std::make_shared<box>(QVector3D(x0, y0, z0), QVector3D(x1, y1, z1), ground));
+        }
+    }
+
+    world.push_back(std::make_shared<bvh_node>(boxes, 0, 1));
+
+    auto light = std::make_shared<diffuse_light>(QVector3D(5, 5, 5));
+    world.push_back(std::make_shared<xz_rect>(123, 423, 147, 412, 554, light));
+
+    //boule bleu
+    auto boundary = std::make_shared<sphere>(QVector3D(360, 150, 145), 70, std::make_shared<dielectric>(1.5));
+    world.push_back(boundary);
+    world.push_back(std::make_shared<constant_medium>(boundary, 0.2, QVector3D(0.2, 0.4, 0.9)));
+    boundary = std::make_shared<sphere>(QVector3D(0, 0, 0), 5000, std::make_shared<dielectric>(1.5));
+    world.push_back(std::make_shared<constant_medium>(boundary, .0001, QVector3D(1, 1, 1)));
+
+    // bulle et métal
+    world.push_back(std::make_shared<sphere>(QVector3D(260, 150, 45), 50, std::make_shared<dielectric>(1.5)));
+    world.push_back(std::make_shared<sphere>(QVector3D(0, 150, 145), 50, std::make_shared<metal>(QVector3D(0.8, 0.8, 0.9), 1.0)));
+
+    //shperes
+    std::vector<std::shared_ptr<shape>> boxes2;
+    auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
+    int ns = 10;
+    for (int j = 0; j < ns; j++) {
+        boxes2.push_back(std::make_shared<sphere>(QVector3D(calc::randomVec(1, 165)), 10, white));
+    }
+
+    world.push_back(std::make_shared<bvh_node>(boxes2, 0, 1));
+
+    return world;
 }

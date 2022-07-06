@@ -3,7 +3,7 @@
 
 #include <shapes.h>
 
-std::optional<hit_record> hitFromList(const std::vector<std::unique_ptr<shape> > &sphereList, const Ray &ray, double t_min, double t_max)
+std::optional<hit_record> hitFromList(const std::vector<std::shared_ptr<shape>>& sphereList, const Ray& ray, double t_min, double t_max)
 {
     bool hit_anything = false;
     auto closest_so_far = t_max;
@@ -19,4 +19,35 @@ std::optional<hit_record> hitFromList(const std::vector<std::unique_ptr<shape> >
     }
 
     return retVal;
+}
+
+bool boundingBoxFromList(const std::vector<std::shared_ptr<shape>>& list, aabb& output_box)
+{
+    if (list.empty())
+        return false;
+
+    aabb temp_box;
+    bool first_box = true;
+
+    for (const auto& object : list) {
+        if (!object->bounding_box(temp_box))
+            return false;
+        output_box = first_box ? temp_box : surrounding_box(output_box, temp_box);
+        first_box = false;
+    }
+
+    return true;
+}
+
+aabb surrounding_box(aabb box0, aabb box1)
+{
+    QVector3D small(fmin(box0.min().x(), box1.min().x()),
+        fmin(box0.min().y(), box1.min().y()),
+        fmin(box0.min().z(), box1.min().z()));
+
+    QVector3D big(fmax(box0.max().x(), box1.max().x()),
+        fmax(box0.max().y(), box1.max().y()),
+        fmax(box0.max().z(), box1.max().z()));
+
+    return aabb(small, big);
 }

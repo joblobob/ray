@@ -12,13 +12,13 @@
 struct shape;
 namespace img {
 // img
-constexpr float aspect_ratio = 16.0f / 9.0f;
-constexpr int width = 700;
+constexpr float aspect_ratio = 1.0f;
+constexpr int width = 500;
 constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr int totalPixels = width * height;
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D infiniteZ { 0.0f, 0.0f, -1.0f };
-constexpr QVector3D gradientBgVec { 0.5f, 0.7f, 1.0f };
+constexpr QVector3D gradientBgVec { 0.7f, 0.70f, 0.70f };
 constexpr QVector3D bgColor { 1.0f, 1.0f, 1.0f };
 }
 
@@ -41,16 +41,23 @@ float random_double(float min, float max);
 float random_double01();
 float random_double11();
 
-inline QVector3D randomVec();
-inline QVector3D randomVec11();
-inline QVector3D randomVec(float min, float max);
+QVector3D randomVec();
+QVector3D randomVec11();
+QVector3D randomVec(float min, float max);
 
 QVector3D random_in_unit_sphere();
+QVector3D random_in_unit_disk();
 QVector3D random_unit_vector();
 inline QVector3D random_in_hemisphere(const QVector3D& normal);
 
+inline int random_int(int min, int max)
+{
+    // Returns a random integer in [min,max].
+    return static_cast<int>(random_double(min, max + 1));
+}
+
 //ray calcs
-QVector3D ray_color(const Ray& r, const std::vector<std::unique_ptr<shape>>& worldObjects,
+QVector3D ray_color(const Ray& r, const QVector3D& background, const std::vector<std::shared_ptr<shape>>& worldObjects,
     int depth, bool drawOnlyColors = false);
 
 QVector3D reflect(const QVector3D& v, const QVector3D& n);

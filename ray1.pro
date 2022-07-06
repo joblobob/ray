@@ -8,6 +8,7 @@ CONFIG -= app_bundle
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+	bvh_node.cpp \
         main.cpp \
 	rayview_rtiow.cpp \
         rayview.cpp \
@@ -25,6 +26,7 @@ FORMS += \
 
 HEADERS += \
 	Ray.h \
+	bvh_node.h \
 	calc.h \
 	camera.h \
 	hitPosition.h \
