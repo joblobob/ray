@@ -18,7 +18,7 @@ constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr int totalPixels = width * height;
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D infiniteZ { 0.0f, 0.0f, -1.0f };
-constexpr QVector3D gradientBgVec { 0.7f, 0.70f, 0.70f };
+constexpr QVector3D gradientBgVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D bgColor { 1.0f, 1.0f, 1.0f };
 }
 
@@ -56,8 +56,32 @@ inline int random_int(int min, int max)
     return static_cast<int>(random_double(min, max + 1));
 }
 
+inline QVector3D random_cosine_direction() {
+    auto r1 = random_double01();
+    auto r2 = random_double01();
+    auto z = sqrt(1-r2);
+
+    auto phi = 2*pi*r1;
+    auto x = cos(phi)*sqrt(r2);
+    auto y = sin(phi)*sqrt(r2);
+
+    return QVector3D(x, y, z);
+}
+
+inline QVector3D random_to_sphere(double radius, double distance_squared) {
+    auto r1 = random_double01();
+    auto r2 = random_double01();
+    auto z = 1 + r2*(sqrt(1-radius*radius/distance_squared) - 1);
+
+    auto phi = 2*calc::pi*r1;
+    auto x = cos(phi)*sqrt(1-z*z);
+    auto y = sin(phi)*sqrt(1-z*z);
+
+    return QVector3D(x, y, z);
+}
+
 //ray calcs
-QVector3D ray_color(const Ray& r, const QVector3D& background, const std::vector<std::shared_ptr<shape>>& worldObjects,
+QVector3D ray_color(const Ray& r, const QVector3D& background, const std::vector<std::shared_ptr<shape>>& worldObjects, std::shared_ptr<shape>& lights,
     int depth, bool drawOnlyColors = false);
 
 QVector3D reflect(const QVector3D& v, const QVector3D& n);

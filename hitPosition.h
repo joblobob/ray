@@ -5,6 +5,7 @@
 #include <calc.h>
 #include <optional>
 
+
 struct shape;
 
 class aabb;
@@ -14,6 +15,14 @@ struct hit_record;
 class texture {
 public:
     virtual QVector3D value(double u, double v, const QVector3D& p) const = 0;
+};
+
+class pdf {
+public:
+    virtual ~pdf() {}
+
+    virtual double value(const QVector3D& direction) const = 0;
+    virtual QVector3D generate() const = 0;
 };
 
 class solid_color : public texture {
@@ -60,11 +69,24 @@ struct hitPosition {
     }
 };
 
+struct scatter_record {
+    Ray specular_ray;
+    bool is_specular;
+    QVector3D attenuation;
+    std::shared_ptr<pdf> pdf_ptr;
+};
+
 class material {
 public:
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const = 0;
-    virtual QVector3D emitted(double u, double v, const QVector3D& p) const
+        const Ray& r_in, const hit_record& rec, scatter_record& scattered) const { return false;};
+
+    virtual double scattering_pdf(
+        const Ray& r_in, const hit_record& rec, const Ray& scattered
+        ) const {
+        return 0;
+    }
+    virtual QVector3D emitted(const Ray& ray, const hit_record& rec, double u, double v, const QVector3D& p) const
     {
         return img::defaultVec;
     }
@@ -86,6 +108,81 @@ struct hit_record {
     }
 };
 
+
+class onb {
+public:
+    onb() {}
+
+    inline QVector3D operator[](int i) const { return axis[i]; }
+
+    QVector3D u() const { return axis[0]; }
+    QVector3D v() const { return axis[1]; }
+    QVector3D w() const { return axis[2]; }
+
+    QVector3D local(double a, double b, double c) const {
+        return a*u() + b*v() + c*w();
+    }
+
+    QVector3D local(const QVector3D& a) const {
+        return a.x()*u() + a.y()*v() + a.z()*w();
+    }
+
+    void build_from_w(const QVector3D& n){
+        axis[2] = n.normalized();
+        QVector3D a = (fabs(w().x()) > 0.9) ? QVector3D(0,1,0) : QVector3D(1,0,0);
+        axis[1] = QVector3D::crossProduct(w(), a).normalized();
+        axis[0] = QVector3D::crossProduct(w(), v());
+    };
+
+public:
+    QVector3D axis[3];
+};
+
+class cosine_pdf : public pdf {
+public:
+    cosine_pdf(const QVector3D& w) { uvw.build_from_w(w); }
+
+    virtual double value(const QVector3D& direction) const override {
+        auto cosine = QVector3D::dotProduct(direction.normalized(), uvw.w());
+        return (cosine <= 0) ? 0 : cosine/calc::pi;
+    }
+
+    virtual QVector3D generate() const override {
+        return uvw.local(calc::random_cosine_direction());
+    }
+
+public:
+    onb uvw;
+};
+
+class hittable_pdf : public pdf {
+public:
+    hittable_pdf(std::shared_ptr<shape> p, const QVector3D& origin) : ptr(p), o(origin) {}
+
+    virtual double value(const QVector3D& direction) const override;
+
+    virtual QVector3D generate() const override;
+
+public:
+    QVector3D o;
+    std::shared_ptr<shape> ptr;
+};
+
+class mixture_pdf : public pdf {
+public:
+    mixture_pdf(std::shared_ptr<pdf> p0, std::shared_ptr<pdf> p1) {
+        p[0] = p0;
+        p[1] = p1;
+    }
+
+    virtual double value(const QVector3D& direction) const override;
+
+    virtual QVector3D generate() const override;
+
+public:
+    std::shared_ptr<pdf> p[2];
+};
+
 std::optional<hit_record>
 hitFromList(const std::vector<std::shared_ptr<shape>>& sphereList,
     const Ray& ray,
@@ -98,24 +195,23 @@ aabb surrounding_box(aabb box0, aabb box1);
 
 class lambertian : public material {
 public:
-    lambertian(const QVector3D& a)
-        : albedo(std::make_shared<solid_color>(a))
-    {
-    }
-    lambertian(std::shared_ptr<texture> a)
-        : albedo(a)
-    {
-    }
+    lambertian(const QVector3D& a) : albedo(std::make_shared<solid_color>(a)) {}
+    lambertian(std::shared_ptr<texture> a) : albedo(a) {}
 
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const override
-    {
-        auto scatter_direction = rec.normal + calc::random_unit_vector();
-        if (calc::near_zero(scatter_direction))
-            scatter_direction = rec.normal;
-        scattered = Ray(rec.p, scatter_direction);
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+        const Ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
+        srec.is_specular = false;
+        srec.attenuation = albedo->value(rec.u, rec.v, rec.p);
+        srec.pdf_ptr = std::make_shared<cosine_pdf>(rec.normal);
         return true;
+    }
+
+    double scattering_pdf(
+        const Ray& r_in, const hit_record& rec, const Ray& scattered
+        ) const {
+        auto cosine = QVector3D::dotProduct(rec.normal, scattered.direction.normalized());
+        return cosine < 0 ? 0 : cosine/calc::pi;
     }
 
 public:
@@ -131,12 +227,14 @@ public:
     }
 
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const override
-    {
+        const Ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
         QVector3D reflected = calc::reflect(r_in.direction.normalized(), rec.normal);
-        scattered = Ray(rec.p, reflected + fuzz * calc::random_in_unit_sphere());
-        attenuation = albedo;
-        return (QVector3D::dotProduct(scattered.direction, rec.normal) > 0.0f);
+        srec.specular_ray = Ray(rec.p, reflected+fuzz*calc::random_in_unit_sphere());
+        srec.attenuation = albedo;
+        srec.is_specular = true;
+        srec.pdf_ptr = 0;
+        return true;
     }
 
 public:
@@ -152,9 +250,11 @@ public:
     }
 
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const override
-    {
-        attenuation = img::bgColor;
+        const Ray& r_in, const hit_record& rec, scatter_record& srec
+        ) const override {
+        srec.is_specular = true;
+        srec.pdf_ptr = nullptr;
+        srec.attenuation = QVector3D(1.0, 1.0, 1.0);
         double refraction_ratio = rec.front_face ? (1.0f / ir) : ir;
 
         QVector3D unit_direction = r_in.direction.normalized();
@@ -169,7 +269,7 @@ public:
         else
             direction = calc::refract(unit_direction, rec.normal, refraction_ratio);
 
-        scattered = Ray(rec.p, direction);
+        srec.specular_ray = Ray(rec.p, direction);
         return true;
     }
 
@@ -198,12 +298,12 @@ public:
     }
 
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const override
+        const Ray& r_in, const hit_record& rec, scatter_record& scattered) const override
     {
         return false;
     }
 
-    virtual QVector3D emitted(double u, double v, const QVector3D& p) const override
+    virtual QVector3D emitted(const Ray& ray, const hit_record& rec, double u, double v, const QVector3D& p) const override
     {
         return emiter->value(u, v, p);
     }
@@ -224,10 +324,10 @@ public:
     }
 
     virtual bool scatter(
-        const Ray& r_in, const hit_record& rec, QVector3D& attenuation, Ray& scattered) const override
+        const Ray& r_in, const hit_record& rec, scatter_record& scattered) const override
     {
-        scattered = Ray(rec.p, calc::random_in_unit_sphere());
-        attenuation = albedo->value(rec.u, rec.v, rec.p);
+        scattered.specular_ray = Ray(rec.p, calc::random_in_unit_sphere());
+        scattered.attenuation = albedo->value(rec.u, rec.v, rec.p);
         return true;
     }
 

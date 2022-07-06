@@ -51,3 +51,22 @@ aabb surrounding_box(aabb box0, aabb box1)
 
     return aabb(small, big);
 }
+
+double hittable_pdf::value(const QVector3D &direction) const {
+    return ptr->pdf_value(o, direction);
+}
+
+QVector3D hittable_pdf::generate() const {
+    return ptr->random(o);
+}
+
+double mixture_pdf::value(const QVector3D &direction) const {
+    return 0.5 * p[0]->value(direction) + 0.5 *p[1]->value(direction);
+}
+
+QVector3D mixture_pdf::generate() const {
+    if (calc::random_double01() < 0.5)
+        return p[0]->generate();
+    else
+        return p[1]->generate();
+}

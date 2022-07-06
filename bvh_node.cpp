@@ -43,7 +43,8 @@ bvh_node::bvh_node(
     size_t object_span = end - start;
 
     if (object_span == 1) {
-        left = right = objects[start];
+        left = objects[start];
+            right = objects[start];
     } else if (object_span == 2) {
         if (comparator(objects[start], objects[start + 1])) {
             left = objects[start];

@@ -53,6 +53,14 @@ struct shape {
     virtual std::optional<hit_record> hit(const Ray& r, double t_min, double t_max) const = 0;
     virtual bool bounding_box(aabb& output_box) const = 0;
 
+    virtual double pdf_value(const QVector3D& o, const QVector3D& v) const {
+        return 0.0;
+    }
+
+    virtual QVector3D random(const QVector3D& o) const {
+        return QVector3D(1, 0, 0);
+    }
+
     QVector3D center;
 };
 
@@ -104,6 +112,26 @@ struct sphere : public shape {
     {
         output_box = sphere_output_box;
         return true;
+    }
+
+    double pdf_value(const QVector3D& o, const QVector3D& v) const {
+        hit_record rec;
+        auto hitRec = this->hit(Ray(o, v), 0.001, calc::infinity);
+        if (!hitRec.has_value())
+            return 0.0;
+
+        auto cos_theta_max = sqrt(1 - radius*radius/(center-o).lengthSquared());
+        auto solid_angle = 2*calc::pi*(1-cos_theta_max);
+
+        return  1 / solid_angle;
+    }
+
+    QVector3D random(const QVector3D& o) const {
+        QVector3D direction = center - o;
+        auto distance_squared = direction.lengthSquared();
+        onb uvw;
+        uvw.build_from_w(direction);
+        return uvw.local(calc::random_to_sphere(radius, distance_squared));
     }
 
     const float radius;
@@ -171,6 +199,25 @@ struct rectangle : public shape {
         return true;
     }
 
+    virtual double pdf_value(const QVector3D& origin, const QVector3D& v) const override {
+        hit_record rec;
+        auto hitRec = this->hit(Ray(origin, v), 0.001, calc::infinity);
+        if (!hitRec.has_value())
+            return {};
+        rec = hitRec.value();
+
+        auto area = (x1-x0)*(y1-y0);
+        auto distance_squared = rec.t * rec.t * v.lengthSquared();
+        auto cosine = fabs(QVector3D::dotProduct(v, rec.normal) / v.length());
+
+        return distance_squared / (cosine * area);
+    }
+
+    virtual QVector3D random(const QVector3D& origin) const override {
+        auto random_point = QVector3D(calc::random_double(x0,x1), k, calc::random_double(y0,y1));
+        return random_point - origin;
+    }
+
     const std::shared_ptr<material> mp;
     const double x0, x1, y0, y1, k;
     const aabb xy_rect_output_box;
@@ -216,6 +263,24 @@ public:
         // dimension a small amount.
         output_box = xz_rect_output_box;
         return true;
+    }
+
+    virtual double pdf_value(const QVector3D& origin, const QVector3D& v) const override {
+        hit_record rec;
+        auto hitRec = this->hit(Ray(origin, v), 0.001, calc::infinity);
+        if (!hitRec.has_value())
+            return {};
+        rec = hitRec.value();
+        auto area = (x1-x0)*(z1-z0);
+        auto distance_squared = rec.t * rec.t * v.lengthSquared();
+        auto cosine = fabs(QVector3D::dotProduct(v, rec.normal) / v.length());
+
+        return distance_squared / (cosine * area);
+    }
+
+    virtual QVector3D random(const QVector3D& origin) const override {
+        auto random_point = QVector3D(calc::random_double(x0,x1), k, calc::random_double(z0,z1));
+        return random_point - origin;
     }
 
 public:
@@ -297,7 +362,7 @@ public:
     virtual bool bounding_box(aabb& output_box) const override
     {
         output_box = aabb(box_min, box_max);
-        return true;
+        return boundingBoxFromList(sides, output_box);
     }
 
 public:
@@ -388,5 +453,6 @@ public:
     std::shared_ptr<material> phase_function;
     double neg_inv_density;
 };
+
 
 #endif // SHAPES_H

@@ -17,7 +17,7 @@ RayView::RayView(QWidget* parent)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
     , m_lookAt(278, 278, 0)
-    , m_lookFrom(478, 278, -600)
+    , m_lookFrom(278, 278, -800)
     , m_vup(0.0f, 1.0f, 0.0f)
     , m_sceneItem(nullptr)
     , m_nextFrameX(0)
@@ -44,8 +44,10 @@ RayView::RayView(QWidget* parent)
     ui->graphicsView->setScene(scene);
 
     //m_worldObjects = random_scene();
-    m_worldObjects = normal_scene();
-    m_worldObjects = bvh_scene();
+    m_worldObjects = box_scene();
+    //m_worldObjects = bvh_scene();
+    worldLights = std::make_shared<xz_rect>(213, 343, 227, 332, 554, std::shared_ptr<material>());
+    //worldLights = std::make_shared<sphere>(QVector3D(190, 90, 190), 90, std::shared_ptr<material>());
 }
 
 RayView::~RayView()
@@ -85,7 +87,7 @@ void RayView::renderAll(int width, int height, int samples, const camera& cam, c
                 auto u = (row + calc::random_double01()) / (width - 1);
                 auto v = (col + calc::random_double01()) / (height - 1);
                 Ray r = cam.get_ray(u, v);
-                m_default_pixel_color += calc::ray_color(r, img::gradientBgVec, worldObjects, max_depth, m_isColorOnly);
+                m_default_pixel_color += calc::ray_color(r, img::gradientBgVec, worldObjects, worldLights, max_depth, m_isColorOnly);
                 if (x < m_imageCanvas.width() && y < m_imageCanvas.height() && x >= 0 && y >= 0)
                     if (m_imageCanvas.pixelColor(x, y).red() == m_default_pixel_color.x() && m_imageCanvas.pixelColor(x, y).green() == m_default_pixel_color.y() && m_imageCanvas.pixelColor(x, y).blue() == m_default_pixel_color.z())
                         skip = true;
@@ -125,7 +127,7 @@ void RayView::renderOneRay()
         float u = (randX + calc::random_double01()) / img::width;
         float v = (randY + calc::random_double01()) / img::height;
 
-        m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), img::gradientBgVec, m_worldObjects, m_depth, m_isColorOnly);
+        m_default_pixel_color += calc::ray_color(cam.get_ray(u, v), img::gradientBgVec, m_worldObjects, worldLights, m_depth, m_isColorOnly);
     }
 
     RayView::writeToImg(m_imageCanvas, img::width - randX - 1, img::height - randY - 1, m_default_pixel_color, numSamples);
@@ -214,16 +216,16 @@ void RayView::keyPressEvent(QKeyEvent* keyEvent)
 {
     switch (keyEvent->key()) {
     case Qt::Key_W:
-        m_lookFrom -= { 0.0f, 0.0f, 1.1f };
+        m_lookFrom -= { 0.0f, 0.0f, 5.1f };
         break;
     case Qt::Key_A:
-        m_lookFrom += { 1.1f, 0.0f, 0.0f };
+        m_lookFrom += { 5.1f, 0.0f, 0.0f };
         break;
     case Qt::Key_S:
-        m_lookFrom += { 0.0f, 0.0f, 1.1f };
+        m_lookFrom += { 0.0f, 0.0f, 5.1f };
         break;
     case Qt::Key_D:
-        m_lookFrom -= { 1.1f, 0.0f, 0.0f };
+        m_lookFrom -= { 5.1f, 0.0f, 0.0f };
         break;
     }
 
@@ -313,11 +315,11 @@ std::vector<std::shared_ptr<shape>> RayView::box_scene()
     auto red = std::make_shared<lambertian>(QVector3D(.65, .05, .05));
     auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
     auto green = std::make_shared<lambertian>(QVector3D(.12, .45, .15));
-    auto light = std::make_shared<diffuse_light>(QVector3D(7, 7, 7));
+    auto light = std::make_shared<diffuse_light>(QVector3D(10, 10, 10));
 
     world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 555, green));
     world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 0, red));
-    world.push_back(std::make_shared<xz_rect>(113, 443, 127, 432, 554, light));
+    world.push_back(std::make_shared<xz_rect>(213, 343, 227, 332, 554, light));
     world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 0, white));
     world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 555, white));
     world.push_back(std::make_shared<rectangle>(0, 555, 0, 555, 555, white));
@@ -331,10 +333,10 @@ std::vector<std::shared_ptr<shape>> RayView::box_scene()
 std::vector<std::shared_ptr<shape>> RayView::bvh_scene()
 {
     std::vector<std::shared_ptr<shape>> world {};
-    std::vector<std::shared_ptr<shape>> boxes {};
+    static std::vector<std::shared_ptr<shape>> boxes {};
     auto ground = std::make_shared<lambertian>(QVector3D(0.48, 0.83, 0.53));
 
-    const int boxes_per_side = 10;
+    const int boxes_per_side = 20;
     for (int i = 0; i < boxes_per_side; i++) {
         for (int j = 0; j < boxes_per_side; j++) {
             auto w = 100.0;
@@ -368,7 +370,7 @@ std::vector<std::shared_ptr<shape>> RayView::bvh_scene()
     //shperes
     std::vector<std::shared_ptr<shape>> boxes2;
     auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
-    int ns = 10;
+    int ns = 100;
     for (int j = 0; j < ns; j++) {
         boxes2.push_back(std::make_shared<sphere>(QVector3D(calc::randomVec(1, 165)), 10, white));
     }

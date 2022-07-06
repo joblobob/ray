@@ -54,6 +54,7 @@ private:
     bool m_isColorOnly;
 
     std::vector<std::shared_ptr<shape>> m_worldObjects;
+    std::shared_ptr<shape> worldLights;
 
     QImage m_imageCanvas;
     QVector3D m_default_pixel_color;
