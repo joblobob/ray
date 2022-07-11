@@ -18,7 +18,7 @@ constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr int totalPixels = width * height;
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D infiniteZ { 0.0f, 0.0f, -1.0f };
-constexpr QVector3D gradientBgVec { 0.0f, 0.0f, 0.0f };
+constexpr QVector3D gradientBgVec { 0.5f, 0.7f, 1.0f };
 constexpr QVector3D bgColor { 1.0f, 1.0f, 1.0f };
 }
 

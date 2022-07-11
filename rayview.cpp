@@ -315,14 +315,14 @@ std::vector<std::shared_ptr<shape>> RayView::box_scene()
     auto red = std::make_shared<lambertian>(QVector3D(.65, .05, .05));
     auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
     auto green = std::make_shared<lambertian>(QVector3D(.12, .45, .15));
-    auto light = std::make_shared<diffuse_light>(QVector3D(10, 10, 10));
+    auto light = std::make_shared<diffuse_light>(QVector3D(20, 20, 20));
 
-    world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 555, green));
-    world.push_back(std::make_shared<yz_rect>(0, 555, 0, 555, 0, red));
+    world.push_back(std::make_shared<yz_rect>(0, 555, 5000, 555, 555, green));
+    world.push_back(std::make_shared<yz_rect>(0, 555, 5000, 555, 0, red));
     world.push_back(std::make_shared<xz_rect>(213, 343, 227, 332, 554, light));
     world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 0, white));
-    world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 555, white));
-    world.push_back(std::make_shared<rectangle>(0, 555, 0, 555, 555, white));
+    world.push_back(std::make_shared<xz_rect>(0, 555, 0, 555, 5550, white));
+    world.push_back(std::make_shared<rectangle>(0, 555, 0, 555, 5550, white));
 
     world.push_back(std::make_shared<box>(QVector3D(130, m_shpereY, 65), QVector3D(295, 165, 230), white));
     world.push_back(std::make_shared<box>(QVector3D(265, m_shpereY, 295), QVector3D(430, 330, 460), white));
