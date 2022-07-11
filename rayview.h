@@ -1,6 +1,7 @@
 #ifndef RAYVIEW_H
 #define RAYVIEW_H
 
+#include "qelapsedtimer.h"
 #include <QDialog>
 #include <QFile>
 #include <QGraphicsPixmapItem>
@@ -79,6 +80,8 @@ private:
     bool m_allisDone;
 
     QVector<QVector<int>> m_allPixelsMaps;
+    
+    QElapsedTimer timer;
 
     // camera
     camera cam;
