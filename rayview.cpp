@@ -17,7 +17,7 @@ RayView::RayView(QWidget* parent) :
     m_imageCanvas(img::width, img::height, QImage::Format_RGB32),
     m_default_pixel_color(img::defaultVec),
     m_lookAt(278, 278, 6000),
-    m_lookFrom(278, 278, -800),
+    m_lookFrom(278, 278, -300),
     m_vup(0.0f, 1.0f, 0.0f),
     m_sceneItem(nullptr),
     m_nextFrameX(0),
@@ -46,7 +46,7 @@ RayView::RayView(QWidget* parent) :
 	//m_worldObjects = random_scene();
 	m_worldObjects = box_scene();
 	//m_worldObjects = bvh_scene();
-	worldLights = std::make_shared<xz_rect>(213, 343, 227, 3320, 554, std::shared_ptr<material>());
+	worldLights = std::make_shared<sphere>(QVector3D(275, 2000, 1000), 500, std::shared_ptr<material>());
 	//worldLights = std::make_shared<sphere>(QVector3D(190, 90, 190), 90, std::shared_ptr<material>());
 }
 
@@ -58,10 +58,10 @@ RayView::~RayView()
 void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples)
 {
 	if (x < img.width() && y < img.height() && x >= 0 && y >= 0) {
-		if (m_allPixelsMaps[x][y] < m_numSamples)
-			m_allPixelsMaps[x][y]++;
-		if (m_allPixelsMaps[x][y] >= m_numSamples)
-			m_allPixelsMaps[x][y] = 1;
+		//if (m_allPixelsMaps[x][y] < m_numSamples)
+		//	m_allPixelsMaps[x][y]++;
+		//if (m_allPixelsMaps[x][y] >= m_numSamples)
+		//	m_allPixelsMaps[x][y] = 1;
 		QVector3D newCol = calc::rgbPerSamples(pixel, samples);
 		// Write the translated [0,255] value of each color component.
 
@@ -124,10 +124,10 @@ void RayView::renderOneRay()
 	m_default_pixel_color.setY(0);
 	m_default_pixel_color.setZ(0);
 
-	int numSamples = 1;
-	if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 &&
-	    img::height - randY - 1 >= 0)
-		numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
+	int numSamples = m_numSamples;
+	//if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 &&
+	//   img::height - randY - 1 >= 0)
+	//	numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
 
 	//random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
 	for (int s = 0; s < numSamples; ++s) {
@@ -158,7 +158,7 @@ void RayView::go()
 		renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
 		QTimer::singleShot(timer.elapsed(), this, &RayView::go);
 	} else {
-		while (timer.elapsed() < 16) {
+		while (timer.elapsed() < 1000) {
 			renderOneRay();
 			rays++;
 		}
@@ -220,10 +220,10 @@ void RayView::on_chkStyle_stateChanged(int arg1)
 void RayView::keyPressEvent(QKeyEvent* keyEvent)
 {
 	switch (keyEvent->key()) {
-		case Qt::Key_W: m_lookFrom -= { 0.0f, 0.0f, 5.1f }; break;
-		case Qt::Key_A: m_lookFrom += { 5.1f, 0.0f, 0.0f }; break;
-		case Qt::Key_S: m_lookFrom += { 0.0f, 0.0f, 5.1f }; break;
-		case Qt::Key_D: m_lookFrom -= { 5.1f, 0.0f, 0.0f }; break;
+		case Qt::Key_W: m_lookFrom -= { 0.0f, 0.0f, 20.1f }; break;
+		case Qt::Key_A: m_lookFrom += { 20.1f, 0.0f, 0.0f }; break;
+		case Qt::Key_S: m_lookFrom += { 0.0f, 0.0f, 20.1f }; break;
+		case Qt::Key_D: m_lookFrom -= { 20.1f, 0.0f, 0.0f }; break;
 	}
 
 	cam.resetCam(m_lookFrom, m_lookAt, m_vup, (m_lookFrom - m_lookAt).length());
@@ -309,18 +309,21 @@ std::vector<std::shared_ptr<shape> > RayView::box_scene()
 {
 	std::vector<std::shared_ptr<shape> > world;
 
-	auto red   = std::make_shared<lambertian>(QVector3D(.65, .05, .05));
-	auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
-	auto green = std::make_shared<lambertian>(QVector3D(.12, .45, .15));
-	auto gray  = std::make_shared<lambertian>(QVector3D(.77, .77, .77));
-	auto light = std::make_shared<diffuse_light>(QVector3D(40, 40, 40));
+	auto red       = std::make_shared<lambertian>(QVector3D(.65, .05, .05));
+	auto white     = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
+	auto green     = std::make_shared<lambertian>(QVector3D(.12, .45, .15));
+	auto gray      = std::make_shared<lambertian>(QVector3D(.77, .77, .77));
+	auto light     = std::make_shared<diffuse_light>(QVector3D(20, 20, 20));
+	auto metallike = std::make_shared<metal>(QVector3D(0.6, 0.6, 0.6), 0.0);
 
-	world.push_back(std::make_shared<yz_rect>(0, 600, -600, 5000, 600, green));
-	world.push_back(std::make_shared<yz_rect>(0, 600, -600, 5000, 0, red));
-	world.push_back(std::make_shared<xz_rect>(275, 325, 250, 5000, 590, light));
-	world.push_back(std::make_shared<xz_rect>(0, 600, -600, 5000, 0, white));
-	world.push_back(std::make_shared<xz_rect>(0, 200, -600, 5000, 600, white));
-	world.push_back(std::make_shared<xz_rect>(400, 600, -600, 5000, 600, white));
+	world.push_back(std::make_shared<yz_rect>(0, 600, -600, 3000, 600, red));
+	world.push_back(std::make_shared<yz_rect>(0, 600, -600, 3000, 0, green));
+
+	world.push_back(std::make_shared<sphere>(QVector3D(275, 3000, 1000), 500, light));
+
+	world.push_back(std::make_shared<xz_rect>(0, 600, -600, 3000, 0, metallike));
+	world.push_back(std::make_shared<xz_rect>(0, 200, -600, 3000, 600, white));
+	world.push_back(std::make_shared<xz_rect>(400, 600, -600, 3000, 600, white));
 
 
 	world.push_back(std::make_shared<xz_rect>(200, 400, -600, -200, 580, gray));
@@ -328,10 +331,96 @@ std::vector<std::shared_ptr<shape> > RayView::box_scene()
 	world.push_back(std::make_shared<xz_rect>(200, 400, 1000, 1200, 580, gray));
 	world.push_back(std::make_shared<xz_rect>(200, 400, 1800, 2000, 580, gray));
 	world.push_back(std::make_shared<xz_rect>(200, 400, 2600, 2800, 580, gray));
-	world.push_back(std::make_shared<xz_rect>(200, 400, 3400, 3600, 580, gray));
-	world.push_back(std::make_shared<xz_rect>(200, 400, 4200, 4400, 580, gray));
 
-	world.push_back(std::make_shared<rectangle>(-600, 600, 0, 600, 5000, white));
+	world.push_back(std::make_shared<rectangle>(-600, 600, 0, 600, 3000, white));
+	world.push_back(std::make_shared<rectangle>(-600, 600, 0, 600, -1000, light));
+
+	// cpp north
+	QVector3D initialPosition = QVector3D(0, 250, 700);
+
+	float scaleFactor = 0.22f;
+
+	//C
+	world.push_back(std::make_shared<box>(initialPosition, initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), red));
+	world.push_back(
+	    std::make_shared<box>(initialPosition + (QVector3D(100, 0, 0) *= scaleFactor), initialPosition + (QVector3D(200, 50, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 150, 0) *= scaleFactor), initialPosition + (QVector3D(200, 200, 100) *= scaleFactor), red));
+
+	initialPosition += QVector3D(300, 0, 0) *= scaleFactor;
+
+	//P
+	world.push_back(
+	    std::make_shared<box>(initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 150, 0) *= scaleFactor), initialPosition + (QVector3D(200, 200, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 50, 0) *= scaleFactor), initialPosition + (QVector3D(200, 100, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(150, 100, 0) *= scaleFactor), initialPosition + (QVector3D(200, 150, 100) *= scaleFactor), red));
+
+	initialPosition += QVector3D(300, 0, 0) *= scaleFactor;
+
+	//P
+	world.push_back(
+	    std::make_shared<box>(initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 150, 0) *= scaleFactor), initialPosition + (QVector3D(200, 200, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 50, 0) *= scaleFactor), initialPosition + (QVector3D(200, 100, 100) *= scaleFactor), red));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(150, 100, 0) *= scaleFactor), initialPosition + (QVector3D(200, 150, 100) *= scaleFactor), red));
+
+	initialPosition += QVector3D(350, 0, 0) *= scaleFactor;
+
+	//N
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 125, 0) *= scaleFactor), initialPosition + (QVector3D(250, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(150, 0, 0) *= scaleFactor), initialPosition + (QVector3D(250, 150, 100) *= scaleFactor), green));
+
+	initialPosition += QVector3D(350, 0, 0) *= scaleFactor;
+
+	//O
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 150, 0) *= scaleFactor), initialPosition + (QVector3D(300, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(200, 0, 0) *= scaleFactor), initialPosition + (QVector3D(300, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 0, 0) *= scaleFactor), initialPosition + (QVector3D(300, 50, 100) *= scaleFactor), green));
+
+	initialPosition += QVector3D(400, 0, 0) *= scaleFactor;
+
+	//R
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 150, 0) *= scaleFactor), initialPosition + (QVector3D(200, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(150, 100, 0) *= scaleFactor), initialPosition + (QVector3D(200, 150, 100) *= scaleFactor), green));
+
+	initialPosition += QVector3D(300, 0, 0) *= scaleFactor;
+
+	//T
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(75, 0, 0) *= scaleFactor), initialPosition + (QVector3D(125, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(0, 150, 0) *= scaleFactor), initialPosition + (QVector3D(200, 200, 100) *= scaleFactor), green));
+
+	initialPosition += QVector3D(300, 0, 0) *= scaleFactor;
+
+	//H
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(0, 0, 0) *= scaleFactor), initialPosition + (QVector3D(100, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(200, 0, 0) *= scaleFactor), initialPosition + (QVector3D(300, 200, 100) *= scaleFactor), green));
+	world.push_back(std::make_shared<box>(
+	    initialPosition + (QVector3D(100, 75, 0) *= scaleFactor), initialPosition + (QVector3D(200, 125, 100) *= scaleFactor), green));
+
 
 	return world;
 }
