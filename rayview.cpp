@@ -16,8 +16,8 @@ RayView::RayView(QWidget* parent)
     , ui(new Ui::RayView)
     , m_imageCanvas(img::width, img::height, QImage::Format_RGB32)
     , m_default_pixel_color(img::defaultVec)
-    , m_lookAt(278, 278, 6000)
-    , m_lookFrom(278, 278, -300)
+    , m_lookAt(0.0f, 0.0f, -1.0f)
+    , m_lookFrom(0.0f, 0.0f, 1.0f)
     , m_vup(0.0f, 1.0f, 0.0f)
     , m_sceneItem(nullptr)
     , m_nextFrameX(0)
@@ -43,11 +43,11 @@ RayView::RayView(QWidget* parent)
 
     ui->graphicsView->setScene(scene);
 
-    //m_worldObjects = random_scene();
-    m_worldObjects = box_scene();
-    //m_worldObjects = bvh_scene();
+    m_worldObjects = normal_scene();
+    //m_worldObjects = box_scene();
+    // m_worldObjects = bvh_scene();
     worldLights = std::make_shared<sphere>(QVector3D(275, 2000, 1000), 500, std::shared_ptr<material>());
-    //worldLights = std::make_shared<sphere>(QVector3D(190, 90, 190), 90, std::shared_ptr<material>());
+    worldLights = std::make_shared<sphere>(QVector3D(190, 90, 190), 90, std::shared_ptr<material>());
 }
 
 RayView::~RayView()
@@ -124,13 +124,13 @@ void RayView::renderOneRay()
     m_default_pixel_color.setZ(0);
 
     int numSamples = m_numSamples;
-    if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 && img::height - randY - 1 >= 0) {
+    /* if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 && img::height - randY - 1 >= 0) {
         auto color = m_imageCanvas.pixelColor(img::width - randX - 1, img::height - randY - 1);
         if (color.red() != 0 || color.green() != 0 || color.blue() != 0) {
             //qCritical("sckipping already done pix");
             return;
         }
-    }
+    }*/
     //numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
 
     //random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
@@ -162,7 +162,7 @@ void RayView::go()
         renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
         QTimer::singleShot(timer.elapsed(), this, &RayView::go);
     } else {
-        while (timer.elapsed() < 5000) {
+        while (timer.elapsed() < 16) {
             renderOneRay();
             rays++;
         }
@@ -225,16 +225,16 @@ void RayView::keyPressEvent(QKeyEvent* keyEvent)
 {
     switch (keyEvent->key()) {
     case Qt::Key_W:
-        m_lookFrom -= { 0.0f, 0.0f, 20.1f };
+        m_lookFrom -= { 0.0f, 0.0f, 2.1f };
         break;
     case Qt::Key_A:
-        m_lookFrom += { 20.1f, 0.0f, 0.0f };
+        m_lookFrom += { 2.1f, 0.0f, 0.0f };
         break;
     case Qt::Key_S:
-        m_lookFrom += { 0.0f, 0.0f, 20.1f };
+        m_lookFrom += { 0.0f, 0.0f, 2.1f };
         break;
     case Qt::Key_D:
-        m_lookFrom -= { 20.1f, 0.0f, 0.0f };
+        m_lookFrom -= { 2.1f, 0.0f, 0.0f };
         break;
     }
 
