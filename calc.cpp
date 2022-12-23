@@ -12,6 +12,16 @@ float random_double(float min, float max)
     return distribution(gen);
 }
 
+float random_doubleW()
+{
+    return simple_distributionW(gen);
+}
+
+float random_doubleH()
+{
+    return simple_distributionH(gen);
+}
+
 float random_double01()
 {
     return simple_distribution(gen01);
@@ -76,7 +86,7 @@ QVector3D random_in_hemisphere(const QVector3D& normal)
 // couleur
 QVector3D
 ray_color(const Ray& inboundRay, const QVector3D& background,
-          const std::vector<std::shared_ptr<shape>>& worldObjects, std::shared_ptr<shape>& lights,
+    const std::vector<std::shared_ptr<shape>>& worldObjects, std::shared_ptr<shape>& lights,
     int depth, bool drawOnlyColors)
 {
     // If we've exceeded the ray bounce limit, no more light is gathered.
@@ -108,7 +118,7 @@ ray_color(const Ray& inboundRay, const QVector3D& background,
 
     if (srec.is_specular) {
         return srec.attenuation
-               * ray_color(srec.specular_ray, background, worldObjects, lights, depth-1);
+            * ray_color(srec.specular_ray, background, worldObjects, lights, depth - 1);
     }
 
     auto light_ptr = std::make_shared<hittable_pdf>(lights, rec.p);
@@ -118,8 +128,8 @@ ray_color(const Ray& inboundRay, const QVector3D& background,
     auto pdf_val = p.value(scattered.direction);
 
     return emitted
-           + srec.attenuation * rec.mat_ptr->scattering_pdf(inboundRay, rec, scattered)
-                 * ray_color(scattered, background, worldObjects, lights, depth-1) / pdf_val;
+        + srec.attenuation * rec.mat_ptr->scattering_pdf(inboundRay, rec, scattered)
+        * ray_color(scattered, background, worldObjects, lights, depth - 1) / pdf_val;
 }
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
@@ -129,15 +139,18 @@ QVector3D rgbPerSamples(const QVector3D& pixel, int samples)
     auto b = pixel.z();
 
     // Replace NaN components with zero. See explanation in Ray Tracing: The Rest of Your Life.
-    if (r != r) r = 0.0;
-    if (g != g) g = 0.0;
-    if (b != b) b = 0.0;
+    if (r != r)
+        r = 0.0;
+    if (g != g)
+        g = 0.0;
+    if (b != b)
+        b = 0.0;
 
     // Divide the color by the number of samples. and gamma-correct for gamma=2.0.
     auto scale = 1.0f / samples;
-     r = sqrt(scale * pixel.x());
-     g = sqrt(scale * pixel.y());
-     b = sqrt(scale * pixel.z());
+    r = sqrt(scale * pixel.x());
+    g = sqrt(scale * pixel.y());
+    b = sqrt(scale * pixel.z());
 
     return { 255.0f * std::clamp(r, 0.0f, 0.999f), 255.0f * std::clamp(g, 0.0f, 0.999f), 255.0f * std::clamp(b, 0.0f, 0.999f) };
 }
