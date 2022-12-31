@@ -13,7 +13,8 @@ struct shape;
 namespace img {
 // img
 constexpr float aspect_ratio = 16.0f / 9.0f;
-constexpr int width = 1000;
+constexpr int min0          = 0;
+constexpr int width = 800;
 constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr int totalPixels = width * height;
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
@@ -38,8 +39,8 @@ inline constexpr double degrees_to_radians(double degrees)
 }
 
 float random_double(float min, float max);
-float random_doubleW();
-float random_doubleH();
+int random_doubleW();
+int random_doubleH();
 float random_double01();
 float random_double11();
 
@@ -107,8 +108,8 @@ static std::random_device rd11; // Will be used to obtain a seed for the random 
 static std::minstd_rand0 gen11(rd11());
 
 static std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
-static std::uniform_real_distribution<float> simple_distributionW(0.0f, img::width);
-static std::uniform_real_distribution<float> simple_distributionH(0.0f, img::height);
+static std::uniform_int_distribution simple_distributionW(img::min0, img::width);
+static std::uniform_int_distribution simple_distributionH(img::min0, img::height);
 static std::uniform_real_distribution<float> simple_distributionMinusOneToOne(-1.0f, 1.0f);
 
 } // namespace calc

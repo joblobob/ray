@@ -12,12 +12,12 @@ float random_double(float min, float max)
     return distribution(gen);
 }
 
-float random_doubleW()
+int random_doubleW()
 {
     return simple_distributionW(gen);
 }
 
-float random_doubleH()
+int random_doubleH()
 {
     return simple_distributionH(gen);
 }
