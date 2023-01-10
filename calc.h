@@ -4,8 +4,8 @@
 #include <QVector3D>
 #include <random>
 
+#include <limits> 
 #include <cmath>
-#include <limits>
 
 #include <Ray.h>
 
@@ -19,7 +19,7 @@ constexpr int height = static_cast<int>(width / aspect_ratio);
 constexpr int totalPixels = width * height;
 constexpr QVector3D defaultVec { 0.0f, 0.0f, 0.0f };
 constexpr QVector3D infiniteZ { 0.0f, 0.0f, -1.0f };
-constexpr QVector3D gradientBgVec { 0.2f, 0.2f, 0.2f };
+constexpr QVector3D gradientBgVec { 0.5f, 0.7f, 1.0f };
 constexpr QVector3D bgColor { 1.0f, 1.0f, 1.0f };
 } // namespace img
 
@@ -100,17 +100,18 @@ bool near_zero(const QVector3D& vec);
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples);
 
-static std::random_device rd; // Will be used to obtain a seed for the random number engine
-static std::minstd_rand0 gen(rd());
-static std::random_device rd01; // Will be used to obtain a seed for the random number engine
-static std::minstd_rand0 gen01(rd01());
-static std::random_device rd11; // Will be used to obtain a seed for the random number engine
-static std::minstd_rand0 gen11(rd11());
+inline std::random_device rd; // Will be used to obtain a seed for the random number engine
+inline std::minstd_rand0 gen(rd());
+inline std::random_device rd01; // Will be used to obtain a seed for the random number engine
+inline std::minstd_rand0 gen01(rd01());
+inline std::random_device rd11; // Will be used to obtain a seed for the random number engine
+inline std::minstd_rand0 gen11(rd11());
 
-static std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
-static std::uniform_int_distribution simple_distributionW(img::min0, img::width);
-static std::uniform_int_distribution simple_distributionH(img::min0, img::height);
-static std::uniform_real_distribution<float> simple_distributionMinusOneToOne(-1.0f, 1.0f);
+inline std::uniform_real_distribution<float> simple_distribution(0.0f, 1.0f);
+inline std::uniform_int_distribution simple_distributionW(img::min0, img::width);
+inline std::uniform_int_distribution simple_distributionH(img::min0, img::height);
+inline std::uniform_real_distribution<float> simple_distributionMinusOneToOne(-1.0f, 1.0f);
+
 
 } // namespace calc
 

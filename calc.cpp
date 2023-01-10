@@ -6,6 +6,9 @@
 
 namespace calc {
 
+     hittable_pdf m_light_ptr;
+
+
 float random_double(float min, float max)
 {
     std::uniform_real_distribution<float> distribution(min, max);
@@ -95,10 +98,6 @@ ray_color(const Ray& inboundRay, const QVector3D& background,
 
     std::optional<hit_record> hitRecord = hitFromList(worldObjects, inboundRay, calc::smallestVal, calc::infinity);
     if (!hitRecord.has_value()) {
-        /*// pas de hit, background gradient
-        QVector3D unit_direction = inboundRay.direction.normalized();
-        float t = 0.5f * (unit_direction.y() + 1.0f);
-        return (1.0f - t) * img::bgColor + t * img::gradientBgVec;*/
         // pas de hit, background
         return background;
     }
@@ -109,7 +108,7 @@ ray_color(const Ray& inboundRay, const QVector3D& background,
         return 0.5f * QVector3D { N.x() + 1.0f, N.y() + 1.0f, N.z() + 1.0f };
     }
 
-    auto rec = hitRecord.value();
+    const auto& rec = hitRecord.value();
 
     scatter_record srec;
     QVector3D emitted = rec.mat_ptr->emitted(inboundRay, rec, rec.u, rec.v, rec.p);
@@ -121,15 +120,14 @@ ray_color(const Ray& inboundRay, const QVector3D& background,
             * ray_color(srec.specular_ray, background, worldObjects, lights, depth - 1);
     }
 
-    auto light_ptr = std::make_shared<hittable_pdf>(lights, rec.p);
-    mixture_pdf p(light_ptr, srec.pdf_ptr);
+    m_light_ptr.ptr = lights;
+    m_light_ptr.o = rec.p;
+    mixture_pdf p(&m_light_ptr, srec.pdf_ptr.get());
 
     Ray scattered = Ray(rec.p, p.generate());
-    auto pdf_val = p.value(scattered.direction);
 
-    return emitted
-        + srec.attenuation * rec.mat_ptr->scattering_pdf(inboundRay, rec, scattered)
-        * ray_color(scattered, background, worldObjects, lights, depth - 1) / pdf_val;
+    return emitted + srec.attenuation * rec.mat_ptr->scattering_pdf(inboundRay, rec, scattered) *
+	                        ray_color(scattered, background, worldObjects, lights, depth - 1) / p.value(scattered.direction);
 }
 
 QVector3D rgbPerSamples(const QVector3D& pixel, int samples)

@@ -26,7 +26,7 @@ public:
         return Ray(
             origin + offset,
             lower_left_corner + s * horizontal + t * vertical - origin - offset);
-        return Ray(origin, lower_left_corner + s * horizontal + t * vertical - origin);
+        //return Ray(origin, lower_left_corner + s * horizontal + t * vertical - origin);
     }
 
     void resetCam(QVector3D lookfrom,
