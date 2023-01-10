@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <execution>
 
-#include <bvh_node.h>
 #include <hitPosition.h>
 
 #include <calc.h>
@@ -45,7 +44,7 @@ RayView::RayView(QWidget* parent)
 
     m_worldObjects = normal_scene();
     //m_worldObjects = box_scene();
-    // m_worldObjects = bvh_scene();
+	//m_worldObjects = random_scene();
     worldLights = std::make_shared<sphere>(QVector3D(275, 2000, 1000), 500, std::shared_ptr<material>());
     worldLights = std::make_shared<sphere>(QVector3D(190, 90, 190), 90, std::shared_ptr<material>());
 }
@@ -58,60 +57,11 @@ RayView::~RayView()
 void RayView::writeToImg(QImage& img, int x, int y, const QVector3D& pixel, int samples)
 {
     if (x < img.width() && y < img.height() && x >= 0 && y >= 0) {
-        // if (m_allPixelsMaps[x][y] < m_numSamples)
-        //    m_allPixelsMaps[x][y] += 10;
-        //  if (m_allPixelsMaps[x][y] >= m_numSamples)
-        //      m_allPixelsMaps[x][y] = 1;
         QVector3D newCol = calc::rgbPerSamples(pixel, samples);
         // Write the translated [0,255] value of each color component.
 
         img.setPixelColor(x, y, QColor(newCol.x(), newCol.y(), newCol.z()));
     }
-}
-
-void RayView::renderAll(int width,
-    int height,
-    int samples,
-    const camera& cam,
-    const std::vector<std::shared_ptr<shape>>& worldObjects,
-    int max_depth)
-{
-    QElapsedTimer processTimer;
-    processTimer.start();
-    bool skip = false;
-    int skipped = 0;
-    for (int col = height; col >= 0; --col) {
-        for (int row = 0; row < width; ++row) {
-            skip = false;
-            m_default_pixel_color.setX(0.0f);
-            m_default_pixel_color.setY(0.0f);
-            m_default_pixel_color.setZ(0.0f);
-            int x = width - row - 1;
-            int y = height - col;
-            for (int s = 0; s < samples && !skip; ++s) {
-                auto u = (row + calc::random_double01()) / (width - 1);
-                auto v = (col + calc::random_double01()) / (height - 1);
-                Ray r = cam.get_ray(u, v);
-                m_default_pixel_color += calc::ray_color(r, img::gradientBgVec, worldObjects, worldLights, max_depth, m_isColorOnly);
-                if (x < m_imageCanvas.width() && y < m_imageCanvas.height() && x >= 0 && y >= 0)
-                    if (m_imageCanvas.pixelColor(x, y).red() == m_default_pixel_color.x() && m_imageCanvas.pixelColor(x, y).green() == m_default_pixel_color.y() && m_imageCanvas.pixelColor(x, y).blue() == m_default_pixel_color.z())
-                        skip = true;
-            }
-            if (!skip)
-                RayView::writeToImg(m_imageCanvas, x, y, m_default_pixel_color, samples);
-            else
-                skipped++;
-        }
-    }
-
-    ui->m_tempsProcess->setText("Process: " + QString::number(processTimer.elapsed()) + " ms");
-    qCritical() << skipped;
-    QElapsedTimer imageTimer;
-    imageTimer.start();
-
-    drawImageToScene();
-
-    ui->m_tempsImage->setText("Image: " + QString::number(imageTimer.elapsed()) + " ms");
 }
 
 void RayView::renderOneRay()
@@ -124,14 +74,6 @@ void RayView::renderOneRay()
     m_default_pixel_color.setZ(0);
 
     int numSamples = m_numSamples;
-    /* if (img::width - randX - 1 < m_imageCanvas.width() && img::height - randY - 1 < m_imageCanvas.height() && img::width - randX - 1 >= 0 && img::height - randY - 1 >= 0) {
-        auto color = m_imageCanvas.pixelColor(img::width - randX - 1, img::height - randY - 1);
-        if (color.red() != 0 || color.green() != 0 || color.blue() != 0) {
-            //qCritical("sckipping already done pix");
-            return;
-        }
-    }*/
-    //numSamples = m_allPixelsMaps[img::width - randX - 1][img::height - randY - 1];
 
     //random mais dans une liste detat pour faire une passe a 1, ensuite une passe a 2 et faire chaque pixels mais randomly wow
     for (int s = 0; s < numSamples; ++s) {
@@ -155,23 +97,23 @@ void RayView::drawImageToScene()
 
 void RayView::go()
 {
-    timer.start();
+    timer.start(); 
     int rays = 0;
+
     // render
-    if (m_isStyleNormal) {
-        renderAll(img::width, img::height, m_numSamples, cam, m_worldObjects, m_depth);
-        QTimer::singleShot(timer.elapsed(), this, &RayView::go);
-    } else {
-        while (timer.elapsed() < 16) {
-            renderOneRay();
-            rays++;
-        }
-
-        drawImageToScene();
-
-        QTimer::singleShot(0, this, &RayView::go);
+    while (timer.elapsed() < 16) {
+        renderOneRay();
+        rays++;
     }
-    ui->m_tempsTotal->setText("Total: " + QString::number(timer.elapsed()) + " ms " + QString::number(rays));
+
+    //draw
+    drawImageToScene();
+
+	ui->m_tempsTotal->setText("Total: " + QString::number(timer.elapsed()) + " ms " + QString::number(rays));
+
+    //callback in 0ms
+    QTimer::singleShot(0, this, &RayView::go);
+    
 }
 
 void RayView::on_dSpin1_valueChanged(double arg1)
@@ -225,16 +167,16 @@ void RayView::keyPressEvent(QKeyEvent* keyEvent)
 {
     switch (keyEvent->key()) {
     case Qt::Key_W:
-        m_lookFrom -= { 0.0f, 0.0f, 2.1f };
+        m_lookFrom -= { 0.0f, 0.0f, 1.0f };
         break;
     case Qt::Key_A:
-        m_lookFrom += { 2.1f, 0.0f, 0.0f };
+        m_lookFrom += { 1.0f, 0.0f, 0.0f };
         break;
     case Qt::Key_S:
-        m_lookFrom += { 0.0f, 0.0f, 2.1f };
+        m_lookFrom += { 0.0f, 0.0f, 1.0f };
         break;
     case Qt::Key_D:
-        m_lookFrom -= { 2.1f, 0.0f, 0.0f };
+        m_lookFrom -= { 1.0f, 0.0f, 0.0f };
         break;
     }
 
@@ -431,56 +373,6 @@ std::vector<std::shared_ptr<shape>> RayView::box_scene()
         initialPosition + (QVector3D(200, 0, 0) *= scaleFactor), initialPosition + (QVector3D(300, 200, 100) *= scaleFactor), green));
     world.push_back(std::make_shared<box>(
         initialPosition + (QVector3D(100, 75, 0) *= scaleFactor), initialPosition + (QVector3D(200, 125, 100) *= scaleFactor), green));
-
-    return world;
-}
-
-std::vector<std::shared_ptr<shape>> RayView::bvh_scene()
-{
-    std::vector<std::shared_ptr<shape>> world {};
-    static std::vector<std::shared_ptr<shape>> boxes {};
-    auto ground = std::make_shared<lambertian>(QVector3D(0.48, 0.83, 0.53));
-
-    const int boxes_per_side = 20;
-    for (int i = 0; i < boxes_per_side; i++) {
-        for (int j = 0; j < boxes_per_side; j++) {
-            auto w = 100.0;
-            auto x0 = -1000.0 + i * w;
-            auto z0 = -1000.0 + j * w;
-            auto y0 = 0.0;
-            auto x1 = x0 + w;
-            auto y1 = calc::random_double(1, 101);
-            auto z1 = z0 + w;
-
-            boxes.push_back(std::make_shared<box>(QVector3D(x0, y0, z0), QVector3D(x1, y1, z1), ground));
-        }
-    }
-
-    world.push_back(std::make_shared<bvh_node>(boxes, 0, 1));
-
-    auto light = std::make_shared<diffuse_light>(QVector3D(5, 5, 5));
-    world.push_back(std::make_shared<xz_rect>(123, 423, 147, 412, 554, light));
-
-    //boule bleu
-    auto boundary = std::make_shared<sphere>(QVector3D(360, 150, 145), 70, std::make_shared<dielectric>(1.5));
-    world.push_back(boundary);
-    world.push_back(std::make_shared<constant_medium>(boundary, 0.2, QVector3D(0.2, 0.4, 0.9)));
-    boundary = std::make_shared<sphere>(QVector3D(0, 0, 0), 5000, std::make_shared<dielectric>(1.5));
-    world.push_back(std::make_shared<constant_medium>(boundary, .0001, QVector3D(1, 1, 1)));
-
-    // bulle et métal
-    world.push_back(std::make_shared<sphere>(QVector3D(260, 150, 45), 50, std::make_shared<dielectric>(1.5)));
-    world.push_back(std::make_shared<sphere>(QVector3D(0, 150, 145), 50, std::make_shared<metal>(QVector3D(0.8, 0.8, 0.9), 1.0)));
-
-    //shperes
-    std::vector<std::shared_ptr<shape>> boxes2;
-    auto white = std::make_shared<lambertian>(QVector3D(.73, .73, .73));
-    int ns = 100;
-    for (int j = 0; j < ns; j++) {
-        boxes2.push_back(std::make_shared<sphere>(QVector3D(calc::randomVec(1, 165)), 10, white));
-    }
-
-    world.push_back(std::make_shared<bvh_node>(boxes2, 0, 1));
 
     return world;
 }

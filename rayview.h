@@ -90,8 +90,6 @@ private:
     std::vector<std::shared_ptr<shape>> normal_scene();
 
     std::vector<std::shared_ptr<shape>> box_scene();
-
-    std::vector<std::shared_ptr<shape>> bvh_scene();
 };
 
 #endif // RAYVIEW_H

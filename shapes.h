@@ -79,7 +79,7 @@ struct sphere : public shape {
     {
         QVector3D originCenter = ray.pointOfOrigin - center;
 
-        float a = ray.direction.lengthSquared();
+        float a = ray.DirlengthSquared;
         float b = QVector3D::dotProduct(originCenter, ray.direction);
         float c = originCenter.lengthSquared() - radiusSquared;
 
@@ -121,7 +121,7 @@ struct sphere : public shape {
             return 0.0;
 
         auto cos_theta_max = sqrt(1 - radius*radius/(center-o).lengthSquared());
-        auto solid_angle = 2*calc::pi*(1-cos_theta_max);
+        auto solid_angle = 2*calc::pi*(1-cos_theta_max); 
 
         return  1 / solid_angle;
     }

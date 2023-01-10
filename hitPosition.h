@@ -157,6 +157,7 @@ public:
 
 class hittable_pdf : public pdf {
 public:
+	   hittable_pdf() { };
     hittable_pdf(std::shared_ptr<shape> p, const QVector3D& origin) : ptr(p), o(origin) {}
 
     virtual double value(const QVector3D& direction) const override;
@@ -170,7 +171,7 @@ public:
 
 class mixture_pdf : public pdf {
 public:
-    mixture_pdf(std::shared_ptr<pdf> p0, std::shared_ptr<pdf> p1) {
+    mixture_pdf(pdf* p0, pdf* p1) {
         p[0] = p0;
         p[1] = p1;
     }
@@ -180,7 +181,7 @@ public:
     virtual QVector3D generate() const override;
 
 public:
-    std::shared_ptr<pdf> p[2];
+    pdf* p[2];
 };
 
 std::optional<hit_record>
@@ -282,7 +283,7 @@ private:
         // Use Schlick's approximation for reflectance.
         auto r0 = (1.0f - ref_idx) / (1.0f + ref_idx);
         r0 = r0 * r0;
-        return r0 + (1.0f - r0) * pow((1.0f - cosine), 5);
+        return r0 + (1.0f - r0) * (float)pow((1.0f - cosine), 5);
     }
 };
 
