@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 project(ray1 VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "/O2")
 
 set(CMAKE_PREFIX_PATH C:/Qt/5.15.2/msvc2019_64)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -25,15 +25,15 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Concurrent Gui Widgets)
 
 add_executable(ray1 WIN32
     Ray.h
-    bvh_node.cpp bvh_node.h
     calc.cpp calc.h
     camera.h
     hitPosition.cpp hitPosition.h
     main.cpp
     rayview.cpp rayview.h rayview.ui
-    rayview_rtiow.cpp rayview_rtiow.h rayview_rtiow.ui
-    shapes.h
-)
+    fluid.h fluid.cpp fluid.ui
+    shapes.h 
+    Module1.ixx)
+
 target_link_libraries(ray1 PRIVATE
     Qt::Concurrent
     Qt::Core

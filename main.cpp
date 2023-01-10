@@ -6,17 +6,17 @@
 #include <iostream>
 
 #include <rayview.h>
-#include <rayview_rtiow.h>
+#include <fluid.h>
 
 int main(int argc, char* argv[])
 {
-
     QApplication app(argc, argv);
 
     RayView* view = new RayView();
     view->show();
 
-    RayView_rtiow* view_rtiow = new RayView_rtiow();
-    view_rtiow->show();
+    fluid* view2 = new fluid();
+	view2->show();
+
     app.exec();
 }
