@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "/O2")
 set(CMAKE_PREFIX_PATH C:/Qt/5.15.2/msvc2019_64)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON) 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set up AUTOMOC and some sensible defaults for runtime execution
@@ -30,7 +30,7 @@ add_executable(ray1 WIN32
     hitPosition.cpp hitPosition.h
     main.cpp
     rayview.cpp rayview.h rayview.ui
-    fluid.h fluid.cpp fluid.ui
+    fluid.cpp fluid.h fluid.ui
     shapes.h 
     Module1.ixx)
 

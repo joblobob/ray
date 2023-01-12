@@ -4,12 +4,23 @@
 #include <algorithm>
 #include <execution>
 
+#include <QElapsedTimer>
+
 #include <hitPosition.h>
 
 #include <calc.h>
 
 #include "ui_fluid.h"
 
+
+fluid::fluid(QWidget* parent) : ui(new Ui::fluid), frameNr(0), paused(true)
+{
+	ui->setupUi(this);
+	scene = new QGraphicsScene(this);
+
+	ui->m_graphView->setScene(scene);
+
+}
 
 void fluid::setupScene()
 {
@@ -63,6 +74,25 @@ void fluid::setupScene()
 		}
 	}
 
+	//setup grid
+	 if (constants::showGrid) {
+	 auto pointSize = 0.9 * h / constants::simwidth * ui->m_graphView->width();
+		for (auto i = 0; i < f.fNumX; i++) {
+			for (auto j = 0; j < f.fNumY; j++) {
+				scene->addRect(
+				    (i + 0.5) * f.h, (j + 0.5) * f.h, 5, 5, QPen(QColor::fromRgbF(f.cellColor[3 * i], f.cellColor[3 * i + 1], f.cellColor[3 * i + 2])), Qt::SolidPattern);
+			}
+		}
+	}
+
+	//setup particles of water
+	 if (constants::showParticles) {
+		for (auto i = 0; i < f.numParticles; i++) {
+			auto particlePen = QPen(QColor::fromRgbF(f.particleColor[3 * i], f.particleColor[3 * i + 1], f.particleColor[3 * i + 2]));
+			scene->addEllipse(f.particlePos[2 * i], f.particlePos[2 * i + 1], r, r, particlePen, Qt::SolidPattern);
+		}
+	}
+
 	setupObstacle(3.0, 2.0, true);
 }
 
@@ -102,4 +132,67 @@ void fluid::setupObstacle(int x, int y, bool reset)
 	//scene.showObstacle = true;
 	ggobstacleVelX = vx;
 	ggobstacleVelY = vy;
+}
+
+void fluid::simulate() {
+	if (!paused)
+		f.simulate(constants::dt,
+		    constants::gravity,
+		    constants::flipRatio,
+		    constants::numPressureIters,
+		    constants::numParticleIters,
+		    constants::overRelaxation,
+		    constants::compensateDrift,
+		    constants::separateParticles,
+		    obstacleX,
+		    obstacleY,
+		    constants::obstacleRadius);
+
+	frameNr++;
+}
+
+void fluid::draw() {
+	//grid
+	auto p = 0;
+
+
+	
+	/* if (constants::showGrid) {
+		auto pointSize = 0.9 * f.h / constants::simwidth * ui->m_graphView->width();
+		QPen outlinePen(Qt::black);
+		for (auto i = 0; i < f.fNumX; i++) {
+			for (auto j = 0; j < f.fNumY; j++) {
+				auto item = ui->m_graphView->itemAt((i + 0.5) * f.h, (j + 0.5) * f.h);
+				if (item != nullptr) {
+					auto rect = qgraphicsitem_cast<QGraphicsRectItem*>(item);
+					if (rect != nullptr)
+						rect->setPen(QPen(QColor::fromRgbF(f.cellColor[3 * i], f.cellColor[3 * i + 1], f.cellColor[3 * i + 2])));
+				}
+			}
+		}
+	}*/
+
+	//particles
+
+	auto pointSize = 2.0 * f.particleRadius / constants::simwidth * ui->m_graphView->width();
+
+}
+
+void fluid::requestAnimationFrame() {
+}
+
+
+void fluid::update() {
+	QElapsedTimer timer;
+	timer.start();
+
+	simulate();
+	draw();
+
+	
+	ui->label->setText(QString::number(timer.elapsed()) + " ms " + QString::number(f.particlePos[50]));
+	//requestAnimationFrame();
+	//callback to update
+	//callback in 0ms
+	QTimer::singleShot(0, this, &fluid::update);
 }

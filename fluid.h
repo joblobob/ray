@@ -2,6 +2,7 @@
 #define FLUID_H
 
 #include "qelapsedtimer.h"
+
 #include <QDialog>
 #include <QFile>
 #include <QGraphicsPixmapItem>
@@ -9,14 +10,10 @@
 #include <QImage>
 
 
-namespace Ui {
-class fluid;
-}
-
 namespace constants {
-constexpr int maxwidth { 200 };
-constexpr int maxheight { 200 };
-constexpr int simheight { 3 };
+constexpr int maxwidth { 500 };
+constexpr int maxheight { 500 };
+constexpr int simheight { 250 };
 const int scale { maxheight / simheight };
 const int simwidth { maxwidth / scale };
 
@@ -37,6 +34,18 @@ constexpr float dt      = 1.0 / 60.0;
 constexpr float numPressureIters = 50;
 constexpr float numParticleIters  = 2;
 
+constexpr float gravity = -9.81;
+//constexpr float dt : 1.0 / 120.0,
+constexpr float flipRatio = 0.9;
+constexpr bool compensateDrift = true;
+constexpr bool separateParticles= true;
+constexpr bool paused = false;
+constexpr bool showObstacle = true;
+constexpr float obstacleVelX = 0.0;
+constexpr float obstacleVelY = 0.0;
+    constexpr bool showParticles = true;
+    constexpr bool showGrid = true;
+
 } // namespace
 
 namespace {
@@ -47,24 +56,26 @@ float ggobstacleVelY = 0.0;
 
 struct FlipFluid
 {
-	float density, fInvSpacing, particleRestDensity, pInvSpacing;
-	int fNumX, fNumY, fNumCells, h, particleRadius, maxParticles, pNumX, pNumY, pNumCells, numParticles;
+	float density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h;
+	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
 	std::vector<float> u, v, du, dv, prevU, prevV, p, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
 	std::vector<int> cellType, numCellParticles, firstCellParticle, cellParticleIds;
 
 	FlipFluid() = default;
-	FlipFluid(float density, int width, int height, float spacing, float particleRadius, int maxParticles) :
+	FlipFluid(float density, float width, float height, float spacing, float particleRadius, int maxParticles) :
 	    density(density),
 	    fNumX(floor(width / spacing) + 1), fNumY(floor(height / spacing) + 1),
-	    h(std::max(width / fNumX, height / fNumY)),
-	    fInvSpacing(1.0 / h), fNumCells(fNumX * fNumY),
+	    //fNumX(50), fNumY(50),
+	    //h(std::max(width / fNumX, height / fNumY)),
+	   //fInvSpacing(1.0 / h), 
+		fNumCells(fNumX * fNumY),
 	    u(fNumCells),
 		// fluid
 	    v(fNumCells),
 	    du(fNumCells), dv(fNumCells), 
 		prevU(fNumCells), prevV(fNumCells), 
 		p(fNumCells), s(fNumCells),     
-		cellType(fNumCells), cellColor(fNumCells),
+		cellType(fNumCells), cellColor(3 * fNumCells),
 	    particleRadius(particleRadius),
 		// particles
 	    maxParticles(maxParticles),
@@ -79,6 +90,8 @@ struct FlipFluid
 	    cellParticleIds(maxParticles),
 	    numParticles(0)
 	{
+		h = std::max(width / fNumX, height / fNumY);
+		fInvSpacing = 1.0 / h;
 		//set default color to blue
 		for (auto i = 0; i < maxParticles; i++)
 			particleColor[3 * i + 2] = 1.0;
@@ -264,8 +277,8 @@ struct FlipFluid
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			x = std::clamp((int)x, h, (fNumX - 1) * h);
-			y = std::clamp((int)y, h, (fNumY - 1) * h);
+			x = std::clamp(x, h, (fNumX - 1) * h);
+			y = std::clamp(y, h, (fNumY - 1) * h);
 
 			auto x0 = (int)floor((x - h2) * h1);
 			auto tx = ((x - h2) - x0 * h) * h1;
@@ -360,8 +373,8 @@ struct FlipFluid
 			std::vector<float> d     = component == 0 ? du : dv;
 
 			for (auto i = 0; i < numParticles; i++) {
-				int x = particlePos[2 * i];
-				int y = particlePos[2 * i + 1];
+				auto x = particlePos[2 * i];
+				auto y = particlePos[2 * i + 1];
 
 				x = std::clamp(x, h, (fNumX - 1) * h);
 				y = std::clamp(y, h, (fNumY - 1) * h);
@@ -577,7 +590,7 @@ struct FlipFluid
 
 	void updateCellColors()
 	{
-		std::fill(cellColor.begin(), cellColor.end(), 0.0);
+		std::fill(cellColor.begin(), cellColor.end(), 0.5);
 
 		for (auto i = 0; i < fNumCells; i++) {
 			if (cellType[i] == constants::SOLID_CELL) {
@@ -626,21 +639,30 @@ struct FlipFluid
 
 
 
-
+namespace Ui {
+class fluid;
+}
 
 class fluid : public QDialog
 {
 	Q_OBJECT
 
 public:
-	explicit fluid(QWidget* parent = nullptr) {};
-	~fluid() {};
+	explicit fluid(QWidget* parent = nullptr);
+
+	~fluid() { delete ui; }
 
 
+	void setupScene();
+	void update();
 
 protected:
 private slots:
-
+	void on_pauseBtn_clicked()
+	{
+		paused = false;
+		 update();
+	}
 
 private:
 	Ui::fluid* ui;
@@ -650,15 +672,25 @@ private:
 
 	QGraphicsPixmapItem* m_sceneItem;
 
+	int frameNr;
 	float obstacleX;
 	float obstacleY;
+	bool paused;
 
 	FlipFluid f;
 
+
 	float scenedt; //le delta temps de la scene! omg! frame time alert!
 
-	void setupScene();
+	
 	void setupObstacle(int x, int y, bool reset);
+
+	void simulate();
+	void draw();
+	void requestAnimationFrame();
+
+
+	
 
 
 
