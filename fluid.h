@@ -12,7 +12,7 @@
 
 namespace constants {
 constexpr int maxwidth { 500 };
-constexpr int maxheight { 500 };
+constexpr int maxheight { 250 };
 constexpr int simheight { 250 };
 const int scale { maxheight / simheight };
 const int simwidth { maxwidth / scale };
@@ -629,7 +629,7 @@ struct FlipFluid
 			transferVelocities(true, flipRatio);
 			updateParticleDensity();
 			solveIncompressibility(numPressureIters, sdt, overRelaxation, compensateDrift);
-			transferVelocities(false, flipRatio);
+			transferVelocities(true, flipRatio);
 		}
 
 		updateParticleColors();
@@ -660,27 +660,29 @@ protected:
 private slots:
 	void on_pauseBtn_clicked()
 	{
-		paused = false;
+		m_paused = false;
 		 update();
 	}
 
 private:
 	Ui::fluid* ui;
-	QGraphicsScene* scene;
+	QGraphicsScene* m_scene;
 
 	QImage m_imageCanvas;
 
 	QGraphicsPixmapItem* m_sceneItem;
+	std::vector<QGraphicsRectItem*> m_gridItems;
+	std::vector<QGraphicsEllipseItem*> m_particleItems;
 
-	int frameNr;
-	float obstacleX;
-	float obstacleY;
-	bool paused;
+	int m_frameNr;
+	float m_obstacleX;
+	float m_obstacleY;
+	bool m_paused;
 
-	FlipFluid f;
+	FlipFluid m_f;
 
 
-	float scenedt; //le delta temps de la scene! omg! frame time alert!
+	float m_scenedt; //le delta temps de la scene! omg! frame time alert!
 
 	
 	void setupObstacle(int x, int y, bool reset);
@@ -694,7 +696,7 @@ private:
 
 
 
-	QElapsedTimer timer;
+	QElapsedTimer m_timer;
 };
 
 #endif
