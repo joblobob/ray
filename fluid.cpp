@@ -82,8 +82,8 @@ void fluid::setupScene()
 	 auto pointSize = 0.9 * h / constants::simwidth * ui->m_graphView->width();
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect(
-				    (i + 0.5) * m_f.h, (j + 0.5) * m_f.h, 10, 10, QPen(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])), Qt::SolidPattern));
+				m_gridItems.push_back(m_scene->addRect((i + 0.5) * 10,
+				    (j + 0.5) * 10, 10, 10, QPen(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])), Qt::SolidPattern));
 			}
 		}
 	}
@@ -91,10 +91,11 @@ void fluid::setupScene()
 	//setup particles of water
 	m_particleItems.reserve(m_f.numParticles);
 	auto r2 = r * 2;
+	auto pointSize = 2.0 * m_f.particleRadius / constants::simwidth * ui->m_graphView->width();
 	 if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particlePen = QPen(QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]));
-			m_particleItems.push_back(m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r, r, particlePen, Qt::SolidPattern));
+			m_particleItems.push_back(m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], 10, 10, particlePen, Qt::SolidPattern));
 		}
 	}
 
@@ -172,6 +173,7 @@ void fluid::draw() {
 	//particles
 
 	 //setup particles of water
+	 //auto pointSize = 2.0 * m_f.particleRadius / constants::simwidth * ui->m_graphView->width();
 	 m_particleItems.reserve(m_f.numParticles);
 	 if (constants::showParticles) {
 		 for (auto i = 0; i < m_f.numParticles; i++) {
@@ -181,7 +183,8 @@ void fluid::draw() {
 		 }
 	 }
 
-	auto pointSize = 2.0 * m_f.particleRadius / constants::simwidth * ui->m_graphView->width();
+	 // obstacle
+
 
 }
 
@@ -197,7 +200,7 @@ void fluid::update() {
 	draw();
 
 	
-	ui->label->setText(QString::number(timer.elapsed()) + " ms " + QString::number(m_f.particlePos[50]));
+	ui->label->setText(QString::number(timer.elapsed()) + " ms");
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms

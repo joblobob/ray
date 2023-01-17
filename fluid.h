@@ -14,8 +14,8 @@ namespace constants {
 constexpr int maxwidth { 500 };
 constexpr int maxheight { 250 };
 constexpr int simheight { 250 };
-const int scale { maxheight / simheight };
-const int simwidth { maxwidth / scale };
+const float scale { maxheight / simheight };
+const float simwidth { maxwidth / scale };
 
 constexpr int U_FIELD = 0;
 constexpr int V_FIELD = 1;
@@ -65,9 +65,6 @@ struct FlipFluid
 	FlipFluid(float density, float width, float height, float spacing, float particleRadius, int maxParticles) :
 	    density(density),
 	    fNumX(floor(width / spacing) + 1), fNumY(floor(height / spacing) + 1),
-	    //fNumX(50), fNumY(50),
-	    //h(std::max(width / fNumX, height / fNumY)),
-	   //fInvSpacing(1.0 / h), 
 		fNumCells(fNumX * fNumY),
 	    u(fNumCells),
 		// fluid
@@ -97,7 +94,7 @@ struct FlipFluid
 			particleColor[3 * i + 2] = 1.0;
 	}
 
-	void integrateParticles(int dt, float gravity)
+	void integrateParticles(float dt, float gravity)
 	{
 		for (auto i = 0; i < numParticles; i++) {
 			particleVel[2 * i + 1] += dt * gravity;
@@ -118,8 +115,8 @@ struct FlipFluid
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			auto xi    = std::clamp((int)floor(x * pInvSpacing), 0, pNumX - 1);
-			auto yi    = std::clamp((int)floor(y * pInvSpacing), 0, pNumY - 1);
+			auto xi    = std::clamp(floor(x * pInvSpacing), 0.0f, (float)pNumX - 1);
+			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0f, (float)pNumY - 1);
 			auto cellNr = xi * pNumY + yi;
 			numCellParticles[cellNr]++;
 		}
@@ -140,8 +137,8 @@ struct FlipFluid
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			auto xi    = std::clamp((int)floor(x * pInvSpacing), 0, pNumX - 1);
-			auto yi    = std::clamp((int)floor(y * pInvSpacing), 0, pNumY - 1);
+			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0f, (float)pNumX - 1);
+			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0f, (float)pNumY - 1);
 			auto cellNr = xi * pNumY + yi;
 			firstCellParticle[cellNr]--;
 			cellParticleIds[firstCellParticle[cellNr]] = i;
@@ -206,7 +203,7 @@ struct FlipFluid
 		}
 	}
 
-	void handleParticleCollisions(int obstacleX, int obstacleY, int obstacleRadius)
+	void handleParticleCollisions(int obstacleX, int obstacleY, float obstacleRadius)
 	{
 		auto h         = 1.0 / fInvSpacing;
 		auto r        = particleRadius;
@@ -280,13 +277,13 @@ struct FlipFluid
 			x = std::clamp(x, h, (fNumX - 1) * h);
 			y = std::clamp(y, h, (fNumY - 1) * h);
 
-			auto x0 = (int)floor((x - h2) * h1);
+			auto x0 = floor((x - h2) * h1);
 			auto tx = ((x - h2) - x0 * h) * h1;
-			auto x1 = std::min(x0 + 1, fNumX - 2);
+			auto x1 = std::min(x0 + 1, (float)fNumX - 2);
 
-			auto y0 = (int)floor((y - h2) * h1);
+			auto y0 = floor((y - h2) * h1);
 			auto ty = ((y - h2) - y0 * h) * h1;
-			auto y1 = std::min(y0 + 1, fNumY - 2);
+			auto y1 = std::min(y0 + 1, (float)fNumY - 2);
 
 			auto sx = 1.0 - tx;
 			auto sy = 1.0 - ty;
@@ -356,8 +353,8 @@ struct FlipFluid
 			for (auto i = 0; i < numParticles; i++) {
 				auto x      = particlePos[2 * i];
 				auto y      = particlePos[2 * i + 1];
-				auto xi     = std::clamp((int)floor(x * h1), 0, fNumX - 1);
-				auto yi     = std::clamp((int)floor(y * h1), 0, fNumY - 1);
+				auto xi     = std::clamp(floor(x * h1), 0.0f, (float)fNumX - 1);
+				auto yi     = std::clamp(floor(y * h1), 0.0f, (float)fNumY - 1);
 				auto cellNr = xi * n + yi;
 				if (cellType[cellNr] == constants::AIR_CELL)
 					cellType[cellNr] = constants::FLUID_CELL;
@@ -365,8 +362,8 @@ struct FlipFluid
 		}
 
 		for (auto component = 0; component < 2; component++) {
-			auto dx = component == 0 ? 0.0 : h2;
-			auto dy = component == 0 ? h2 : 0.0;
+			auto dx = component == 0 ? 0.0f : h2;
+			auto dy = component == 0 ? h2 : 0.0f;
 
 			std::vector<float> f = component == 0 ? u : v;
 			std::vector<float> prevF = component == 0 ? prevU : prevV;
@@ -379,13 +376,13 @@ struct FlipFluid
 				x = std::clamp(x, h, (fNumX - 1) * h);
 				y = std::clamp(y, h, (fNumY - 1) * h);
 
-				auto x0 = std::min((int)floor((x - dx) * h1), fNumX - 2);
+				auto x0 = std::min(floor((x - dx) * h1), (float)fNumX - 2);
 				auto tx = ((x - dx) - x0 * h) * h1;
-				auto x1 = std::min(x0 + 1, fNumX - 2);
+				auto x1 = std::min(x0 + 1, (float)fNumX - 2);
 
-				auto y0 = std::min((int)floor((y - dy) * h1), fNumY - 2);
+				auto y0 = std::min(floor((y - dy) * h1), (float)fNumY - 2);
 				auto ty = ((y - dy) - y0 * h) * h1;
-				auto y1 = std::min(y0 + 1, fNumY - 2);
+				auto y1 = std::min(y0 + 1, (float)fNumY - 2);
 
 				auto sx = 1.0 - tx;
 				auto sy = 1.0 - ty;
@@ -532,8 +529,8 @@ struct FlipFluid
 
 			auto x      = particlePos[2 * i];
 			auto y      = particlePos[2 * i + 1];
-			auto xi     = std::clamp((int)floor(x * h1), 1, fNumX - 1);
-			auto yi     = std::clamp((int)floor(y * h1), 1, fNumY - 1);
+			auto xi     = std::clamp(floor(x * h1), 1.0f, (float)fNumX - 1);
+			auto yi     = std::clamp(floor(y * h1), 1.0f, (float)fNumY - 1);
 			auto cellNr = xi * fNumY + yi;
 
 			auto d0 = particleRestDensity;
@@ -616,7 +613,7 @@ struct FlipFluid
 	    bool separateParticles,
 	    int obstacleX,
 	    int obstacleY,
-	    int obstacleRadius)
+	    float obstacleRadius)
 	{
 		auto numSubSteps = 1;
 		auto sdt         = dt / numSubSteps;
