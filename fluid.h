@@ -13,9 +13,9 @@
 namespace constants {
 constexpr int maxwidth { 500 };
 constexpr int maxheight { 250 };
-constexpr int simheight { 250 };
-const float scale { maxheight / simheight };
-const float simwidth { maxwidth / scale };
+constexpr float simheight { 250 };
+const float scale { 1 };
+const float simwidth { (float)maxwidth / scale };
 
 constexpr int U_FIELD = 0;
 constexpr int V_FIELD = 1;
@@ -87,7 +87,7 @@ struct FlipFluid
 	    cellParticleIds(maxParticles),
 	    numParticles(0)
 	{
-		h = std::max(width / fNumX, height / fNumY);
+		h           = std::max(width / (float)fNumX, height / (float)fNumY);
 		fInvSpacing = 1.0 / h;
 		//set default color to blue
 		for (auto i = 0; i < maxParticles; i++)
@@ -105,7 +105,7 @@ struct FlipFluid
 
 	void pushParticlesApart(int numIters)
 	{
-		auto colorDiffusionCoeff = 0.001;
+		auto colorDiffusionCoeff = 0.001f;
 
 		// count particles per cell
 
@@ -267,7 +267,7 @@ struct FlipFluid
 		float h2 = 0.5 * h;
 
 
-		std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
+		std::fill(particleDensity.begin(), particleDensity.end(), 0.0f);
 
 
 		for (auto i = 0; i < numParticles; i++) {
@@ -342,10 +342,10 @@ struct FlipFluid
 			prevU = u;
 			prevV = v;
 
-			std::fill(du.begin(), du.end(), 0.0);
-			std::fill(dv.begin(), dv.end(), 0.0);
-			std::fill(u.begin(), u.end(), 0.0);
-			std::fill(v.begin(), v.end(), 0.0);
+			std::fill(du.begin(), du.end(), 0.0f);
+			std::fill(dv.begin(), dv.end(), 0.0f);
+			std::fill(u.begin(), u.end(), 0.0f);
+			std::fill(v.begin(), v.end(), 0.0f);
 
 			for (auto i = 0; i < fNumCells; i++)
 				cellType[i] = s[i] == 0.0 ? constants::SOLID_CELL : constants::AIR_CELL;
@@ -452,7 +452,7 @@ struct FlipFluid
 
 	void solveIncompressibility(int numIters, float dt, float overRelaxation, bool compensateDrift = true)
 	{
-		std::fill(p.begin(), p.end(), 0.0);
+		std::fill(p.begin(), p.end(), 0.0f);
 		prevU = u;
 		prevV = v;
 
@@ -521,11 +521,11 @@ struct FlipFluid
 		auto h1 = fInvSpacing;
 
 		for (auto i = 0; i < numParticles; i++) {
-			auto s = 0.01;
+			auto s = 0.01f;
 
-			particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0, 1.0);
-			particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0, 1.0);
-			particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0, 1.0);
+			particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0f, 1.0f);
+			particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0f, 1.0f);
+			particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0f, 1.0f);
 
 			auto x      = particlePos[2 * i];
 			auto y      = particlePos[2 * i + 1];
@@ -538,10 +538,10 @@ struct FlipFluid
 			if (d0 > 0.0) {
 				auto relDensity = particleDensity[cellNr] / d0;
 				if (relDensity < 0.7) {
-					auto s = 0.8;
+					auto s = 0.8f;
 					particleColor[3 * i]     = s;
 					particleColor[3 * i + 1] = s;
-					particleColor[3 * i + 2] = 1.0;
+					particleColor[3 * i + 2] = 1.0f;
 				}
 			}
 		}
@@ -551,32 +551,32 @@ struct FlipFluid
 	{
 		val     = std::min(std::max(val, minVal), maxVal - 0.0001f);
 		auto d   = maxVal - minVal;
-		val     = d == 0.0 ? 0.5 : (val - minVal) / d;
-		float m   = 0.25;
+		val     = d == 0.0f ? 0.5f : (val - minVal) / d;
+		float m   = 0.25f;
 		int num = floor(val / m);
 		float s   = (val - num * m) / m;
 		float r, g, b;
 
 		switch (num) {
 			case 0:
-				r = 0.0;
+				r = 0.0f;
 				g = s;
-				b = 1.0;
+				b = 1.0f;
 				break;
 			case 1:
-				r = 0.0;
-				g = 1.0;
-				b = 1.0 - s;
+				r = 0.0f;
+				g = 1.0f;
+				b = 1.0f - s;
 				break;
 			case 2:
 				r = s;
-				g = 1.0;
-				b = 0.0;
+				g = 1.0f;
+				b = 0.0f;
 				break;
 			case 3:
-				r = 1.0;
-				g = 1.0 - s;
-				b = 0.0;
+				r = 1.0f;
+				g = 1.0f - s;
+				b = 0.0f;
 				break;
 		}
 
@@ -587,18 +587,18 @@ struct FlipFluid
 
 	void updateCellColors()
 	{
-		std::fill(cellColor.begin(), cellColor.end(), 0.5);
+		std::fill(cellColor.begin(), cellColor.end(), 0.5f);
 
 		for (auto i = 0; i < fNumCells; i++) {
 			if (cellType[i] == constants::SOLID_CELL) {
-				cellColor[3 * i]     = 0.5;
-				cellColor[3 * i + 1] = 0.5;
-				cellColor[3 * i + 2] = 0.5;
+				cellColor[3 * i]     = 0.5f;
+				cellColor[3 * i + 1] = 0.5f;
+				cellColor[3 * i + 2] = 0.5f;
 			} else if (cellType[i] == constants::FLUID_CELL) {
 				auto d = particleDensity[i];
-				if (particleRestDensity > 0.0)
+				if (particleRestDensity > 0.0f)
 					d /= particleRestDensity;
-				setSciColor(i, d, 0.0, 2.0);
+				setSciColor(i, d, 0.0f, 2.0f);
 			}
 		}
 	}

@@ -19,20 +19,20 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_frameNr(0), m_paused(true)
 	m_scene = new QGraphicsScene(this);
 
 	ui->m_graphView->setScene(m_scene);
-
+	ui->m_graphView->scale(1, -1);	// invert Y axis
 }
 
 void fluid::setupScene()
 {
-	float res = 50;
+	float res = 25;
 
 	float tankHeight = 1.0 * constants::simheight;
 	float tankWidth  = 1.0 * constants::simwidth;
 	float h          = tankHeight / res;
-	float density    = 1000.0;
+	float density    = 1000.0f;
 
-	float relWaterHeight = 0.8;
-	float relWaterWidth  = 0.6;
+	float relWaterHeight = 0.8f;
+	float relWaterWidth  = 0.6f;
 
 	    // dam break
 
@@ -40,10 +40,10 @@ void fluid::setupScene()
 
 	float r = 0.5 * h; // particle radius w.r.t. cell size
 	float dx    = 2.0 * r;
-	float dy    = sqrt(3.0) / 2.0 * dx;
+	float dy    = sqrt(3.0f) / 2.0f * dx;
 
-	float numX         = floor((relWaterWidth * tankWidth - 2.0 * h - 2.0 * r) / dx);
-	float numY         = floor((relWaterHeight * tankHeight - 2.0 * h - 2.0 * r) / dy);
+	float numX         = floor((relWaterWidth * tankWidth - 2.0f * h - 2.0f * r) / dx);
+	float numY         = floor((relWaterHeight * tankHeight - 2.0f * h - 2.0f * r) / dy);
 	float maxParticles = numX * numY;
 
 	// create fluid
@@ -56,7 +56,7 @@ void fluid::setupScene()
 	int p = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0f : r);
 			m_f.particlePos[p++] = h + r + dy * j;
 		}
 	}
@@ -67,9 +67,9 @@ void fluid::setupScene()
 
 	for (int i = 0; i < m_f.fNumX; i++) {
 		for (int j = 0; j < m_f.fNumY; j++) {
-			float s = 1.0; // fluid
+			float s = 1.0f; // fluid
 			if (i == 0 || i == m_f.fNumX - 1 || j == 0)
-				s = 0.0; // solid
+				s = 0.0f; // solid
 			m_f.s[i * n + j] = s;
 		}
 	}
@@ -79,11 +79,13 @@ void fluid::setupScene()
 	int nbGridItems = m_f.fNumX * m_f.fNumY;
 	m_gridItems.reserve(nbGridItems);
 	 if (constants::showGrid) {
-	 auto pointSize = 0.9 * h / constants::simwidth * ui->m_graphView->width();
+		auto gridPen   = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect((i + 0.5) * 10,
-				    (j + 0.5) * 10, 10, 10, QPen(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])), Qt::SolidPattern));
+				m_gridItems.push_back(m_scene->addRect(i * h,
+				    j * h, h, h,
+				    gridPen,
+				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2]))));
 			}
 		}
 	}
@@ -91,11 +93,12 @@ void fluid::setupScene()
 	//setup particles of water
 	m_particleItems.reserve(m_f.numParticles);
 	auto r2 = r * 2;
-	auto pointSize = 2.0 * m_f.particleRadius / constants::simwidth * ui->m_graphView->width();
 	 if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
-			auto particlePen = QPen(QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]));
-			m_particleItems.push_back(m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], 10, 10, particlePen, Qt::SolidPattern));
+			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
+			m_particleItems.push_back(m_scene->addEllipse(m_f.particlePos[2 * i],
+			    m_f.particlePos[2 * i + 1],
+			    r2, r2, QPen(particleColor), QBrush(particleColor)));
 		}
 	}
 
@@ -166,25 +169,24 @@ void fluid::draw() {
 	 if (constants::showGrid) {
 		for (auto i = 0; i < m_f.fNumCells; i++) {
 				m_gridItems[i]->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
-				}
+			}
 		}
 	
 
 	//particles
 
 	 //setup particles of water
-	 //auto pointSize = 2.0 * m_f.particleRadius / constants::simwidth * ui->m_graphView->width();
 	 m_particleItems.reserve(m_f.numParticles);
 	 if (constants::showParticles) {
 		 for (auto i = 0; i < m_f.numParticles; i++) {
-			 auto particlePen = QPen(QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]));
+			 auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			 m_particleItems.at(i)->setPos(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1]);
-			 m_particleItems.at(i)->setPen(particlePen);
+			 m_particleItems.at(i)->setBrush(QBrush(particleColor));
+			 m_particleItems.at(i)->setPen(QPen(particleColor));
 		 }
 	 }
 
 	 // obstacle
-
 
 }
 
