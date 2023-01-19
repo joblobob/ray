@@ -177,6 +177,9 @@
      </item>
     </layout>
    </item>
+   <item row="7" column="0">
+    <widget class="QGraphicsView" name="m_graphView"/>
+   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
@@ -184,7 +187,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
+   <item row="8" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -194,15 +197,26 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
-    <widget class="QPushButton" name="pauseBtn">
-     <property name="text">
-      <string>Start / Stop</string>
+   <item row="4" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="topMargin">
+      <number>0</number>
      </property>
-    </widget>
-   </item>
-   <item row="6" column="0">
-    <widget class="QGraphicsView" name="m_graphView"/>
+     <item>
+      <widget class="QPushButton" name="pauseBtn">
+       <property name="text">
+        <string>Start / Stop</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="resetBtn">
+       <property name="text">
+        <string>Reset</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

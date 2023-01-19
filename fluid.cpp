@@ -24,6 +24,10 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_frameNr(0), m_paused(true)
 
 void fluid::setupScene()
 {
+	m_scene->clear();
+	m_particleItems.clear();
+	m_gridItems.clear();
+
 	float res = 25;
 
 	float tankHeight = 1.0 * constants::simheight;
@@ -81,12 +85,8 @@ void fluid::setupScene()
 		auto gridPen = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect(i * r2,
-				    j * r2,
-				    r2,
-				    r2,
-				    gridPen,
-				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
+				m_gridItems.push_back(m_scene->addRect(
+				    i * h, j * h, h, h, gridPen, QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
 			}
 		}
 	}
@@ -98,7 +98,7 @@ void fluid::setupScene()
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(
-			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r4, r4, QPen(particleColor), QBrush(particleColor)));
+			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r, r, QPen(particleColor), QBrush(particleColor)));
 		}
 	}
 
@@ -191,7 +191,6 @@ void fluid::draw()
 	}
 
 	// obstacle
-	
 }
 
 void fluid::requestAnimationFrame() {}
@@ -205,7 +204,7 @@ void fluid::update()
 	setupObstacle(m_obstacleItem->x(), m_obstacleItem->y(), false);
 
 	//while (timer.elapsed() < 16.666f)
-		simulate();
+	simulate();
 	draw();
 
 
@@ -219,6 +218,19 @@ void fluid::update()
 	ui->dsBox7->setValue(m_f.h);
 	ui->dsBox8->setValue(m_obstacleX);
 	ui->dsBox9->setValue(m_obstacleY);
+	ui->dsBox10->setValue(m_f.fNumX);
+	ui->dsBox11->setValue(m_f.fNumY);
+
+	auto h = 1.0 / m_f.fInvSpacing;
+	auto r = m_f.particleRadius;
+
+	auto minX = h + r;
+	auto maxX = (m_f.fNumX - 1) * h - r;
+	auto minY = h + r;
+	auto maxY = (m_f.fNumY - 1) * h - r;
+
+	ui->dsBox12->setValue(maxY);
+
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms
