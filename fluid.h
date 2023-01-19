@@ -27,10 +27,10 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr float obstacleRadius = 0.15;
+constexpr float obstacleRadius = 150;
 constexpr float overRelaxation  = 1.9;
 
-constexpr float dt      = 1.0 / 60.0;
+constexpr float dt      = 1.0 / 60.0f;
 constexpr float numPressureIters = 50;
 constexpr float numParticleIters  = 2;
 
@@ -670,6 +670,7 @@ private:
 	QGraphicsPixmapItem* m_sceneItem;
 	std::vector<QGraphicsRectItem*> m_gridItems;
 	std::vector<QGraphicsEllipseItem*> m_particleItems;
+	QGraphicsEllipseItem* m_obstacleItem;
 
 	int m_frameNr;
 	float m_obstacleX;

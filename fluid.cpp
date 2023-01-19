@@ -73,7 +73,7 @@ void fluid::setupScene()
 			m_f.s[i * n + j] = s;
 		}
 	}
-
+	auto r2 = r * 2;
 	//setup grid
 	int nbGridItems = m_f.fNumX * m_f.fNumY;
 	m_gridItems.reserve(nbGridItems);
@@ -81,24 +81,30 @@ void fluid::setupScene()
 		auto gridPen = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect(
-				    i * h, j * h, h, h, gridPen, QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
+				m_gridItems.push_back(m_scene->addRect(i * r2,
+				    j * r2,
+				    r2,
+				    r2,
+				    gridPen,
+				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
 			}
 		}
 	}
 
 	//setup particles of water
+	auto r4 = r * 2;
 	m_particleItems.reserve(m_f.numParticles);
-	auto r2 = r * 2;
 	if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(
-			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r2, r2, QPen(particleColor), QBrush(particleColor)));
+			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r4, r4, QPen(particleColor), QBrush(particleColor)));
 		}
 	}
 
 	setupObstacle(3.0, 2.0, true);
+	m_obstacleItem = m_scene->addEllipse(m_obstacleX, m_obstacleY, constants::obstacleRadius, constants::obstacleRadius, QPen(Qt::red), QBrush(Qt::red));
+	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 }
 
 void fluid::setupObstacle(int x, int y, bool reset)
@@ -107,8 +113,8 @@ void fluid::setupObstacle(int x, int y, bool reset)
 	float vy = 0.0;
 
 	if (!reset) {
-		vx = (x - m_obstacleX) / m_scenedt;
-		vy = (y - m_obstacleY) / m_scenedt;
+		vx = (x - m_obstacleX) / constants::dt;
+		vy = (y - m_obstacleY) / constants::dt;
 	}
 
 	m_obstacleX = x;
@@ -185,6 +191,7 @@ void fluid::draw()
 	}
 
 	// obstacle
+	
 }
 
 void fluid::requestAnimationFrame() {}
@@ -195,7 +202,10 @@ void fluid::update()
 	QElapsedTimer timer;
 	timer.start();
 
-	simulate();
+	setupObstacle(m_obstacleItem->x(), m_obstacleItem->y(), false);
+
+	//while (timer.elapsed() < 16.666f)
+		simulate();
 	draw();
 
 
@@ -207,6 +217,8 @@ void fluid::update()
 	ui->dsBox5->setValue(constants::simwidth);
 	//ui->dsBox6->setValue(res);
 	ui->dsBox7->setValue(m_f.h);
+	ui->dsBox8->setValue(m_obstacleX);
+	ui->dsBox9->setValue(m_obstacleY);
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms

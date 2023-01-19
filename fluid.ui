@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
-    <height>493</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,7 +113,7 @@
      <item row="1" column="1">
       <widget class="QDoubleSpinBox" name="dsBox8">
        <property name="prefix">
-        <string>setup r </string>
+        <string>setup obsX </string>
        </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
@@ -126,7 +126,7 @@
      <item row="1" column="2">
       <widget class="QDoubleSpinBox" name="dsBox9">
        <property name="prefix">
-        <string>maxParticles </string>
+        <string>setup obsY </string>
        </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
