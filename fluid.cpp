@@ -85,8 +85,12 @@ void fluid::setupScene()
 		auto gridPen = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect(
-				    i * h, j * h, h, h, gridPen, QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
+				m_gridItems.push_back(m_scene->addRect(i * h * 2,
+				    j * h * 2,
+				    h * 2,
+				    h * 2,
+				    gridPen,
+				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
 			}
 		}
 	}
@@ -98,7 +102,7 @@ void fluid::setupScene()
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(
-			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r, r, QPen(particleColor), QBrush(particleColor)));
+			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r2, r2, QPen(particleColor), QBrush(particleColor)));
 		}
 	}
 

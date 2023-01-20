@@ -11,9 +11,9 @@
 
 
 namespace constants {
-constexpr int maxwidth { 500 };
-constexpr int maxheight { 500 };
-constexpr float simheight { 250 };
+constexpr int maxwidth { 300 };
+//constexpr int maxheight { 200 };
+constexpr float simheight { 200 };
 inline float scale { 1 };
 inline float simwidth { (float)maxwidth / scale };
 
