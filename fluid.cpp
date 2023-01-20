@@ -28,7 +28,7 @@ void fluid::setupScene()
 	m_particleItems.clear();
 	m_gridItems.clear();
 
-	float res = 25;
+	float res = 50;
 
 	float tankHeight = 1.0 * constants::simheight;
 	float tankWidth  = 1.0 * constants::simwidth;
@@ -77,6 +77,16 @@ void fluid::setupScene()
 			m_f.s[i * n + j] = s;
 		}
 	}
+
+	float hautre = 1.0 / m_f.fInvSpacing;
+	auto rautre  = m_f.particleRadius;
+
+	auto minX      = hautre + rautre;
+	auto maxX      = (m_f.fNumX - 1) * hautre - rautre;
+	auto minY      = hautre + rautre;
+	auto maxY      = (m_f.fNumY - 1) * hautre - rautre;
+	float sizeRect = 2.0f * maxX / m_f.fNumX - (rautre * 0.5f);
+
 	auto r2 = r * 2;
 	//setup grid
 	int nbGridItems = m_f.fNumX * m_f.fNumY;
@@ -85,10 +95,10 @@ void fluid::setupScene()
 		auto gridPen = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
-				m_gridItems.push_back(m_scene->addRect(i * h * 2,
-				    j * h * 2,
-				    h * 2,
-				    h * 2,
+				m_gridItems.push_back(m_scene->addRect(i * sizeRect,
+				    j * sizeRect,
+				    sizeRect,
+				    sizeRect,
 				    gridPen,
 				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2]))));
 			}
@@ -222,8 +232,8 @@ void fluid::update()
 	ui->dsBox7->setValue(m_f.h);
 	ui->dsBox8->setValue(m_obstacleX);
 	ui->dsBox9->setValue(m_obstacleY);
-	ui->dsBox10->setValue(m_f.fNumX);
-	ui->dsBox11->setValue(m_f.fNumY);
+	ui->dsBox10->setValue(m_f.fNumY);
+	ui->dsBox11->setValue(m_f.pNumY);
 
 	auto h = 1.0 / m_f.fInvSpacing;
 	auto r = m_f.particleRadius;

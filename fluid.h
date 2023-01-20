@@ -13,7 +13,7 @@
 namespace constants {
 constexpr int maxwidth { 300 };
 //constexpr int maxheight { 200 };
-constexpr float simheight { 200 };
+constexpr float simheight { 300 };
 inline float scale { 1 };
 inline float simwidth { (float)maxwidth / scale };
 
@@ -27,7 +27,7 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr float obstacleRadius = 75;
+constexpr float obstacleRadius = 50;
 constexpr float overRelaxation = 1.9;
 
 constexpr float dt               = 1.0 / 60.0f;
