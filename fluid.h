@@ -3,6 +3,7 @@
 
 #include "qelapsedtimer.h"
 
+#include <QDebug>
 #include <QDialog>
 #include <QFile>
 #include <QGraphicsPixmapItem>
@@ -11,11 +12,11 @@
 
 
 namespace constants {
-constexpr int maxwidth { 300 };
+constexpr int maxwidth { 400 };
 //constexpr int maxheight { 200 };
-constexpr float simheight { 300 };
+constexpr float simheight { 400.0f };
 inline float scale { 1 };
-inline float simwidth { (float)maxwidth / scale };
+inline float simwidth { 400.0f };
 
 constexpr int U_FIELD = 0;
 constexpr int V_FIELD = 1;
@@ -27,7 +28,7 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr float obstacleRadius = 50;
+constexpr float obstacleRadius = (float)maxwidth * 0.15f;
 constexpr float overRelaxation = 1.9;
 
 constexpr float dt               = 1.0 / 60.0f;
@@ -84,7 +85,7 @@ struct FlipFluid {
 	    particleColor(3 * maxParticles),
 	    particleVel(2 * maxParticles),
 	    particleDensity(fNumCells),
-	    particleRestDensity(0.0),
+	    particleRestDensity(0.0f),
 	    pInvSpacing(1.0 / (2.2 * particleRadius)),
 	    pNumX(floor(width * pInvSpacing) + 1),
 	    pNumY(floor(height * pInvSpacing) + 1),
@@ -95,7 +96,9 @@ struct FlipFluid {
 	    numParticles(0)
 	{
 		h           = std::max(width / (float)fNumX, height / (float)fNumY);
-		fInvSpacing = 1.0 / h;
+		fInvSpacing = 1.0f / h;
+
+		qCritical() << density << fNumX << fNumY << fNumCells << particleRadius << maxParticles << pInvSpacing << pNumX << pNumY << pNumCells;
 		//set default color to blue
 		for (auto i = 0; i < maxParticles; i++)
 			particleColor[3 * i + 2] = 1.0;
@@ -594,7 +597,7 @@ struct FlipFluid {
 
 	void updateCellColors()
 	{
-		std::fill(cellColor.begin(), cellColor.end(), 0.5f);
+		std::fill(cellColor.begin(), cellColor.end(), 0.0f);
 
 		for (auto i = 0; i < fNumCells; i++) {
 			if (cellType[i] == constants::SOLID_CELL) {
