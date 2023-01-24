@@ -194,7 +194,8 @@ void fluid::draw()
 	if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - m_f.h * 2.0f, m_f.particlePos[2 * i + 1] - m_f.h * 2.0f);
+
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1]);
 			m_particleItems.at(i)->setBrush(QBrush(particleColor));
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
@@ -211,7 +212,7 @@ void fluid::update()
 	QElapsedTimer timer;
 	timer.start();
 
-	setupObstacle(m_obstacleItem->x() + (constants::obstacleRadius / 2.0f), m_obstacleItem->y() + (constants::obstacleRadius / 2.0f), false);
+	setupObstacle(m_obstacleItem->x() + constants::obstacleRadius, m_obstacleItem->y() + constants::obstacleRadius, false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
