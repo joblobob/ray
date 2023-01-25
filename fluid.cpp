@@ -106,8 +106,8 @@ void fluid::setupScene()
 	if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-			m_particleItems.push_back(
-			    m_scene->addEllipse(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1], r2, r2, QPen(particleColor), QBrush(particleColor)));
+			m_particleItems.push_back(m_scene->addEllipse(0.0f, 0.0f, r2, r2, QPen(particleColor), QBrush(particleColor)));
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i], m_f.particlePos[2 * i + 1]);
 		}
 	}
 
