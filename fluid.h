@@ -12,11 +12,11 @@
 
 
 namespace constants {
-constexpr int maxwidth { 400 };
+constexpr int maxwidth { 500 };
 //constexpr int maxheight { 200 };
-constexpr float simheight { 400.0f };
-inline float scale { 1 };
-inline float simwidth { 400.0f };
+constexpr double simheight { 500.0 };
+inline double scale { 1 };
+inline double simwidth { 500.0 };
 
 constexpr int U_FIELD = 0;
 constexpr int V_FIELD = 1;
@@ -28,41 +28,41 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr float obstacleRadius = (float)maxwidth * 0.15f;
-constexpr float overRelaxation = 1.9;
+constexpr double obstacleRadius = (double)maxwidth * 0.05;
+constexpr double overRelaxation = 1.9;
 
-constexpr float dt               = 1.0 / 60.0f;
-constexpr float numPressureIters = 50;
-constexpr float numParticleIters = 2;
+constexpr double dt               = 1.0 / 60.0;
+constexpr double numPressureIters = 100;
+constexpr double numParticleIters = 2;
 
-constexpr float gravity = -9.81;
-//constexpr float dt : 1.0 / 120.0,
-constexpr float flipRatio        = 0.9;
+constexpr double gravity = -9.81;
+//constexpr double dt : 1.0 / 120.0,
+constexpr double flipRatio       = 0.9;
 constexpr bool compensateDrift   = true;
 constexpr bool separateParticles = true;
 constexpr bool paused            = false;
 constexpr bool showObstacle      = true;
-constexpr float obstacleVelX     = 0.0;
-constexpr float obstacleVelY     = 0.0;
+constexpr double obstacleVelX    = 0.0;
+constexpr double obstacleVelY    = 0.0;
 constexpr bool showParticles     = true;
 constexpr bool showGrid          = true;
 
 } // namespace constants
 
 namespace {
-float ggobstacleVelX = 0.0;
-float ggobstacleVelY = 0.0;
+double ggobstacleVelX = 0.0;
+double ggobstacleVelY = 0.0;
 } // namespace
 
 
 struct FlipFluid {
-	float density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h;
+	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
-	std::vector<float> u, v, du, dv, prevU, prevV, p, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
+	std::vector<double> u, v, du, dv, prevU, prevV, p, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
 	std::vector<int> cellType, numCellParticles, firstCellParticle, cellParticleIds;
 
 	FlipFluid() = default;
-	FlipFluid(float density, float width, float height, float spacing, float particleRadius, int maxParticles) :
+	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
 	    density(density),
 	    fNumX(floor(width / spacing) + 1),
 	    fNumY(floor(height / spacing) + 1),
@@ -85,7 +85,7 @@ struct FlipFluid {
 	    particleColor(3 * maxParticles),
 	    particleVel(2 * maxParticles),
 	    particleDensity(fNumCells),
-	    particleRestDensity(0.0f),
+	    particleRestDensity(0.0),
 	    pInvSpacing(1.0 / (2.2 * particleRadius)),
 	    pNumX(floor(width * pInvSpacing) + 1),
 	    pNumY(floor(height * pInvSpacing) + 1),
@@ -95,8 +95,8 @@ struct FlipFluid {
 	    cellParticleIds(maxParticles),
 	    numParticles(0)
 	{
-		h           = std::max(width / (float)fNumX, height / (float)fNumY);
-		fInvSpacing = 1.0f / h;
+		h           = std::max(width / (double)fNumX, height / (double)fNumY);
+		fInvSpacing = 1.0 / h;
 
 		qCritical() << density << fNumX << fNumY << fNumCells << particleRadius << maxParticles << pInvSpacing << pNumX << pNumY << pNumCells;
 		//set default color to blue
@@ -104,7 +104,7 @@ struct FlipFluid {
 			particleColor[3 * i + 2] = 1.0;
 	}
 
-	void integrateParticles(float dt, float gravity)
+	void integrateParticles(double dt, double gravity)
 	{
 		for (auto i = 0; i < numParticles; i++) {
 			particleVel[2 * i + 1] += dt * gravity;
@@ -115,7 +115,7 @@ struct FlipFluid {
 
 	void pushParticlesApart(int numIters)
 	{
-		auto colorDiffusionCoeff = 0.001f;
+		auto colorDiffusionCoeff = 0.001;
 
 		// count particles per cell
 
@@ -125,8 +125,8 @@ struct FlipFluid {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0f, (float)pNumX - 1);
-			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0f, (float)pNumY - 1);
+			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0, (double)pNumX - 1);
+			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0, (double)pNumY - 1);
 			auto cellNr = xi * pNumY + yi;
 			numCellParticles[cellNr]++;
 		}
@@ -147,8 +147,8 @@ struct FlipFluid {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0f, (float)pNumX - 1);
-			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0f, (float)pNumY - 1);
+			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0, (double)pNumX - 1);
+			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0, (double)pNumY - 1);
 			auto cellNr = xi * pNumY + yi;
 			firstCellParticle[cellNr]--;
 			cellParticleIds[firstCellParticle[cellNr]] = i;
@@ -213,11 +213,10 @@ struct FlipFluid {
 		}
 	}
 
-	void handleParticleCollisions(int obstacleX, int obstacleY, float obstacleRadius)
+	void handleParticleCollisions(int obstacleX, int obstacleY, double obstacleRadius)
 	{
 		auto h        = 1.0 / fInvSpacing;
 		auto r        = particleRadius;
-		auto or2      = obstacleRadius * obstacleRadius;
 		auto minDist  = obstacleRadius + r;
 		auto minDist2 = minDist * minDist;
 
@@ -272,12 +271,12 @@ struct FlipFluid {
 
 	void updateParticleDensity()
 	{
-		auto n   = fNumY;
-		auto h1  = fInvSpacing;
-		float h2 = 0.5 * h;
+		auto n    = fNumY;
+		auto h1   = fInvSpacing;
+		double h2 = 0.5 * h;
 
 
-		std::fill(particleDensity.begin(), particleDensity.end(), 0.0f);
+		std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
 
 
 		for (auto i = 0; i < numParticles; i++) {
@@ -289,11 +288,11 @@ struct FlipFluid {
 
 			auto x0 = floor((x - h2) * h1);
 			auto tx = ((x - h2) - x0 * h) * h1;
-			auto x1 = std::min(x0 + 1, (float)fNumX - 2);
+			auto x1 = std::min(x0 + 1, (double)fNumX - 2);
 
 			auto y0 = floor((y - h2) * h1);
 			auto ty = ((y - h2) - y0 * h) * h1;
-			auto y1 = std::min(y0 + 1, (float)fNumY - 2);
+			auto y1 = std::min(y0 + 1, (double)fNumY - 2);
 
 			auto sx = 1.0 - tx;
 			auto sy = 1.0 - ty;
@@ -342,20 +341,20 @@ struct FlipFluid {
 		// 			}
 	}
 
-	void transferVelocities(bool toGrid, float flipRatio)
+	void transferVelocities(bool toGrid, double flipRatio)
 	{
-		auto n   = fNumY;
-		auto h1  = fInvSpacing;
-		float h2 = 0.5 * h;
+		auto n    = fNumY;
+		auto h1   = fInvSpacing;
+		double h2 = 0.5 * h;
 
 		if (toGrid) {
 			prevU = u;
 			prevV = v;
 
-			std::fill(du.begin(), du.end(), 0.0f);
-			std::fill(dv.begin(), dv.end(), 0.0f);
-			std::fill(u.begin(), u.end(), 0.0f);
-			std::fill(v.begin(), v.end(), 0.0f);
+			std::fill(du.begin(), du.end(), 0.0);
+			std::fill(dv.begin(), dv.end(), 0.0);
+			std::fill(u.begin(), u.end(), 0.0);
+			std::fill(v.begin(), v.end(), 0.0);
 
 			for (auto i = 0; i < fNumCells; i++)
 				cellType[i] = s[i] == 0.0 ? constants::SOLID_CELL : constants::AIR_CELL;
@@ -363,8 +362,8 @@ struct FlipFluid {
 			for (auto i = 0; i < numParticles; i++) {
 				auto x      = particlePos[2 * i];
 				auto y      = particlePos[2 * i + 1];
-				auto xi     = std::clamp(floor(x * h1), 0.0f, (float)fNumX - 1);
-				auto yi     = std::clamp(floor(y * h1), 0.0f, (float)fNumY - 1);
+				auto xi     = std::clamp(floor(x * h1), 0.0, (double)fNumX - 1);
+				auto yi     = std::clamp(floor(y * h1), 0.0, (double)fNumY - 1);
 				auto cellNr = xi * n + yi;
 				if (cellType[cellNr] == constants::AIR_CELL)
 					cellType[cellNr] = constants::FLUID_CELL;
@@ -372,12 +371,12 @@ struct FlipFluid {
 		}
 
 		for (auto component = 0; component < 2; component++) {
-			auto dx = component == 0 ? 0.0f : h2;
-			auto dy = component == 0 ? h2 : 0.0f;
+			auto dx = component == 0 ? 0.0 : h2;
+			auto dy = component == 0 ? h2 : 0.0;
 
-			std::vector<float> f     = component == 0 ? u : v;
-			std::vector<float> prevF = component == 0 ? prevU : prevV;
-			std::vector<float> d     = component == 0 ? du : dv;
+			std::vector<double> f     = component == 0 ? u : v;
+			std::vector<double> prevF = component == 0 ? prevU : prevV;
+			std::vector<double> d     = component == 0 ? du : dv;
 
 			for (auto i = 0; i < numParticles; i++) {
 				auto x = particlePos[2 * i];
@@ -386,13 +385,13 @@ struct FlipFluid {
 				x = std::clamp(x, h, (fNumX - 1) * h);
 				y = std::clamp(y, h, (fNumY - 1) * h);
 
-				auto x0 = std::min(floor((x - dx) * h1), (float)fNumX - 2);
+				auto x0 = std::min(floor((x - dx) * h1), (double)fNumX - 2);
 				auto tx = ((x - dx) - x0 * h) * h1;
-				auto x1 = std::min(x0 + 1, (float)fNumX - 2);
+				auto x1 = std::min(x0 + 1, (double)fNumX - 2);
 
-				auto y0 = std::min(floor((y - dy) * h1), (float)fNumY - 2);
+				auto y0 = std::min(floor((y - dy) * h1), (double)fNumY - 2);
 				auto ty = ((y - dy) - y0 * h) * h1;
-				auto y1 = std::min(y0 + 1, (float)fNumY - 2);
+				auto y1 = std::min(y0 + 1, (double)fNumY - 2);
 
 				auto sx = 1.0 - tx;
 				auto sy = 1.0 - ty;
@@ -460,9 +459,9 @@ struct FlipFluid {
 		}
 	}
 
-	void solveIncompressibility(int numIters, float dt, float overRelaxation, bool compensateDrift = true)
+	void solveIncompressibility(int numIters, double dt, double overRelaxation, bool compensateDrift = true)
 	{
-		std::fill(p.begin(), p.end(), 0.0f);
+		std::fill(p.begin(), p.end(), 0.0);
 		prevU = u;
 		prevV = v;
 
@@ -531,16 +530,16 @@ struct FlipFluid {
 		auto h1 = fInvSpacing;
 
 		for (auto i = 0; i < numParticles; i++) {
-			auto s = 0.01f;
+			auto s = 0.01;
 
-			particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0f, 1.0f);
-			particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0f, 1.0f);
-			particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0f, 1.0f);
+			particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0, 1.0);
+			particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0, 1.0);
+			particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0, 1.0);
 
 			auto x      = particlePos[2 * i];
 			auto y      = particlePos[2 * i + 1];
-			auto xi     = std::clamp(floor(x * h1), 1.0f, (float)fNumX - 1);
-			auto yi     = std::clamp(floor(y * h1), 1.0f, (float)fNumY - 1);
+			auto xi     = std::clamp(floor(x * h1), 1.0, (double)fNumX - 1);
+			auto yi     = std::clamp(floor(y * h1), 1.0, (double)fNumY - 1);
 			auto cellNr = xi * fNumY + yi;
 
 			auto d0 = particleRestDensity;
@@ -548,45 +547,45 @@ struct FlipFluid {
 			if (d0 > 0.0) {
 				auto relDensity = particleDensity[cellNr] / d0;
 				if (relDensity < 0.7) {
-					auto s                   = 0.8f;
+					auto s                   = 0.8;
 					particleColor[3 * i]     = s;
 					particleColor[3 * i + 1] = s;
-					particleColor[3 * i + 2] = 1.0f;
+					particleColor[3 * i + 2] = 1.0;
 				}
 			}
 		}
 	}
 
-	void setSciColor(int cellNr, float val, float minVal, float maxVal)
+	void setSciColor(int cellNr, double val, double minVal, double maxVal)
 	{
-		val     = std::min(std::max(val, minVal), maxVal - 0.0001f);
-		auto d  = maxVal - minVal;
-		val     = d == 0.0f ? 0.5f : (val - minVal) / d;
-		float m = 0.25f;
-		int num = floor(val / m);
-		float s = (val - num * m) / m;
-		float r, g, b;
+		val      = std::min(std::max(val, minVal), maxVal - 0.0001);
+		auto d   = maxVal - minVal;
+		val      = d == 0.0 ? 0.5 : (val - minVal) / d;
+		double m = 0.25;
+		int num  = floor(val / m);
+		double s = (val - num * m) / m;
+		double r, g, b;
 
 		switch (num) {
 			case 0:
-				r = 0.0f;
+				r = 0.0;
 				g = s;
-				b = 1.0f;
+				b = 1.0;
 				break;
 			case 1:
-				r = 0.0f;
-				g = 1.0f;
-				b = 1.0f - s;
+				r = 0.0;
+				g = 1.0;
+				b = 1.0 - s;
 				break;
 			case 2:
 				r = s;
-				g = 1.0f;
-				b = 0.0f;
+				g = 1.0;
+				b = 0.0;
 				break;
 			case 3:
-				r = 1.0f;
-				g = 1.0f - s;
-				b = 0.0f;
+				r = 1.0;
+				g = 1.0 - s;
+				b = 0.0;
 				break;
 		}
 
@@ -597,33 +596,33 @@ struct FlipFluid {
 
 	void updateCellColors()
 	{
-		std::fill(cellColor.begin(), cellColor.end(), 0.0f);
+		std::fill(cellColor.begin(), cellColor.end(), 0.0);
 
 		for (auto i = 0; i < fNumCells; i++) {
 			if (cellType[i] == constants::SOLID_CELL) {
-				cellColor[3 * i]     = 0.5f;
-				cellColor[3 * i + 1] = 0.5f;
-				cellColor[3 * i + 2] = 0.5f;
+				cellColor[3 * i]     = 0.5;
+				cellColor[3 * i + 1] = 0.5;
+				cellColor[3 * i + 2] = 0.5;
 			} else if (cellType[i] == constants::FLUID_CELL) {
 				auto d = particleDensity[i];
-				if (particleRestDensity > 0.0f)
+				if (particleRestDensity > 0.0)
 					d /= particleRestDensity;
-				setSciColor(i, d, 0.0f, 2.0f);
+				setSciColor(i, d, 0.0, 2.0);
 			}
 		}
 	}
 
-	void simulate(float dt,
-	    float gravity,
-	    float flipRatio,
+	void simulate(double dt,
+	    double gravity,
+	    double flipRatio,
 	    int numPressureIters,
 	    int numParticleIters,
-	    float overRelaxation,
+	    double overRelaxation,
 	    bool compensateDrift,
 	    bool separateParticles,
 	    int obstacleX,
 	    int obstacleY,
-	    float obstacleRadius)
+	    double obstacleRadius)
 	{
 		auto numSubSteps = 1;
 		auto sdt         = dt / numSubSteps;
@@ -676,7 +675,7 @@ private slots:
 	void on_dsBox4_valueChanged(double d)
 	{
 		constants::scale    = d;
-		constants::simwidth = (float)constants::maxwidth / constants::scale;
+		constants::simwidth = (double)constants::maxwidth / constants::scale;
 	}
 
 
@@ -692,8 +691,8 @@ private:
 	QGraphicsEllipseItem* m_obstacleItem;
 
 	int m_frameNr;
-	float m_obstacleX;
-	float m_obstacleY;
+	double m_obstacleX;
+	double m_obstacleY;
 	bool m_paused;
 
 	FlipFluid m_f;
