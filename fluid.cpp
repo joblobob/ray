@@ -30,8 +30,8 @@ void fluid::setupScene()
 
 	double res = 20;
 
-	double tankHeight = constants::simheight;
-	double tankWidth  = constants::simwidth;
+	double tankHeight = constants::simheight * constants::scale;
+	double tankWidth  = constants::simwidth * constants::scale;
 	double h          = tankHeight / res;
 	double density    = 1000.0;
 
@@ -53,17 +53,17 @@ void fluid::setupScene()
 	// create fluid
 	qCritical() << density << tankWidth << tankHeight << h << r << maxParticles;
 	qCritical() << fixed << qSetRealNumberPrecision(20) << numX << numY << dx << dy << h + r + dx << h + r + dy;
-	auto pointSizerad =  r / constants::simwidth * constants::maxwidth;
-	m_f               = FlipFluid(density, tankWidth, tankHeight, h , r , maxParticles);
+
+	m_f = FlipFluid(density, tankWidth, tankHeight, h, r, maxParticles);
 
 	// create particles
-
+	auto r2          = r * 2.0;
 	m_f.numParticles = numX * numY;
 	int p            = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			m_f.particlePos[p++] = h + r + dx * (double)i + (j % 2 == 0 ? 0.0 : r);
-			m_f.particlePos[p++] = h + r + dy * (double)j;
+			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			m_f.particlePos[p++] = h + r + dy * j;
 		}
 	}
 
@@ -83,46 +83,43 @@ void fluid::setupScene()
 		}
 	}
 
-	double sizeRect = h ;
+	double sizeRect = h;
 
-	auto r2 = r * 2.0;
 	//setup grid
 	int nbGridItems = m_f.fNumX * m_f.fNumY;
 	m_gridItems.reserve(nbGridItems);
+
+	auto pointSizeGrid = m_f.h;
 	if (constants::showGrid) {
-		auto pointSize = 0.9 * m_f.h / constants::simwidth * constants::maxwidth;
-		qCritical() << pointSize;
-		auto gridPen  = QPen(QColor(127, 127, 127));
+		auto gridPen = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
 				auto item = m_scene->addRect(0,
 				    0,
-				    h ,
-				    h ,
+				    pointSizeGrid,
+				    pointSizeGrid,
 				    gridPen,
 				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2])));
 				m_gridItems.push_back(item);
-				item->setPos(i * h, j*h );
+				item->setPos(i * pointSizeGrid, j * pointSizeGrid);
 			}
 		}
 	}
 
 	//setup particles of water
-	auto r4 = r * 0.5;
 	m_particleItems.reserve(m_f.numParticles);
 	if (constants::showParticles) {
-		auto pointSize = 2.0 * r / constants::simwidth * constants::maxwidth;
+		auto pointSize = 2.0 * r;
 		qCritical() << pointSize;
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, r2 , r2  , QPen(particleColor), QBrush(particleColor)));
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] , m_f.particlePos[2 * i + 1]);
+			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - r, m_f.particlePos[2 * i + 1] - r);
 		}
 	}
 
 	setupObstacle(0.0, 0.0, true);
-	m_obstacleItem = m_scene->addEllipse(
-	    0, 0, constants::obstacleRadius , constants::obstacleRadius , QPen(Qt::red), QBrush(Qt::red));
+	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::red), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 }
 
@@ -200,12 +197,11 @@ void fluid::draw()
 	//particles
 
 	//setup particles of water
-	double r4 = m_f.particleRadius * 0.5;
 	if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] , m_f.particlePos[2 * i + 1] );
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
 			m_particleItems.at(i)->setBrush(QBrush(particleColor));
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
@@ -222,7 +218,7 @@ void fluid::update()
 	QElapsedTimer timer;
 	timer.start();
 
-	setupObstacle(((double)m_obstacleItem->x() ), ((double)m_obstacleItem->y() ), false);
+	setupObstacle(((double)m_obstacleItem->x() + (constants::obstacleRadius)), ((double)m_obstacleItem->y() + (constants::obstacleRadius)), false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
@@ -255,5 +251,5 @@ void fluid::update()
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms
-	QTimer::singleShot(16, this, &fluid::update);
+	QTimer::singleShot(0, this, &fluid::update);
 }

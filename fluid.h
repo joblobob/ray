@@ -28,7 +28,7 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr double obstacleRadius =  0.15;
+const double obstacleRadius     = 0.20 * constants::scale;
 constexpr double overRelaxation = 1.9;
 
 constexpr double dt               = 1.0 / 60.0;
@@ -98,7 +98,6 @@ struct FlipFluid {
 		h           = std::max(width / (double)fNumX, height / (double)fNumY);
 		fInvSpacing = 1.0 / h;
 
-		qCritical() << density << fNumX << fNumY << fNumCells << particleRadius << maxParticles << pInvSpacing << pNumX << pNumY << pNumCells;
 		//set default color to blue
 		for (auto i = 0; i < maxParticles; i++)
 			particleColor[3 * i + 2] = 1.0;
@@ -166,10 +165,10 @@ struct FlipFluid {
 
 				double pxi = floor(px * pInvSpacing);
 				double pyi = floor(py * pInvSpacing);
-				auto x0 = std::max(pxi - 1.0, 0.0);
-				auto y0 = std::max(pyi - 1.0, 0.0);
-				auto x1 = std::min(pxi + 1.0, pNumX - 1.0);
-				auto y1 = std::min(pyi + 1.0, pNumY - 1.0);
+				auto x0    = std::max(pxi - 1.0, 0.0);
+				auto y0    = std::max(pyi - 1.0, 0.0);
+				auto x1    = std::min(pxi + 1.0, pNumX - 1.0);
+				auto y1    = std::min(pyi + 1.0, pNumY - 1.0);
 
 				for (auto xi = x0; xi <= x1; xi++) {
 					for (auto yi = y0; yi <= y1; yi++) {
