@@ -24,6 +24,9 @@
        <property name="prefix">
         <string>sim height </string>
        </property>
+       <property name="decimals">
+        <number>20</number>
+       </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
        </property>
@@ -50,6 +53,9 @@
        <property name="prefix">
         <string>Width </string>
        </property>
+       <property name="decimals">
+        <number>20</number>
+       </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
        </property>
@@ -62,6 +68,9 @@
       <widget class="QDoubleSpinBox" name="dsBox5">
        <property name="prefix">
         <string>sim width </string>
+       </property>
+       <property name="decimals">
+        <number>20</number>
        </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
@@ -76,6 +85,9 @@
        <property name="prefix">
         <string>Height </string>
        </property>
+       <property name="decimals">
+        <number>20</number>
+       </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>
        </property>
@@ -88,6 +100,9 @@
       <widget class="QDoubleSpinBox" name="dsBox4">
        <property name="prefix">
         <string>scale </string>
+       </property>
+       <property name="decimals">
+        <number>20</number>
        </property>
        <property name="minimum">
         <double>-1000.000000000000000</double>

@@ -13,10 +13,10 @@
 
 namespace constants {
 constexpr int maxwidth { 500 };
-//constexpr int maxheight { 200 };
-constexpr double simheight { 500.0 };
-inline double scale { 1 };
-inline double simwidth { 500.0 };
+constexpr int maxheight { 500 };
+constexpr double simheight { 3.0 };
+inline double scale { (double)maxheight / simheight };
+inline double simwidth { (double)maxwidth / scale };
 
 constexpr int U_FIELD = 0;
 constexpr int V_FIELD = 1;
@@ -28,7 +28,7 @@ constexpr int SOLID_CELL = 2;
 constexpr int cnt = 0;
 
 //setupScene
-constexpr double obstacleRadius = (double)maxwidth * 0.05;
+constexpr double obstacleRadius =  0.15;
 constexpr double overRelaxation = 1.9;
 
 constexpr double dt               = 1.0 / 60.0;
@@ -147,8 +147,8 @@ struct FlipFluid {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
-			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0, (double)pNumX - 1);
-			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0, (double)pNumY - 1);
+			auto xi     = std::clamp(floor(x * pInvSpacing), 0.0, pNumX - 1.0);
+			auto yi     = std::clamp(floor(y * pInvSpacing), 0.0, pNumY - 1.0);
 			auto cellNr = xi * pNumY + yi;
 			firstCellParticle[cellNr]--;
 			cellParticleIds[firstCellParticle[cellNr]] = i;
@@ -164,12 +164,12 @@ struct FlipFluid {
 				auto px = particlePos[2 * i];
 				auto py = particlePos[2 * i + 1];
 
-				int pxi = floor(px * pInvSpacing);
-				int pyi = floor(py * pInvSpacing);
-				auto x0 = std::max(pxi - 1, 0);
-				auto y0 = std::max(pyi - 1, 0);
-				auto x1 = std::min(pxi + 1, pNumX - 1);
-				auto y1 = std::min(pyi + 1, pNumY - 1);
+				double pxi = floor(px * pInvSpacing);
+				double pyi = floor(py * pInvSpacing);
+				auto x0 = std::max(pxi - 1.0, 0.0);
+				auto y0 = std::max(pyi - 1.0, 0.0);
+				auto x1 = std::min(pxi + 1.0, pNumX - 1.0);
+				auto y1 = std::min(pyi + 1.0, pNumY - 1.0);
 
 				for (auto xi = x0; xi <= x1; xi++) {
 					for (auto yi = y0; yi <= y1; yi++) {
@@ -213,7 +213,7 @@ struct FlipFluid {
 		}
 	}
 
-	void handleParticleCollisions(int obstacleX, int obstacleY, double obstacleRadius)
+	void handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius)
 	{
 		auto h        = 1.0 / fInvSpacing;
 		auto r        = particleRadius;
@@ -620,8 +620,8 @@ struct FlipFluid {
 	    double overRelaxation,
 	    bool compensateDrift,
 	    bool separateParticles,
-	    int obstacleX,
-	    int obstacleY,
+	    double obstacleX,
+	    double obstacleY,
 	    double obstacleRadius)
 	{
 		auto numSubSteps = 1;
@@ -674,8 +674,8 @@ private slots:
 
 	void on_dsBox4_valueChanged(double d)
 	{
-		constants::scale    = d;
-		constants::simwidth = (double)constants::maxwidth / constants::scale;
+		//constants::scale    = d;
+		//constants::simwidth = (double)constants::maxwidth / constants::scale;
 	}
 
 
@@ -698,7 +698,7 @@ private:
 	FlipFluid m_f;
 
 
-	void setupObstacle(int x, int y, bool reset);
+	void setupObstacle(double x, double y, bool reset);
 
 	void simulate();
 	void draw();

@@ -19,7 +19,7 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_frameNr(0), m_paused(true)
 	m_scene = new QGraphicsScene(this);
 
 	ui->m_graphView->setScene(m_scene);
-	ui->m_graphView->scale(1, -1); // invert Y axis
+	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
 }
 
 void fluid::setupScene()
@@ -28,7 +28,7 @@ void fluid::setupScene()
 	m_particleItems.clear();
 	m_gridItems.clear();
 
-	double res = 50;
+	double res = 20;
 
 	double tankHeight = constants::simheight;
 	double tankWidth  = constants::simwidth;
@@ -52,9 +52,9 @@ void fluid::setupScene()
 
 	// create fluid
 	qCritical() << density << tankWidth << tankHeight << h << r << maxParticles;
-	qCritical() << numX << numY << dx << dy << h + r + dx << h + r + dy;
-
-	m_f = FlipFluid(density, tankWidth, tankHeight, h, r, maxParticles);
+	qCritical() << fixed << qSetRealNumberPrecision(20) << numX << numY << dx << dy << h + r + dx << h + r + dy;
+	auto pointSizerad =  r / constants::simwidth * constants::maxwidth;
+	m_f               = FlipFluid(density, tankWidth, tankHeight, h , r , maxParticles);
 
 	// create particles
 
@@ -62,10 +62,13 @@ void fluid::setupScene()
 	int p            = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			m_f.particlePos[p++] = h + r + dy * j;
+			m_f.particlePos[p++] = h + r + dx * (double)i + (j % 2 == 0 ? 0.0 : r);
+			m_f.particlePos[p++] = h + r + dy * (double)j;
 		}
 	}
+
+	qCritical() << fixed << qSetRealNumberPrecision(20) << "create" << m_f.particlePos[0] << m_f.particlePos[1] << m_f.particleVel[0]
+	            << m_f.particleVel[1];
 
 	// setup grid cells for tank
 
@@ -80,24 +83,26 @@ void fluid::setupScene()
 		}
 	}
 
-	double sizeRect = h;
+	double sizeRect = h ;
 
 	auto r2 = r * 2.0;
 	//setup grid
 	int nbGridItems = m_f.fNumX * m_f.fNumY;
 	m_gridItems.reserve(nbGridItems);
 	if (constants::showGrid) {
-		auto gridPen = QPen(QColor(127, 127, 127));
+		auto pointSize = 0.9 * m_f.h / constants::simwidth * constants::maxwidth;
+		qCritical() << pointSize;
+		auto gridPen  = QPen(QColor(127, 127, 127));
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
 				auto item = m_scene->addRect(0,
 				    0,
-				    sizeRect,
-				    sizeRect,
+				    h ,
+				    h ,
 				    gridPen,
 				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2])));
 				m_gridItems.push_back(item);
-				item->setPos(i * sizeRect, j * sizeRect);
+				item->setPos(i * h, j*h );
 			}
 		}
 	}
@@ -106,19 +111,22 @@ void fluid::setupScene()
 	auto r4 = r * 0.5;
 	m_particleItems.reserve(m_f.numParticles);
 	if (constants::showParticles) {
+		auto pointSize = 2.0 * r / constants::simwidth * constants::maxwidth;
+		qCritical() << pointSize;
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, r2, r2, QPen(particleColor), QBrush(particleColor)));
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] + r, m_f.particlePos[2 * i + 1] + r);
+			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, r2 , r2  , QPen(particleColor), QBrush(particleColor)));
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] , m_f.particlePos[2 * i + 1]);
 		}
 	}
 
 	setupObstacle(0.0, 0.0, true);
-	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2, constants::obstacleRadius * 2, QPen(Qt::red), QBrush(Qt::red));
+	m_obstacleItem = m_scene->addEllipse(
+	    0, 0, constants::obstacleRadius , constants::obstacleRadius , QPen(Qt::red), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 }
 
-void fluid::setupObstacle(int x, int y, bool reset)
+void fluid::setupObstacle(double x, double y, bool reset)
 {
 	double vx = 0.0;
 	double vy = 0.0;
@@ -197,7 +205,7 @@ void fluid::draw()
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] + m_f.particleRadius, m_f.particlePos[2 * i + 1] + m_f.particleRadius);
+			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] , m_f.particlePos[2 * i + 1] );
 			m_particleItems.at(i)->setBrush(QBrush(particleColor));
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
@@ -214,7 +222,7 @@ void fluid::update()
 	QElapsedTimer timer;
 	timer.start();
 
-	setupObstacle(m_obstacleItem->x() + constants::obstacleRadius, m_obstacleItem->y() + constants::obstacleRadius, false);
+	setupObstacle(((double)m_obstacleItem->x() ), ((double)m_obstacleItem->y() ), false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
@@ -222,11 +230,11 @@ void fluid::update()
 
 
 	ui->label->setText(QString::number(timer.elapsed()) + " ms");
-	ui->dsBox1->setValue(m_scene->width());
-	ui->dsBox2->setValue(m_scene->height());
-	ui->dsBox3->setValue(constants::simheight);
-	ui->dsBox4->setValue(constants::scale);
-	ui->dsBox5->setValue(constants::simwidth);
+	ui->dsBox1->setValue(m_f.particlePos[0]);
+	ui->dsBox2->setValue(m_f.particlePos[1]);
+	ui->dsBox3->setValue(m_f.particleVel[0]);
+	ui->dsBox4->setValue(m_f.particleVel[1]);
+	ui->dsBox5->setValue(constants::scale);
 	//ui->dsBox6->setValue(res);
 	ui->dsBox7->setValue(m_f.h);
 	ui->dsBox8->setValue(m_obstacleX);
@@ -247,5 +255,5 @@ void fluid::update()
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms
-	QTimer::singleShot(0, this, &fluid::update);
+	QTimer::singleShot(16, this, &fluid::update);
 }
