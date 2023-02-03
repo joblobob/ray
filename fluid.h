@@ -35,7 +35,7 @@ constexpr double dt               = 1.0 / 60.0;
 constexpr double numPressureIters = 100;
 constexpr double numParticleIters = 2;
 
-constexpr double gravity = -9.81;
+const double gravity = -9.81 * scale;
 //constexpr double dt : 1.0 / 120.0,
 constexpr double flipRatio       = 0.9;
 constexpr bool compensateDrift   = true;
