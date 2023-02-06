@@ -99,13 +99,13 @@ struct FlipFluid {
 		fInvSpacing = 1.0 / h;
 
 		//set default color to blue
-		for (auto i = 0; i < maxParticles; i++)
+		for (int i = 0; i < maxParticles; i++)
 			particleColor[3 * i + 2] = 1.0;
 	}
 
 	void integrateParticles(double dt, double gravity)
 	{
-		for (auto i = 0; i < numParticles; i++) {
+		for (int i = 0; i < numParticles; i++) {
 			particleVel[2 * i + 1] += dt * gravity;
 			particlePos[2 * i] += particleVel[2 * i] * dt;
 			particlePos[2 * i + 1] += particleVel[2 * i + 1] * dt;
@@ -120,7 +120,7 @@ struct FlipFluid {
 
 		std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
-		for (auto i = 0; i < numParticles; i++) {
+		for (int i = 0; i < numParticles; i++) {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
@@ -134,7 +134,7 @@ struct FlipFluid {
 
 		auto first = 0;
 
-		for (auto i = 0; i < pNumCells; i++) {
+		for (int i = 0; i < pNumCells; i++) {
 			first += numCellParticles[i];
 			firstCellParticle[i] = first;
 		}
@@ -142,7 +142,7 @@ struct FlipFluid {
 
 		// fill particles into cells
 
-		for (auto i = 0; i < numParticles; i++) {
+		for (int i = 0; i < numParticles; i++) {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
@@ -158,8 +158,8 @@ struct FlipFluid {
 		auto minDist  = 2.0 * particleRadius;
 		auto minDist2 = minDist * minDist;
 
-		for (auto iter = 0; iter < numIters; iter++) {
-			for (auto i = 0; i < numParticles; i++) {
+		for (int iter = 0; iter < numIters; iter++) {
+			for (int i = 0; i < numParticles; i++) {
 				auto px = particlePos[2 * i];
 				auto py = particlePos[2 * i + 1];
 
@@ -198,7 +198,7 @@ struct FlipFluid {
 
 							// diffuse colors
 
-							for (auto k = 0; k < 3; k++) {
+							for (int k = 0; k < 3; k++) {
 								auto color0               = particleColor[3 * i + k];
 								auto color1               = particleColor[3 * id + k];
 								auto color                = (color0 + color1) * 0.5;
@@ -225,7 +225,7 @@ struct FlipFluid {
 		auto maxY = (fNumY - 1) * h - r;
 
 
-		for (auto i = 0; i < numParticles; i++) {
+		for (int i = 0; i < numParticles; i++) {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
@@ -321,8 +321,8 @@ struct FlipFluid {
 				particleRestDensity = sum / numFluidCells;
 		}
 
-		// 			for (auto xi = 1; xi < this.fNumX; xi++) {
-		// 				for (auto yi = 1; yi < this.fNumY; yi++) {
+		// 			for (int xi = 1; xi < this.fNumX; xi++) {
+		// 				for (int yi = 1; yi < this.fNumY; yi++) {
 		// 					auto cellNr = xi * n + yi;
 		// 					if (this.cellType[cellNr] != FLUID_CELL)
 		// 						continue;
@@ -355,10 +355,10 @@ struct FlipFluid {
 			std::fill(u.begin(), u.end(), 0.0);
 			std::fill(v.begin(), v.end(), 0.0);
 
-			for (auto i = 0; i < fNumCells; i++)
+			for (int i = 0; i < fNumCells; i++)
 				cellType[i] = s[i] == 0.0 ? constants::SOLID_CELL : constants::AIR_CELL;
 
-			for (auto i = 0; i < numParticles; i++) {
+			for (int i = 0; i < numParticles; i++) {
 				auto x      = particlePos[2 * i];
 				auto y      = particlePos[2 * i + 1];
 				auto xi     = std::clamp(floor(x * h1), 0.0, (double)fNumX - 1);
@@ -369,7 +369,7 @@ struct FlipFluid {
 			}
 		}
 
-		for (auto component = 0; component < 2; component++) {
+		for (int component = 0; component < 2; component++) {
 			auto dx = component == 0 ? 0.0 : h2;
 			auto dy = component == 0 ? h2 : 0.0;
 
@@ -377,7 +377,7 @@ struct FlipFluid {
 			std::vector<double> prevF = component == 0 ? prevU : prevV;
 			std::vector<double> d     = component == 0 ? du : dv;
 
-			for (auto i = 0; i < numParticles; i++) {
+			for (int i = 0; i < numParticles; i++) {
 				auto x = particlePos[2 * i];
 				auto y = particlePos[2 * i + 1];
 
@@ -438,15 +438,15 @@ struct FlipFluid {
 			}
 
 			if (toGrid) {
-				for (auto i = 0; i < f.size(); i++) {
+				for (int i = 0; i < f.size(); i++) {
 					if (d[i] > 0.0)
 						f[i] /= d[i];
 				}
 
 				// restore solid cells
 
-				for (auto i = 0; i < fNumX; i++) {
-					for (auto j = 0; j < fNumY; j++) {
+				for (int i = 0; i < fNumX; i++) {
+					for (int j = 0; j < fNumY; j++) {
 						auto solid = cellType[i * n + j] == constants::SOLID_CELL;
 						if (solid || (i > 0 && cellType[(i - 1) * n + j] == constants::SOLID_CELL))
 							u[i * n + j] = prevU[i * n + j];
@@ -472,9 +472,9 @@ struct FlipFluid {
 		//	auto v = v[i];
 		//}
 
-		for (auto iter = 0; iter < numIters; iter++) {
-			for (auto i = 1; i < fNumX - 1; i++) {
-				for (auto j = 1; j < fNumY - 1; j++) {
+		for (int iter = 0; iter < numIters; iter++) {
+			for (int i = 1; i < fNumX - 1; i++) {
+				for (int j = 1; j < fNumY - 1; j++) {
 					if (cellType[i * n + j] != constants::FLUID_CELL)
 						continue;
 
@@ -517,7 +517,7 @@ struct FlipFluid {
 
 	void updateParticleColors()
 	{
-		// for (auto i = 0; i < this.numParticles; i++) {
+		// for (int i = 0; i < this.numParticles; i++) {
 		// 	this.particleColor[3 * i] *= 0.99;
 		// 	this.particleColor[3 * i + 1] *= 0.99
 		// 	this.particleColor[3 * i + 2] =
@@ -528,7 +528,7 @@ struct FlipFluid {
 
 		auto h1 = fInvSpacing;
 
-		for (auto i = 0; i < numParticles; i++) {
+		for (int i = 0; i < numParticles; i++) {
 			auto s = 0.01;
 
 			particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0, 1.0);
@@ -597,7 +597,7 @@ struct FlipFluid {
 	{
 		std::fill(cellColor.begin(), cellColor.end(), 0.0);
 
-		for (auto i = 0; i < fNumCells; i++) {
+		for (int i = 0; i < fNumCells; i++) {
 			if (cellType[i] == constants::SOLID_CELL) {
 				cellColor[3 * i]     = 0.5;
 				cellColor[3 * i + 1] = 0.5;
@@ -626,7 +626,7 @@ struct FlipFluid {
 		auto numSubSteps = 1;
 		auto sdt         = dt / numSubSteps;
 
-		for (auto step = 0; step < numSubSteps; step++) {
+		for (int step = 0; step < numSubSteps; step++) {
 			integrateParticles(sdt, gravity);
 			if (separateParticles)
 				pushParticlesApart(numParticleIters);
@@ -634,7 +634,7 @@ struct FlipFluid {
 			transferVelocities(true, flipRatio);
 			updateParticleDensity();
 			solveIncompressibility(numPressureIters, sdt, overRelaxation, compensateDrift);
-			transferVelocities(true, flipRatio);
+			transferVelocities(false, flipRatio);
 		}
 
 		updateParticleColors();
