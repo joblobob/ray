@@ -58,7 +58,7 @@ double ggobstacleVelY = 0.0;
 struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
-	std::vector<double> u, v, du, dv, prevU, prevV, p, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
+	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
 	std::vector<int> cellType, numCellParticles, firstCellParticle, cellParticleIds;
 
 	FlipFluid() = default;
@@ -74,7 +74,6 @@ struct FlipFluid {
 	    dv(fNumCells),
 	    prevU(fNumCells),
 	    prevV(fNumCells),
-	    p(fNumCells),
 	    s(fNumCells),
 	    cellType(fNumCells),
 	    cellColor(3 * fNumCells),
@@ -365,13 +364,13 @@ struct FlipFluid {
 				x = std::clamp(x, h, (fNumX - 1) * h);
 				y = std::clamp(y, h, (fNumY - 1) * h);
 
-				auto x0 = std::min(floor((x - dx) * h1), (double)fNumX - 2);
+				int x0 = std::min((int)floor((x - dx) * h1), fNumX - 2);
 				auto tx = ((x - dx) - x0 * h) * h1;
-				auto x1 = std::min(x0 + 1, (double)fNumX - 2);
+				int x1  = std::min(x0 + 1, fNumX - 2);
 
-				auto y0 = std::min(floor((y - dy) * h1), (double)fNumY - 2);
+				int y0  = std::min((int)floor((y - dy) * h1), fNumY - 2);
 				auto ty = ((y - dy) - y0 * h) * h1;
-				auto y1 = std::min(y0 + 1, (double)fNumY - 2);
+				int y1  = std::min(y0 + 1, fNumY - 2);
 
 				auto sx = 1.0 - tx;
 				auto sy = 1.0 - ty;
@@ -381,10 +380,10 @@ struct FlipFluid {
 				auto d2 = tx * ty;
 				auto d3 = sx * ty;
 
-				auto nr0 = x0 * n + y0;
-				auto nr1 = x1 * n + y0;
-				auto nr2 = x1 * n + y1;
-				auto nr3 = x0 * n + y1;
+				int nr0  = x0 * n + y0;
+				int nr1  = x1 * n + y0;
+				int nr2  = x1 * n + y1;
+				int nr3  = x0 * n + y1;
 
 				if (toGrid) {
 					auto pv = particleVel[2 * i + component];
@@ -397,7 +396,7 @@ struct FlipFluid {
 					f[nr3] += pv * d3;
 					d[nr3] += d3;
 				} else {
-					auto offset = component == 0 ? n : 1;
+					int offset  = component == 0 ? n : 1;
 					auto valid0 = cellType[nr0] != constants::AIR_CELL || cellType[nr0 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
 					auto valid1 = cellType[nr1] != constants::AIR_CELL || cellType[nr1 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
 					auto valid2 = cellType[nr2] != constants::AIR_CELL || cellType[nr2 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
@@ -454,11 +453,11 @@ struct FlipFluid {
 					if (cellType[i * n + j] != constants::FLUID_CELL)
 						continue;
 
-					auto center = i * n + j;
-					auto left   = (i - 1) * n + j;
-					auto right  = (i + 1) * n + j;
-					auto bottom = i * n + j - 1;
-					auto top    = i * n + j + 1;
+					int center  = i * n + j;
+					int left    = (i - 1) * n + j;
+					int right   = (i + 1) * n + j;
+					int bottom  = i * n + j - 1;
+					int top     = i * n + j + 1;
 
 					auto sx0 = s[left];
 					auto sx1 = s[right];
@@ -479,7 +478,6 @@ struct FlipFluid {
 
 					auto pValue = -div / s;
 					pValue *= overRelaxation;
-					p[center] += cp * pValue;
 
 					u[center] -= sx0 * pValue;
 					u[right] += sx1 * pValue;
