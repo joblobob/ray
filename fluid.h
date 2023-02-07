@@ -373,9 +373,9 @@ struct FlipFluid {
 			auto dx = component == 0 ? 0.0 : h2;
 			auto dy = component == 0 ? h2 : 0.0;
 
-			std::vector<double> f     = component == 0 ? u : v;
-			std::vector<double> prevF = component == 0 ? prevU : prevV;
-			std::vector<double> d     = component == 0 ? du : dv;
+			std::vector<double>& f     = component == 0 ? u : v;
+			std::vector<double>& prevF = component == 0 ? prevU : prevV;
+			std::vector<double>& d     = component == 0 ? du : dv;
 
 			for (int i = 0; i < numParticles; i++) {
 				auto x = particlePos[2 * i];
