@@ -251,5 +251,5 @@ void fluid::update()
 	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms
-	QTimer::singleShot(0, this, &fluid::update);
+	QTimer::singleShot(16, this, &fluid::update);
 }
