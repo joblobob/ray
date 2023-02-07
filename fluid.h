@@ -173,12 +173,12 @@ struct FlipFluid {
 				auto x1    = std::min(pxi + 1.0, pNumX - 1.0);
 				auto y1    = std::min(pyi + 1.0, pNumY - 1.0);
 
-				for (auto xi = x0; xi <= x1; xi++) {
-					for (auto yi = y0; yi <= y1; yi++) {
-						auto cellNr = xi * pNumY + yi;
+				for (int xi = x0; xi <= x1; xi++) {
+					for (int yi = y0; yi <= y1; yi++) {
+						int cellNr = xi * pNumY + yi;
 						auto first  = firstCellParticle[cellNr];
 						auto last   = firstCellParticle[cellNr + 1];
-						for (auto j = first; j < last; j++) {
+						for (int j = first; j < last; j++) {
 							auto id = cellParticleIds[j];
 							if (id == i)
 								continue;
@@ -268,13 +268,11 @@ struct FlipFluid {
 
 	void updateParticleDensity()
 	{
-		auto n    = fNumY;
+		int n     = fNumY;
 		auto h1   = fInvSpacing;
 		double h2 = 0.5 * h;
 
-
 		std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
-
 
 		for (auto i = 0; i < numParticles; i++) {
 			auto x = particlePos[2 * i];
@@ -283,13 +281,13 @@ struct FlipFluid {
 			x = std::clamp(x, h, (fNumX - 1) * h);
 			y = std::clamp(y, h, (fNumY - 1) * h);
 
-			auto x0 = floor((x - h2) * h1);
+			int x0  = floor((x - h2) * h1);
 			auto tx = ((x - h2) - x0 * h) * h1;
-			auto x1 = std::min(x0 + 1, (double)fNumX - 2);
+			int x1  = std::min(x0 + 1, fNumX - 2);
 
-			auto y0 = floor((y - h2) * h1);
+			int y0  = floor((y - h2) * h1);
 			auto ty = ((y - h2) - y0 * h) * h1;
-			auto y1 = std::min(y0 + 1, (double)fNumY - 2);
+			int y1  = std::min(y0 + 1, fNumY - 2);
 
 			auto sx = 1.0 - tx;
 			auto sy = 1.0 - ty;
