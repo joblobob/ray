@@ -103,6 +103,13 @@ struct FlipFluid {
 			particleColor[3 * i + 2] = 1.0;
 	}
 
+	inline bool isVeryCloseToZero(double x)
+	{
+		constexpr double epsilon = std::numeric_limits<double>::epsilon();
+		return std::abs(x) <= epsilon * std::abs(x);
+		// see Knuth section 4.2.2 pages 217-218
+	}
+
 	int cellNumberFromParticle(double x, double y, int clampMin = 0) {
 		int xi = std::clamp((int)floor(x * pInvSpacing), clampMin, pNumX - 1);
 		int yi = std::clamp((int)floor(y * pInvSpacing), clampMin, pNumY - 1);
@@ -188,7 +195,7 @@ struct FlipFluid {
 							auto dx = qx - px;
 							auto dy = qy - py;
 							auto d2 = dx * dx + dy * dy;
-							if (d2 > minDist2 || d2 == 0.0)
+							if (d2 > minDist2 || isVeryCloseToZero(d2))
 								continue;
 							auto d = sqrt(d2);
 							auto s = 0.5 * (minDist - d) / d;
@@ -302,7 +309,7 @@ struct FlipFluid {
 				particleDensity[x0 * n + y1] += sx * ty;
 		}
 
-		if (particleRestDensity == 0.0) {
+		if (isVeryCloseToZero(particleRestDensity)) {
 			auto sum           = 0.0;
 			auto numFluidCells = 0;
 
@@ -334,7 +341,7 @@ struct FlipFluid {
 			std::fill(v.begin(), v.end(), 0.0);
 
 			for (int i = 0; i < fNumCells; i++)
-				cellType[i] = s[i] == 0.0 ? constants::SOLID_CELL : constants::AIR_CELL;
+				cellType[i] = isVeryCloseToZero(s[i]) ? constants::SOLID_CELL : constants::AIR_CELL;
 
 			for (int i = 0; i < numParticles; i++) {
 				int cellNr = cellNumberFromGrid(particlePos[2 * i], particlePos[2 * i + 1]);
@@ -458,7 +465,7 @@ struct FlipFluid {
 					auto sy0 = s[bottom];
 					auto sy1 = s[top];
 					auto s   = sx0 + sx1 + sy0 + sy1;
-					if (s == 0.0)
+					if (isVeryCloseToZero(s))
 						continue;
 
 					auto div = u[right] - u[center] + v[top] - v[center];
@@ -514,7 +521,7 @@ struct FlipFluid {
 	{
 		val      = std::min(std::max(val, minVal), maxVal - 0.0001);
 		auto d   = maxVal - minVal;
-		val      = d == 0.0 ? 0.5 : (val - minVal) / d;
+		val      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
 		double m = 0.25;
 		int num  = floor(val / m);
 		double s = (val - num * m) / m;
