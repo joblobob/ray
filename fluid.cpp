@@ -28,7 +28,7 @@ void fluid::setupScene()
 	m_particleItems.clear();
 	m_gridItems.clear();
 
-	double res = 20;
+	double res = 50;
 
 	double tankHeight = constants::simheight * constants::scale;
 	double tankWidth  = constants::simwidth * constants::scale;
