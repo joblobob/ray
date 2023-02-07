@@ -118,47 +118,9 @@ void fluid::setupScene()
 		}
 	}
 
-	setupObstacle(0.0, 0.0, true);
+	m_f.setupObstacle(0.0, 0.0, true);
 	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::red), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
-}
-
-void fluid::setupObstacle(double x, double y, bool reset)
-{
-	double vx = 0.0;
-	double vy = 0.0;
-
-	if (!reset) {
-		vx = (x - m_obstacleX) / constants::dt;
-		vy = (y - m_obstacleY) / constants::dt;
-	}
-
-	m_obstacleX = x;
-	m_obstacleY = y;
-	auto r      = constants::obstacleRadius;
-	auto n      = m_f.fNumY;
-	auto cd     = sqrt(2.0) * m_f.h;
-
-	for (auto i = 1; i < m_f.fNumX - 2; i++) {
-		for (auto j = 1; j < m_f.fNumY - 2; j++) {
-			m_f.s[i * n + j] = 1.0;
-
-			auto dx = (i + 0.5) * m_f.h - x;
-			auto dy = (j + 0.5) * m_f.h - y;
-
-			if (dx * dx + dy * dy < r * r) {
-				m_f.s[i * n + j]       = 0.0;
-				m_f.u[i * n + j]       = vx;
-				m_f.u[(i + 1) * n + j] = vx;
-				m_f.v[i * n + j]       = vy;
-				m_f.v[i * n + j + 1]   = vy;
-			}
-		}
-	}
-
-	//scene.showObstacle = true;
-	ggobstacleVelX = vx;
-	ggobstacleVelY = vy;
 }
 
 void fluid::simulate()
@@ -172,8 +134,6 @@ void fluid::simulate()
 		    constants::overRelaxation,
 		    constants::compensateDrift,
 		    constants::separateParticles,
-		    m_obstacleX,
-		    m_obstacleY,
 		    constants::obstacleRadius);
 
 	m_frameNr++;
@@ -206,8 +166,6 @@ void fluid::draw()
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
 	}
-
-	// obstacle
 }
 
 void fluid::requestAnimationFrame() {}
@@ -218,7 +176,7 @@ void fluid::update()
 	QElapsedTimer timer;
 	timer.start();
 
-	setupObstacle(((double)m_obstacleItem->x() + (constants::obstacleRadius)), ((double)m_obstacleItem->y() + (constants::obstacleRadius)), false);
+	m_f.setupObstacle(((double)m_obstacleItem->x() + (constants::obstacleRadius)), ((double)m_obstacleItem->y() + (constants::obstacleRadius)), false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
@@ -233,8 +191,6 @@ void fluid::update()
 	ui->dsBox5->setValue(constants::scale);
 	//ui->dsBox6->setValue(res);
 	ui->dsBox7->setValue(m_f.h);
-	ui->dsBox8->setValue(m_obstacleX);
-	ui->dsBox9->setValue(m_obstacleY);
 	ui->dsBox10->setValue(m_f.fNumY);
 	ui->dsBox11->setValue(m_f.pNumY);
 

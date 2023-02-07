@@ -42,21 +42,14 @@ constexpr bool compensateDrift   = true;
 constexpr bool separateParticles = true;
 constexpr bool paused            = false;
 constexpr bool showObstacle      = true;
-constexpr double obstacleVelX    = 0.0;
-constexpr double obstacleVelY    = 0.0;
 constexpr bool showParticles     = true;
 constexpr bool showGrid          = true;
 
 } // namespace constants
 
-namespace {
-double ggobstacleVelX = 0.0;
-double ggobstacleVelY = 0.0;
-} // namespace
-
 
 struct FlipFluid {
-	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h;
+	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
 	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
 	std::vector<int> cellType, numCellParticles, firstCellParticle, cellParticleIds;
@@ -109,7 +102,8 @@ struct FlipFluid {
 		// see Knuth section 4.2.2 pages 217-218
 	}
 
-	int cellNumberFromParticle(double x, double y, int clampMin = 0) {
+	int cellNumberFromParticle(double x, double y, int clampMin = 0)
+	{
 		int xi = std::clamp((int)floor(x * pInvSpacing), clampMin, pNumX - 1);
 		int yi = std::clamp((int)floor(y * pInvSpacing), clampMin, pNumY - 1);
 		return xi * pNumY + yi;
@@ -120,6 +114,44 @@ struct FlipFluid {
 		int xi = std::clamp((int)floor(x * fInvSpacing), clampMin, fNumX - 1);
 		int yi = std::clamp((int)floor(y * fInvSpacing), clampMin, fNumY - 1);
 		return xi * fNumY + yi;
+	}
+
+	void setupObstacle(double x, double y, bool reset)
+	{
+		double vx = 0.0;
+		double vy = 0.0;
+
+		if (!reset) {
+			vx = (x - obstacleX) / constants::dt;
+			vy = (y - obstacleY) / constants::dt;
+		}
+
+		obstacleX = x;
+		obstacleY = y;
+		auto r    = constants::obstacleRadius;
+		auto n    = fNumY;
+		auto cd   = sqrt(2.0) * h;
+
+		for (auto i = 1; i < fNumX - 2; i++) {
+			for (auto j = 1; j < fNumY - 2; j++) {
+				s[i * n + j] = 1.0;
+
+				auto dx = (i + 0.5) * h - x;
+				auto dy = (j + 0.5) * h - y;
+
+				if (dx * dx + dy * dy < r * r) {
+					s[i * n + j]       = 0.0;
+					u[i * n + j]       = vx;
+					u[(i + 1) * n + j] = vx;
+					v[i * n + j]       = vy;
+					v[i * n + j + 1]   = vy;
+				}
+			}
+		}
+
+		//scene.showObstacle = true;
+		obstacleVelX = vx;
+		obstacleVelY = vy;
 	}
 
 	void integrateParticles(double dt, double gravity)
@@ -182,8 +214,8 @@ struct FlipFluid {
 				for (int xi = x0; xi <= x1; xi++) {
 					for (int yi = y0; yi <= y1; yi++) {
 						int cellNr = xi * pNumY + yi;
-						auto first  = firstCellParticle[cellNr];
-						auto last   = firstCellParticle[cellNr + 1];
+						auto first = firstCellParticle[cellNr];
+						auto last  = firstCellParticle[cellNr + 1];
 						for (int j = first; j < last; j++) {
 							auto id = cellParticleIds[j];
 							if (id == i)
@@ -245,8 +277,8 @@ struct FlipFluid {
 			// obstacle collision
 
 			if (d2 < minDist2) {
-				particleVel[2 * i]     = ggobstacleVelX;
-				particleVel[2 * i + 1] = ggobstacleVelY;
+				particleVel[2 * i]     = obstacleVelX;
+				particleVel[2 * i + 1] = obstacleVelY;
 			}
 
 			// wall collisions
@@ -364,7 +396,7 @@ struct FlipFluid {
 				x = std::clamp(x, h, (fNumX - 1) * h);
 				y = std::clamp(y, h, (fNumY - 1) * h);
 
-				int x0 = std::min((int)floor((x - dx) * h1), fNumX - 2);
+				int x0  = std::min((int)floor((x - dx) * h1), fNumX - 2);
 				auto tx = ((x - dx) - x0 * h) * h1;
 				int x1  = std::min(x0 + 1, fNumX - 2);
 
@@ -380,10 +412,10 @@ struct FlipFluid {
 				auto d2 = tx * ty;
 				auto d3 = sx * ty;
 
-				int nr0  = x0 * n + y0;
-				int nr1  = x1 * n + y0;
-				int nr2  = x1 * n + y1;
-				int nr3  = x0 * n + y1;
+				int nr0 = x0 * n + y0;
+				int nr1 = x1 * n + y0;
+				int nr2 = x1 * n + y1;
+				int nr3 = x0 * n + y1;
 
 				if (toGrid) {
 					auto pv = particleVel[2 * i + component];
@@ -453,11 +485,11 @@ struct FlipFluid {
 					if (cellType[i * n + j] != constants::FLUID_CELL)
 						continue;
 
-					int center  = i * n + j;
-					int left    = (i - 1) * n + j;
-					int right   = (i + 1) * n + j;
-					int bottom  = i * n + j - 1;
-					int top     = i * n + j + 1;
+					int center = i * n + j;
+					int left   = (i - 1) * n + j;
+					int right  = (i + 1) * n + j;
+					int bottom = i * n + j - 1;
+					int top    = i * n + j + 1;
 
 					auto sx0 = s[left];
 					auto sx1 = s[right];
@@ -499,7 +531,7 @@ struct FlipFluid {
 			particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0, 1.0);
 			particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0, 1.0);
 
-			int cellNr  = cellNumberFromGrid(particlePos[2 * i], particlePos[2 * i + 1], 1);
+			int cellNr = cellNumberFromGrid(particlePos[2 * i], particlePos[2 * i + 1], 1);
 
 			auto d0 = particleRestDensity;
 
@@ -579,8 +611,6 @@ struct FlipFluid {
 	    double overRelaxation,
 	    bool compensateDrift,
 	    bool separateParticles,
-	    double obstacleX,
-	    double obstacleY,
 	    double obstacleRadius)
 	{
 		auto numSubSteps = 1;
@@ -650,14 +680,9 @@ private:
 	QGraphicsEllipseItem* m_obstacleItem;
 
 	int m_frameNr;
-	double m_obstacleX;
-	double m_obstacleY;
 	bool m_paused;
 
 	FlipFluid m_f;
-
-
-	void setupObstacle(double x, double y, bool reset);
 
 	void simulate();
 	void draw();
