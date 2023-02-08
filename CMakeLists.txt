@@ -38,12 +38,13 @@ add_executable(ray1 WIN32
     rayview.cpp rayview.h rayview.ui
     fluid.cpp fluid.h fluid.ui
     shapes.h 
+    FlipFluid.cxx
 )
 
 target_sources(ray1 
     PRIVATE
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
-        "FlipFluid.cxx"
+        FlipFluid.ixx 
 )
 
 target_link_libraries(ray1 PRIVATE
