@@ -1,6 +1,7 @@
 #include "fluid.h"
 
 #include <QTimer>
+#include <execution>
 
 #include "ui_fluid.h"
 
@@ -145,13 +146,19 @@ void fluid::simulate()
 void fluid::draw()
 {
 	//grid
-	auto p = 0;
-
-
 
 	if (constants::showGrid) {
+		/* 
+		* auto gridBorder       = m_f.fBorder;
+	auto spacing          = m_f.fInvSpacing;
+	auto cellColorVecCopy = m_f.cellColor;
+		
+		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), [=](QGraphicsRectItem* item) {
+			int i = cellNumber({ item->x(), item->y() }, gridBorder, spacing);
+			item->setBrush(QBrush(QColor::fromRgbF(cellColorVecCopy[3 * i], cellColorVecCopy[3 * i + 1], cellColorVecCopy[3 * i + 2])));
+		});*/
+
 		for (auto i = 0; i < m_f.fNumCells; i++) {
-			m_gridItems[i]->setPen(QPen(QColor(0, 0, 0)));
 			m_gridItems[i]->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
 		}
 	}
@@ -160,7 +167,7 @@ void fluid::draw()
 	//particles
 
 	//setup particles of water
-	if (constants::showParticles) {
+	/* if (constants::showParticles) {
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 
@@ -168,7 +175,7 @@ void fluid::draw()
 			m_particleItems.at(i)->setBrush(QBrush(particleColor));
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
-	}
+	}*/
 }
 
 void fluid::requestAnimationFrame() {}

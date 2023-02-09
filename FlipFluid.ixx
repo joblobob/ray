@@ -24,6 +24,9 @@ export struct FlipFluid {
 	std::vector<int> numCellParticles, firstCellParticle, cellParticleIds;
 	std::vector<constants::CellType> cellType;
 
+	Border pBorder;
+	Border fBorder;
+
 	FlipFluid() = default;
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
@@ -50,8 +53,4 @@ export struct FlipFluid {
 	    bool separateParticles,
 	    double obstacleRadius,
 	    bool instrument);
-
-private:
-	Border pBorder;
-	Border fBorder;
 };
