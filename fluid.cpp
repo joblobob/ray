@@ -11,6 +11,7 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	ui->setupUi(this);
 	m_scene = new QGraphicsScene(this);
 
+	m_scene->setSceneRect(-50, -50, 550, 550);
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
 }
@@ -84,7 +85,8 @@ void fluid::setupScene()
 
 	auto pointSizeGrid = m_f.h;
 	if (constants::showGrid) {
-		auto gridPen = QPen(QColor(127, 127, 127));
+		auto gridPen         = QPen(QColor(127, 127, 127));
+		int yesMyIndexAtHand = 0;
 		for (auto i = 0; i < m_f.fNumX; i++) {
 			for (auto j = 0; j < m_f.fNumY; j++) {
 				auto item = m_scene->addRect(0,
@@ -95,6 +97,8 @@ void fluid::setupScene()
 				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2])));
 				m_gridItems.push_back(item);
 				item->setPos(i * pointSizeGrid, j * pointSizeGrid);
+				item->setData(0, yesMyIndexAtHand);
+				yesMyIndexAtHand++;
 			}
 		}
 	}
@@ -108,6 +112,7 @@ void fluid::setupScene()
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
 			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - r, m_f.particlePos[2 * i + 1] - r);
+			m_particleItems.at(i)->setData(0, i);
 		}
 	}
 
@@ -146,25 +151,30 @@ void fluid::simulate()
 void fluid::draw()
 {
 	//grid
-
-	if (constants::showGrid) {
-		auto gridBorder       = m_f.fBorder;
-		auto spacing          = m_f.fInvSpacing;
-		auto cellColorVecCopy = m_f.cellColor;
-
-		auto setCellColor = [=](QGraphicsRectItem* item) {
-			int i = cellNumber({ item->x(), item->y() }, gridBorder, spacing);
-			item->setBrush(QBrush(QColor::fromRgbF(cellColorVecCopy[3 * i], cellColorVecCopy[3 * i + 1], cellColorVecCopy[3 * i + 2])));
+	/* if (constants::showGrid) {
+		auto setCellColor = [&](QGraphicsRectItem* item) {
+			auto i = item->data(0).toInt();
+			item->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
 		};
 
 		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);
-	}
+	}*/
 
 
 	//particles
-
 	//setup particles of water
-	/* if (constants::showParticles) {
+	if (constants::showParticles) {
+		/*auto setParticleColor = [&](QGraphicsEllipseItem* item) {
+			auto i             = item->data(0).toInt();
+			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
+			item->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
+			item->setBrush(QBrush(particleColor));
+			item->setPen(QPen(particleColor));
+		};
+
+		std::for_each(std::execution::seq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);
+		*/
+
 		for (auto i = 0; i < m_f.numParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 
@@ -172,10 +182,9 @@ void fluid::draw()
 			m_particleItems.at(i)->setBrush(QBrush(particleColor));
 			m_particleItems.at(i)->setPen(QPen(particleColor));
 		}
-	}*/
+	}
 }
 
-void fluid::requestAnimationFrame() {}
 
 
 void fluid::update()

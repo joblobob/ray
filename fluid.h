@@ -52,7 +52,6 @@ private:
 
 	void simulate();
 	void draw();
-	void requestAnimationFrame();
 
 
 	QElapsedTimer m_timer;
