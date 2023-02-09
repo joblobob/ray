@@ -182,9 +182,12 @@ void fluid::update()
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
+	auto elapsed = m_timer.nsecsElapsed() * 0.001;
+	m_timer.restart();
 	draw();
 
-	ui->label->setText(QString::number(m_timer.elapsed()) + " ms");
+	ui->label->setText("Simulate: " + QString::number(elapsed) + " us" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.001) + " us");
+
 
 	//requestAnimationFrame();
 	//callback to update
