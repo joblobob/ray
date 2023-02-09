@@ -1,19 +1,13 @@
 #ifndef FLUID_H
 #define FLUID_H
 
-
-
-#include "qelapsedtimer.h"
-
 #include <QDebug>
 #include <QDialog>
-#include <QFile>
+#include <QElapsedTimer>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
-#include <QImage>
 
 import FlipFluid;
-
 
 namespace Ui {
 class fluid;
@@ -53,8 +47,6 @@ private:
 	Ui::fluid* ui;
 	QGraphicsScene* m_scene;
 
-	QImage m_imageCanvas;
-
 	QGraphicsPixmapItem* m_sceneItem;
 	std::vector<QGraphicsRectItem*> m_gridItems;
 	std::vector<QGraphicsEllipseItem*> m_particleItems;
@@ -68,7 +60,6 @@ private:
 	void simulate();
 	void draw();
 	void requestAnimationFrame();
-
 
 
 	QElapsedTimer m_timer;

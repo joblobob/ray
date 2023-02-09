@@ -1,14 +1,6 @@
 #include "fluid.h"
 
-#include <QtConcurrent>
-#include <algorithm>
-#include <execution>
-
-#include <QElapsedTimer>
-
-#include <hitPosition.h>
-
-#include <calc.h>
+#include <QTimer>
 
 #include "ui_fluid.h"
 
@@ -173,8 +165,7 @@ void fluid::requestAnimationFrame() {}
 
 void fluid::update()
 {
-	QElapsedTimer timer;
-	timer.start();
+	m_timer.restart();
 
 	m_f.setupObstacle(((double)m_obstacleItem->x() + (constants::obstacleRadius)), ((double)m_obstacleItem->y() + (constants::obstacleRadius)), false);
 
@@ -183,7 +174,7 @@ void fluid::update()
 	draw();
 
 
-	ui->label->setText(QString::number(timer.elapsed()) + " ms");
+	ui->label->setText(QString::number(m_timer.elapsed()) + " ms");
 	ui->dsBox1->setValue(m_f.particlePos[0]);
 	ui->dsBox2->setValue(m_f.particlePos[1]);
 	ui->dsBox3->setValue(m_f.particleVel[0]);
