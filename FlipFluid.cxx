@@ -5,8 +5,6 @@ module;
 
 module FlipFluid;
 
-
-
 FlipFluid::FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
 	density(density),
 	fNumX(floor(width / spacing) + 1),
@@ -37,7 +35,9 @@ FlipFluid::FlipFluid(double density, double width, double height, double spacing
 	numCellParticles(pNumCells),
 	firstCellParticle(pNumCells + 1),
 	cellParticleIds(maxParticles),
-	numParticles(0)
+	numParticles(0),
+    pBorder {.maxX = pNumX, .maxY = pNumY},
+    fBorder {.maxX = fNumX, .maxY = fNumY}
 {
 	h           = std::max(width / (double)fNumX, height / (double)fNumY);
 	fInvSpacing = 1.0 / h;
@@ -54,19 +54,7 @@ inline bool FlipFluid::isVeryCloseToZero(double x)
 	// see Knuth section 4.2.2 pages 217-218
 }
 
-constexpr int FlipFluid::cellNumberFromParticle(double x, double y, int clampMin)
-{
-	int xi = std::clamp((int)floor(x * pInvSpacing), clampMin, pNumX - 1);
-	int yi = std::clamp((int)floor(y * pInvSpacing), clampMin, pNumY - 1);
-	return xi * pNumY + yi;
-}
 
-constexpr int FlipFluid::cellNumberFromGrid(double x, double y, int clampMin)
-{
-	int xi = std::clamp((int)floor(x * fInvSpacing), clampMin, fNumX - 1);
-	int yi = std::clamp((int)floor(y * fInvSpacing), clampMin, fNumY - 1);
-	return xi * fNumY + yi;
-}
 
 void FlipFluid::setupObstacle(double x, double y, bool reset)
 {
@@ -124,7 +112,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
 	for (int i = 0; i < numParticles; i++) {
-		int cellNr = cellNumberFromParticle(particlePos[2 * i], particlePos[2 * i + 1]);
+		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
 		numCellParticles[cellNr]++;
 	}
 
@@ -141,7 +129,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 	// fill particles into cells
 
 	for (int i = 0; i < numParticles; i++) {
-		int cellNr = cellNumberFromParticle(particlePos[2 * i], particlePos[2 * i + 1]);
+		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
 		firstCellParticle[cellNr]--;
 		cellParticleIds[firstCellParticle[cellNr]] = i;
 	}
@@ -327,7 +315,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::SOLID_CELL : constants::AIR_CELL;
 
 		for (int i = 0; i < numParticles; i++) {
-			int cellNr = cellNumberFromGrid(particlePos[2 * i], particlePos[2 * i + 1]);
+			int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
 			if (cellType[cellNr] == constants::AIR_CELL)
 				cellType[cellNr] = constants::FLUID_CELL;
 		}
@@ -483,7 +471,7 @@ void FlipFluid::updateParticleColors()
 		particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0, 1.0);
 		particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0, 1.0);
 
-		int cellNr = cellNumberFromGrid(particlePos[2 * i], particlePos[2 * i + 1], 1);
+		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
 
 		auto d0 = particleRestDensity;
 

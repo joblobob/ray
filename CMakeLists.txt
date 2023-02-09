@@ -44,7 +44,7 @@ add_executable(ray1 WIN32
 target_sources(ray1 
     PRIVATE
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
-        FlipFluid.ixx 
+        FlipFluid.ixx CellCalculations.ixx Constants.ixx
 )
 
 target_link_libraries(ray1 PRIVATE
