@@ -1,19 +1,28 @@
 module;
 
 #include <algorithm>
+#include <string>
 #include <vector>
+
+#include <QString>
 
 export module FlipFluid;
 
 import Constants;
 import CellCalculations;
 
+export struct ExecutionLog {
+	QString message;
+	long long nsElapsed;
+};
+
 
 export struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
 	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
-	std::vector<int> cellType, numCellParticles, firstCellParticle, cellParticleIds;
+	std::vector<int> numCellParticles, firstCellParticle, cellParticleIds;
+	std::vector<constants::CellType> cellType;
 
 	FlipFluid() = default;
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
@@ -29,14 +38,20 @@ export struct FlipFluid {
 	void updateParticleColors();
 	void setSciColor(int cellNr, double val, double minVal, double maxVal);
 	void updateCellColors();
-	
 
-	void simulate(double dt, double gravity, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation,
+
+	std::vector<ExecutionLog> simulate(double dt,
+	    double gravity,
+	    double flipRatio,
+	    int numPressureIters,
+	    int numParticleIters,
+	    double overRelaxation,
 	    bool compensateDrift,
 	    bool separateParticles,
-	    double obstacleRadius);
+	    double obstacleRadius,
+	    bool instrument);
 
-	private:
-		Border pBorder;
-		Border fBorder;
+private:
+	Border pBorder;
+	Border fBorder;
 };

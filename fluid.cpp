@@ -5,7 +5,7 @@
 #include "ui_fluid.h"
 
 
-fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_frameNr(0), m_paused(true)
+fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 {
 	ui->setupUi(this);
 	m_scene = new QGraphicsScene(this);
@@ -117,8 +117,8 @@ void fluid::setupScene()
 
 void fluid::simulate()
 {
-	if (!m_paused)
-		m_f.simulate(constants::dt,
+	if (!m_paused) {
+		auto result = m_f.simulate(constants::dt,
 		    constants::gravity,
 		    constants::flipRatio,
 		    constants::numPressureIters,
@@ -126,9 +126,20 @@ void fluid::simulate()
 		    constants::overRelaxation,
 		    constants::compensateDrift,
 		    constants::separateParticles,
-		    constants::obstacleRadius);
-
-	m_frameNr++;
+		    constants::obstacleRadius,
+		    true);
+		if (result.size() > 0) {
+			ui->label_2->setText(result[0].message + ": " + QString::number(result[0].nsElapsed * 0.001) + " us");
+			ui->label_3->setText(result[1].message + ": " + QString::number(result[1].nsElapsed * 0.001) + " us");
+			ui->label_4->setText(result[2].message + ": " + QString::number(result[2].nsElapsed * 0.001) + " us");
+			ui->label_5->setText(result[3].message + ": " + QString::number(result[3].nsElapsed * 0.001) + " us");
+			ui->label_6->setText(result[4].message + ": " + QString::number(result[4].nsElapsed * 0.001) + " us");
+			ui->label_7->setText(result[5].message + ": " + QString::number(result[5].nsElapsed * 0.001) + " us");
+			ui->label_8->setText(result[6].message + ": " + QString::number(result[6].nsElapsed * 0.001) + " us");
+			ui->label_9->setText(result[7].message + ": " + QString::number(result[7].nsElapsed * 0.001) + " us");
+			ui->label_10->setText(result[8].message + ": " + QString::number(result[8].nsElapsed * 0.001) + " us");
+		}
+	}
 }
 
 void fluid::draw()
@@ -173,27 +184,7 @@ void fluid::update()
 	simulate();
 	draw();
 
-
 	ui->label->setText(QString::number(m_timer.elapsed()) + " ms");
-	ui->dsBox1->setValue(m_f.particlePos[0]);
-	ui->dsBox2->setValue(m_f.particlePos[1]);
-	ui->dsBox3->setValue(m_f.particleVel[0]);
-	ui->dsBox4->setValue(m_f.particleVel[1]);
-	ui->dsBox5->setValue(constants::scale);
-	//ui->dsBox6->setValue(res);
-	ui->dsBox7->setValue(m_f.h);
-	ui->dsBox10->setValue(m_f.fNumY);
-	ui->dsBox11->setValue(m_f.pNumY);
-
-	auto h = 1.0 / m_f.fInvSpacing;
-	auto r = m_f.particleRadius;
-
-	auto minX = h + r;
-	auto maxX = (m_f.fNumX - 1) * h - r;
-	auto minY = h + r;
-	auto maxY = (m_f.fNumY - 1) * h - r;
-
-	ui->dsBox12->setValue(maxY);
 
 	//requestAnimationFrame();
 	//callback to update

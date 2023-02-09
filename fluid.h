@@ -36,12 +36,6 @@ private slots:
 	}
 	void on_resetBtn_clicked() { setupScene(); }
 
-	void on_dsBox4_valueChanged(double d)
-	{
-		//constants::scale    = d;
-		//constants::simwidth = (double)constants::maxwidth / constants::scale;
-	}
-
 
 private:
 	Ui::fluid* ui;
@@ -52,7 +46,6 @@ private:
 	std::vector<QGraphicsEllipseItem*> m_particleItems;
 	QGraphicsEllipseItem* m_obstacleItem;
 
-	int m_frameNr;
 	bool m_paused;
 
 	FlipFluid m_f;

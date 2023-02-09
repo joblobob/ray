@@ -4,41 +4,43 @@ module;
 #include <execution>
 #include <vector>
 
+#include <QElapsedTimer.h>
+
 module FlipFluid;
 
 FlipFluid::FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
-	density(density),
-	fNumX(floor(width / spacing) + 1),
-	fNumY(floor(height / spacing) + 1),
-	fNumCells(fNumX * fNumY),
-	u(fNumCells),
-	// fluid
-	v(fNumCells),
-	du(fNumCells),
-	dv(fNumCells),
-	prevU(fNumCells),
-	prevV(fNumCells),
-	s(fNumCells),
-	cellType(fNumCells),
-	cellColor(3 * fNumCells),
-	particleRadius(particleRadius),
-	// particles
-	maxParticles(maxParticles),
-	particlePos(2 * maxParticles),
-	particleColor(3 * maxParticles),
-	particleVel(2 * maxParticles),
-	particleDensity(fNumCells),
-	particleRestDensity(0.0),
-	pInvSpacing(1.0 / (2.2 * particleRadius)),
-	pNumX(floor(width * pInvSpacing) + 1),
-	pNumY(floor(height * pInvSpacing) + 1),
-	pNumCells(pNumX * pNumY),
-	numCellParticles(pNumCells),
-	firstCellParticle(pNumCells + 1),
-	cellParticleIds(maxParticles),
-	numParticles(0),
-    pBorder {.maxX = pNumX, .maxY = pNumY},
-    fBorder {.maxX = fNumX, .maxY = fNumY}
+    density(density),
+    fNumX(floor(width / spacing) + 1),
+    fNumY(floor(height / spacing) + 1),
+    fNumCells(fNumX * fNumY),
+    u(fNumCells),
+    // fluid
+    v(fNumCells),
+    du(fNumCells),
+    dv(fNumCells),
+    prevU(fNumCells),
+    prevV(fNumCells),
+    s(fNumCells),
+    cellType(fNumCells),
+    cellColor(3 * fNumCells),
+    particleRadius(particleRadius),
+    // particles
+    maxParticles(maxParticles),
+    particlePos(2 * maxParticles),
+    particleColor(3 * maxParticles),
+    particleVel(2 * maxParticles),
+    particleDensity(fNumCells),
+    particleRestDensity(0.0),
+    pInvSpacing(1.0 / (2.2 * particleRadius)),
+    pNumX(floor(width * pInvSpacing) + 1),
+    pNumY(floor(height * pInvSpacing) + 1),
+    pNumCells(pNumX * pNumY),
+    numCellParticles(pNumCells),
+    firstCellParticle(pNumCells + 1),
+    cellParticleIds(maxParticles),
+    numParticles(0),
+    pBorder { .maxX = pNumX, .maxY = pNumY },
+    fBorder { .maxX = fNumX, .maxY = fNumY }
 {
 	h           = std::max(width / (double)fNumX, height / (double)fNumY);
 	fInvSpacing = 1.0 / h;
@@ -278,7 +280,7 @@ void FlipFluid::updateParticleDensity()
 		auto numFluidCells = 0;
 
 		for (auto i = 0; i < fNumCells; i++) {
-			if (cellType[i] == constants::FLUID_CELL) {
+			if (cellType[i] == constants::CellType::Fluid) {
 				sum += particleDensity[i];
 				numFluidCells++;
 			}
@@ -305,12 +307,12 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		std::fill(v.begin(), v.end(), 0.0);
 
 		for (int i = 0; i < fNumCells; i++)
-			cellType[i] = isVeryCloseToZero(s[i]) ? constants::SOLID_CELL : constants::AIR_CELL;
+			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
 
 		for (int i = 0; i < numParticles; i++) {
 			int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
-			if (cellType[cellNr] == constants::AIR_CELL)
-				cellType[cellNr] = constants::FLUID_CELL;
+			if (cellType[cellNr] == constants::CellType::Air)
+				cellType[cellNr] = constants::CellType::Fluid;
 		}
 	}
 
@@ -362,10 +364,10 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 				d[nr3] += d3;
 			} else {
 				int offset  = component == 0 ? n : 1;
-				auto valid0 = cellType[nr0] != constants::AIR_CELL || cellType[nr0 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
-				auto valid1 = cellType[nr1] != constants::AIR_CELL || cellType[nr1 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
-				auto valid2 = cellType[nr2] != constants::AIR_CELL || cellType[nr2 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
-				auto valid3 = cellType[nr3] != constants::AIR_CELL || cellType[nr3 - offset] != constants::AIR_CELL ? 1.0 : 0.0;
+				auto valid0 = cellType[nr0] != constants::CellType::Air || cellType[nr0 - offset] != constants::CellType::Air ? 1.0 : 0.0;
+				auto valid1 = cellType[nr1] != constants::CellType::Air || cellType[nr1 - offset] != constants::CellType::Air ? 1.0 : 0.0;
+				auto valid2 = cellType[nr2] != constants::CellType::Air || cellType[nr2 - offset] != constants::CellType::Air ? 1.0 : 0.0;
+				auto valid3 = cellType[nr3] != constants::CellType::Air || cellType[nr3 - offset] != constants::CellType::Air ? 1.0 : 0.0;
 
 				auto v = particleVel[2 * i + component];
 				auto d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
@@ -373,8 +375,8 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 				if (d > 0.0) {
 					auto picV = (valid0 * d0 * f[nr0] + valid1 * d1 * f[nr1] + valid2 * d2 * f[nr2] + valid3 * d3 * f[nr3]) / d;
 					auto corr = (valid0 * d0 * (f[nr0] - prevF[nr0]) + valid1 * d1 * (f[nr1] - prevF[nr1]) + valid2 * d2 * (f[nr2] - prevF[nr2]) +
-						            valid3 * d3 * (f[nr3] - prevF[nr3])) /
-						        d;
+					                valid3 * d3 * (f[nr3] - prevF[nr3])) /
+					            d;
 					auto flipV = v + corr;
 
 					particleVel[2 * i + component] = (1.0 - flipRatio) * picV + flipRatio * flipV;
@@ -392,10 +394,10 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 
 			for (int i = 0; i < fNumX; i++) {
 				for (int j = 0; j < fNumY; j++) {
-					auto solid = cellType[i * n + j] == constants::SOLID_CELL;
-					if (solid || (i > 0 && cellType[(i - 1) * n + j] == constants::SOLID_CELL))
+					auto solid = cellType[i * n + j] == constants::CellType::Solid;
+					if (solid || (i > 0 && cellType[(i - 1) * n + j] == constants::CellType::Solid))
 						u[i * n + j] = prevU[i * n + j];
-					if (solid || (j > 0 && cellType[i * n + j - 1] == constants::SOLID_CELL))
+					if (solid || (j > 0 && cellType[i * n + j - 1] == constants::CellType::Solid))
 						v[i * n + j] = prevV[i * n + j];
 				}
 			}
@@ -415,7 +417,7 @@ void FlipFluid::solveIncompressibility(int numIters, double dt, double overRelax
 	for (int iter = 0; iter < numIters; iter++) {
 		for (int i = 1; i < fNumX - 1; i++) {
 			for (int j = 1; j < fNumY - 1; j++) {
-				if (cellType[i * n + j] != constants::FLUID_CELL)
+				if (cellType[i * n + j] != constants::CellType::Fluid)
 					continue;
 
 				int center = i * n + j;
@@ -523,11 +525,11 @@ void FlipFluid::updateCellColors()
 	std::fill(cellColor.begin(), cellColor.end(), 0.0);
 
 	for (int i = 0; i < fNumCells; i++) {
-		if (cellType[i] == constants::SOLID_CELL) {
+		if (cellType[i] == constants::CellType::Solid) {
 			cellColor[3 * i]     = 0.5;
 			cellColor[3 * i + 1] = 0.5;
 			cellColor[3 * i + 2] = 0.5;
-		} else if (cellType[i] == constants::FLUID_CELL) {
+		} else if (cellType[i] == constants::CellType::Fluid) {
 			auto d = particleDensity[i];
 			if (particleRestDensity > 0.0)
 				d /= particleRestDensity;
@@ -536,30 +538,76 @@ void FlipFluid::updateCellColors()
 	}
 }
 
-void FlipFluid::simulate(double dt,
-	double gravity,
-	double flipRatio,
-	int numPressureIters,
-	int numParticleIters,
-	double overRelaxation,
-	bool compensateDrift,
-	bool separateParticles,
-	double obstacleRadius)
+std::vector<ExecutionLog> FlipFluid::simulate(double dt,
+    double gravity,
+    double flipRatio,
+    int numPressureIters,
+    int numParticleIters,
+    double overRelaxation,
+    bool compensateDrift,
+    bool separateParticles,
+    double obstacleRadius,
+    bool instrument)
 {
+	std::vector<ExecutionLog> log;
+
 	auto numSubSteps = 1;
 	auto sdt         = dt / numSubSteps;
 
+
+	QElapsedTimer timer;
+
+	if (instrument)
+		timer.start();
 	for (int step = 0; step < numSubSteps; step++) {
 		integrateParticles(sdt, gravity);
-		if (separateParticles)
+		if (instrument) {
+			log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
+			timer.restart();
+		}
+		if (separateParticles) {
 			pushParticlesApart(numParticleIters);
+			if (instrument) {
+				log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
+				timer.restart();
+			}
+		}
 		handleParticleCollisions(obstacleX, obstacleY, obstacleRadius);
+		if (instrument) {
+			log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
+			timer.restart();
+		}
 		transferVelocities(true, flipRatio);
+		if (instrument) {
+			log.push_back(ExecutionLog { "transferVelocitiesTrue", timer.nsecsElapsed() });
+			timer.restart();
+		}
 		updateParticleDensity();
+		if (instrument) {
+			log.push_back(ExecutionLog { "updateParticleDensity", timer.nsecsElapsed() });
+			timer.restart();
+		}
 		solveIncompressibility(numPressureIters, sdt, overRelaxation, compensateDrift);
+		if (instrument) {
+			log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
+			timer.restart();
+		}
 		transferVelocities(false, flipRatio);
+		if (instrument) {
+			log.push_back(ExecutionLog { "transferVelocitiesFalse", timer.nsecsElapsed() });
+			timer.restart();
+		}
 	}
 
 	updateParticleColors();
+	if (instrument) {
+		log.push_back(ExecutionLog { "updateParticleColors", timer.nsecsElapsed() });
+		timer.restart();
+	}
 	updateCellColors();
+	if (instrument) {
+		log.push_back(ExecutionLog { "updateCellColors", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	return log;
 }
