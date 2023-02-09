@@ -17,7 +17,6 @@ export struct FlipFluid {
 
 	FlipFluid() = default;
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
-	inline bool isVeryCloseToZero(double x);
 
 	void setupObstacle(double x, double y, bool reset);
 	void integrateParticles(double dt, double gravity);

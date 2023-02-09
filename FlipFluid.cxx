@@ -1,6 +1,7 @@
 module;
 
 #include <algorithm>
+#include <execution>
 #include <vector>
 
 module FlipFluid;
@@ -46,14 +47,6 @@ FlipFluid::FlipFluid(double density, double width, double height, double spacing
 	for (int i = 0; i < maxParticles; i++)
 		particleColor[3 * i + 2] = 1.0;
 }
-
-inline bool FlipFluid::isVeryCloseToZero(double x)
-{
-	constexpr double epsilon = std::numeric_limits<double>::epsilon();
-	return std::abs(x) <= epsilon * std::abs(x);
-	// see Knuth section 4.2.2 pages 217-218
-}
-
 
 
 void FlipFluid::setupObstacle(double x, double y, bool reset)
