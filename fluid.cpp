@@ -148,19 +148,16 @@ void fluid::draw()
 	//grid
 
 	if (constants::showGrid) {
-		/* 
-		* auto gridBorder       = m_f.fBorder;
-	auto spacing          = m_f.fInvSpacing;
-	auto cellColorVecCopy = m_f.cellColor;
-		
-		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), [=](QGraphicsRectItem* item) {
+		auto gridBorder       = m_f.fBorder;
+		auto spacing          = m_f.fInvSpacing;
+		auto cellColorVecCopy = m_f.cellColor;
+
+		auto setCellColor = [=](QGraphicsRectItem* item) {
 			int i = cellNumber({ item->x(), item->y() }, gridBorder, spacing);
 			item->setBrush(QBrush(QColor::fromRgbF(cellColorVecCopy[3 * i], cellColorVecCopy[3 * i + 1], cellColorVecCopy[3 * i + 2])));
-		});*/
+		};
 
-		for (auto i = 0; i < m_f.fNumCells; i++) {
-			m_gridItems[i]->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
-		}
+		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);
 	}
 
 
