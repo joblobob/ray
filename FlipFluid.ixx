@@ -3,6 +3,7 @@ module;
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include <QString>
 
@@ -16,13 +17,18 @@ export struct ExecutionLog {
 	long long nsElapsed;
 };
 
+export struct Particle {
+	double particlePosX, particlePosY, particleVelX =0.0, particleVelY =0.0;
+};
 
 export struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
-	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells, numParticles;
-	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particlePos, particleColor, particleVel, particleDensity;
+	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells;
+	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor , particlePos, particleVel ,particleColor, particleDensity;
 	std::vector<int> numCellParticles, firstCellParticle, cellParticleIds;
 	std::vector<constants::CellType> cellType;
+
+	std::unordered_map<int, Particle> particleMap; // cell x particle
 
 	Border pBorder;
 	Border fBorder;

@@ -1,6 +1,8 @@
 #include "fluid.h"
 
 #include <QTimer>
+#include <QGraphicsView>
+#include <QtConcurrent/qtconcurrentmap.h>
 #include <execution>
 
 #include "ui_fluid.h"
@@ -11,7 +13,10 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	ui->setupUi(this);
 	m_scene = new QGraphicsScene(this);
 
-	m_scene->setSceneRect(-50, -50, 550, 550);
+	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
+	ui->m_graphView->setOptimizationFlags(QGraphicsView::DontSavePainterState);
+	ui->m_graphView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
 }
@@ -52,17 +57,15 @@ void fluid::setupScene()
 
 	// create particles
 	auto r2          = r * 2.0;
-	m_f.numParticles = numX * numY;
 	int p            = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
 			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
 			m_f.particlePos[p++] = h + r + dy * j;
+			
 		}
 	}
 
-	qCritical() << fixed << qSetRealNumberPrecision(20) << "create" << m_f.particlePos[0] << m_f.particlePos[1] << m_f.particleVel[0]
-	            << m_f.particleVel[1];
 
 	// setup grid cells for tank
 
@@ -104,17 +107,22 @@ void fluid::setupScene()
 	}
 
 	//setup particles of water
-	m_particleItems.reserve(m_f.numParticles);
+	m_particleItems.reserve(m_f.maxParticles);
 	if (constants::showParticles) {
 		auto pointSize = 2.0 * r;
 		qCritical() << pointSize;
-		for (auto i = 0; i < m_f.numParticles; i++) {
+		for (auto i = 0; i < m_f.maxParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
 			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - r, m_f.particlePos[2 * i + 1] - r);
 			m_particleItems.at(i)->setData(0, i);
 		}
 	}
+
+	//for (auto i : m_f.particleMap) {
+	//	m_particleItems.at(i.first)->setPos(i.second.particlePosX - r, i.second.particlePosY - r);
+	//}
+
 
 	m_f.setupObstacle(0.0, 0.0, true);
 	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::red), QBrush(Qt::red));
@@ -151,31 +159,30 @@ void fluid::simulate()
 void fluid::draw()
 {
 	//grid
-	/* if (constants::showGrid) {
-		auto setCellColor = [&](QGraphicsRectItem* item) {
+	 if (constants::showGrid) {
+		/* auto setCellColor = [&](QGraphicsRectItem* item) {
 			auto i = item->data(0).toInt();
 			item->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
 		};
 
-		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);
-	}*/
-
+		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);*/
+	}
 
 	//particles
 	//setup particles of water
 	if (constants::showParticles) {
-		/*auto setParticleColor = [&](QGraphicsEllipseItem* item) {
+		/* auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			item->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
-			item->setPen(QPen(particleColor));
+			item->setPen(pen);
 		};
 
-		std::for_each(std::execution::seq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);
-		*/
+		std::for_each(std::execution::par_unseq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);*/
+		
 
-		for (auto i = 0; i < m_f.numParticles; i++) {
+		  for (auto i = 0; i < m_f.maxParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 
 			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);

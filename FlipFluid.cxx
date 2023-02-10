@@ -38,7 +38,6 @@ FlipFluid::FlipFluid(double density, double width, double height, double spacing
     numCellParticles(pNumCells),
     firstCellParticle(pNumCells + 1),
     cellParticleIds(maxParticles),
-    numParticles(0),
     pBorder { .maxX = pNumX, .maxY = pNumY },
     fBorder { .maxX = fNumX, .maxY = fNumY }
 {
@@ -91,7 +90,7 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 
 void FlipFluid::integrateParticles(double dt, double gravity)
 {
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < maxParticles; i++) {
 		particleVel[2 * i + 1] += dt * gravity;
 		particlePos[2 * i] += particleVel[2 * i] * dt;
 		particlePos[2 * i + 1] += particleVel[2 * i + 1] * dt;
@@ -106,7 +105,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 
 	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < maxParticles; i++) {
 		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
 		numCellParticles[cellNr]++;
 	}
@@ -123,7 +122,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 
 	// fill particles into cells
 
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < maxParticles; i++) {
 		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
 		firstCellParticle[cellNr]--;
 		cellParticleIds[firstCellParticle[cellNr]] = i;
@@ -135,7 +134,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 	auto minDist2 = minDist * minDist;
 
 	for (int iter = 0; iter < numIters; iter++) {
-		for (int i = 0; i < numParticles; i++) {
+		for (int i = 0; i < maxParticles; i++) {
 			auto px = particlePos[2 * i];
 			auto py = particlePos[2 * i + 1];
 
@@ -201,7 +200,7 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 	auto maxY = (fNumY - 1) * h - r;
 
 
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < maxParticles; i++) {
 		auto x = particlePos[2 * i];
 		auto y = particlePos[2 * i + 1];
 
@@ -247,7 +246,7 @@ void FlipFluid::updateParticleDensity()
 
 	std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
 
-	for (auto i = 0; i < numParticles; i++) {
+	for (auto i = 0; i < maxParticles; i++) {
 		auto x = particlePos[2 * i];
 		auto y = particlePos[2 * i + 1];
 
@@ -309,7 +308,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		for (int i = 0; i < fNumCells; i++)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
 
-		for (int i = 0; i < numParticles; i++) {
+		for (int i = 0; i < maxParticles; i++) {
 			int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
 			if (cellType[cellNr] == constants::CellType::Air)
 				cellType[cellNr] = constants::CellType::Fluid;
@@ -324,7 +323,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		std::vector<double>& prevF = component == 0 ? prevU : prevV;
 		std::vector<double>& d     = component == 0 ? du : dv;
 
-		for (int i = 0; i < numParticles; i++) {
+		for (int i = 0; i < maxParticles; i++) {
 			auto x = particlePos[2 * i];
 			auto y = particlePos[2 * i + 1];
 
@@ -459,7 +458,7 @@ void FlipFluid::updateParticleColors()
 {
 	auto h1 = fInvSpacing;
 
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < maxParticles; i++) {
 		auto s = 0.01;
 
 		particleColor[3 * i]     = std::clamp(particleColor[3 * i] - s, 0.0, 1.0);
