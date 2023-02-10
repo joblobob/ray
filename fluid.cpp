@@ -1,7 +1,7 @@
 #include "fluid.h"
 
-#include <QTimer>
 #include <QGraphicsView>
+#include <QTimer>
 #include <QtConcurrent/qtconcurrentmap.h>
 #include <execution>
 
@@ -16,6 +16,9 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
 	ui->m_graphView->setOptimizationFlags(QGraphicsView::DontSavePainterState);
 	ui->m_graphView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+	ui->m_graphView->setCacheMode(QGraphicsView::CacheBackground);
+
+	m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
@@ -56,13 +59,12 @@ void fluid::setupScene()
 	m_f = FlipFluid(density, tankWidth, tankHeight, h, r, maxParticles);
 
 	// create particles
-	auto r2          = r * 2.0;
-	int p            = 0;
+	auto r2 = r * 2.0;
+	int p   = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
 			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
 			m_f.particlePos[p++] = h + r + dy * j;
-			
 		}
 	}
 
@@ -159,36 +161,29 @@ void fluid::simulate()
 void fluid::draw()
 {
 	//grid
-	 if (constants::showGrid) {
-		/* auto setCellColor = [&](QGraphicsRectItem* item) {
+	if (constants::showGrid) {
+		auto gridPen      = QPen(QColor(0, 0, 0));
+		auto setCellColor = [&](QGraphicsRectItem* item) {
 			auto i = item->data(0).toInt();
 			item->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
+			item->setPen(gridPen);
 		};
 
-		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);*/
+		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);
 	}
 
 	//particles
 	//setup particles of water
 	if (constants::showParticles) {
-		/* auto setParticleColor = [&](QGraphicsEllipseItem* item) {
+		auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			item->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
-			item->setPen(pen);
+			item->setPen(QPen(particleColor));
 		};
 
-		std::for_each(std::execution::par_unseq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);*/
-		
-
-		  for (auto i = 0; i < m_f.maxParticles; i++) {
-			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
-			m_particleItems.at(i)->setBrush(QBrush(particleColor));
-			m_particleItems.at(i)->setPen(QPen(particleColor));
-		}
+		std::for_each(std::execution::par_unseq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);
 	}
 }
 
@@ -209,7 +204,6 @@ void fluid::update()
 	ui->label->setText("Simulate: " + QString::number(elapsed) + " us" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.001) + " us");
 
 
-	//requestAnimationFrame();
 	//callback to update
 	//callback in 0ms
 	QTimer::singleShot(16, this, &fluid::update);
