@@ -26,7 +26,6 @@ FlipFluid::FlipFluid(double density, double width, double height, double spacing
     particleRadius(particleRadius),
     // particles
     maxParticles(maxParticles),
-    particlePos(2 * maxParticles),
     particleColor(3 * maxParticles),
     particleVel(2 * maxParticles),
     particleDensity(fNumCells),
@@ -92,26 +91,30 @@ void FlipFluid::integrateParticles(double dt, double gravity)
 {
 	for (int i = 0; i < maxParticles; i++) {
 		particleVel[2 * i + 1] += dt * gravity;
-		particlePos[2 * i] += particleVel[2 * i] * dt;
-		particlePos[2 * i + 1] += particleVel[2 * i + 1] * dt;
+		//particle.particlePosX += particleVel[2 * i] * dt;
+		//particle.particlePosY += particleVel[2 * i + 1] * dt;
 	}
+
+	auto integration = [&](auto& pair) {
+		pair.second.particlePosX += particleVel[2 * pair.first] * dt;
+		pair.second.particlePosY += particleVel[2 * pair.first + 1] * dt;
+	};
+	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), integration);
 }
 
 void FlipFluid::pushParticlesApart(int numIters)
 {
 	auto colorDiffusionCoeff = 0.001;
 
-	// count particles per cell
-
 	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
-	for (int i = 0; i < maxParticles; i++) {
-		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
-		numCellParticles[cellNr]++;
-	}
+	// count particles per cell
+	auto countParticlesInCell = [&](auto& pair) {
+		numCellParticles[cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, pBorder, pInvSpacing)]++;
+	};
+	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), countParticlesInCell);
 
 	// partial sums
-
 	auto first = 0;
 
 	for (int i = 0; i < pNumCells; i++) {
@@ -121,69 +124,73 @@ void FlipFluid::pushParticlesApart(int numIters)
 	firstCellParticle[pNumCells] = first; // guard
 
 	// fill particles into cells
-
-	for (int i = 0; i < maxParticles; i++) {
-		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, pBorder, pInvSpacing);
+	auto fillParticleIntoCell = [&](auto& pair) {
+		int cellNr = cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, pBorder, pInvSpacing);
 		firstCellParticle[cellNr]--;
-		cellParticleIds[firstCellParticle[cellNr]] = i;
-	}
+		cellParticleIds[firstCellParticle[cellNr]] = pair.first;
+	};
+	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), fillParticleIntoCell);
+
 
 	// push particles apart
 
 	auto minDist  = 2.0 * particleRadius;
 	auto minDist2 = minDist * minDist;
 
-	for (int iter = 0; iter < numIters; iter++) {
-		for (int i = 0; i < maxParticles; i++) {
-			auto px = particlePos[2 * i];
-			auto py = particlePos[2 * i + 1];
+	auto pushParticles = [&](auto& pair) {
+		auto px = pair.second.particlePosX;
+		auto py = pair.second.particlePosY;
 
-			double pxi = floor(px * pInvSpacing);
-			double pyi = floor(py * pInvSpacing);
-			auto x0    = std::max(pxi - 1.0, 0.0);
-			auto y0    = std::max(pyi - 1.0, 0.0);
-			auto x1    = std::min(pxi + 1.0, pNumX - 1.0);
-			auto y1    = std::min(pyi + 1.0, pNumY - 1.0);
+		double pxi = floor(px * pInvSpacing);
+		double pyi = floor(py * pInvSpacing);
+		auto x0    = std::max(pxi - 1.0, 0.0);
+		auto y0    = std::max(pyi - 1.0, 0.0);
+		auto x1    = std::min(pxi + 1.0, pNumX - 1.0);
+		auto y1    = std::min(pyi + 1.0, pNumY - 1.0);
 
-			for (int xi = x0; xi <= x1; xi++) {
-				for (int yi = y0; yi <= y1; yi++) {
-					int cellNr = xi * pNumY + yi;
-					auto first = firstCellParticle[cellNr];
-					auto last  = firstCellParticle[cellNr + 1];
-					for (int j = first; j < last; j++) {
-						auto id = cellParticleIds[j];
-						if (id == i)
-							continue;
-						auto qx = particlePos[2 * id];
-						auto qy = particlePos[2 * id + 1];
+		for (int xi = x0; xi <= x1; xi++) {
+			for (int yi = y0; yi <= y1; yi++) {
+				int cellNr = xi * pNumY + yi;
+				auto first = firstCellParticle[cellNr];
+				auto last  = firstCellParticle[cellNr + 1];
+				for (int j = first; j < last; j++) {
+					auto id = cellParticleIds[j];
+					if (id == pair.first)
+						continue;
+					auto& particleAtId { particleMap[id] };
+					auto qx = particleAtId.particlePosX;
+					auto qy = particleAtId.particlePosY;
 
-						auto dx = qx - px;
-						auto dy = qy - py;
-						auto d2 = dx * dx + dy * dy;
-						if (d2 > minDist2 || isVeryCloseToZero(d2))
-							continue;
-						auto d = sqrt(d2);
-						auto s = 0.5 * (minDist - d) / d;
-						dx *= s;
-						dy *= s;
-						particlePos[2 * i] -= dx;
-						particlePos[2 * i + 1] -= dy;
-						particlePos[2 * id] += dx;
-						particlePos[2 * id + 1] += dy;
+					auto dx = qx - px;
+					auto dy = qy - py;
+					auto d2 = dx * dx + dy * dy;
+					if (d2 > minDist2 || isVeryCloseToZero(d2))
+						continue;
+					auto d = sqrt(d2);
+					auto s = 0.5 * (minDist - d) / d;
+					dx *= s;
+					dy *= s;
+					pair.second.particlePosX -= dx;
+					pair.second.particlePosY -= dy;
+					particleAtId.particlePosX += dx;
+					particleAtId.particlePosY += dy;
 
-						// diffuse colors
+					// diffuse colors
 
-						for (int k = 0; k < 3; k++) {
-							auto color0               = particleColor[3 * i + k];
-							auto color1               = particleColor[3 * id + k];
-							auto color                = (color0 + color1) * 0.5;
-							particleColor[3 * i + k]  = color0 + (color - color0) * colorDiffusionCoeff;
-							particleColor[3 * id + k] = color1 + (color - color1) * colorDiffusionCoeff;
-						}
+					for (int k = 0; k < 3; k++) {
+						auto color0                       = particleColor[3 * pair.first + k];
+						auto color1                       = particleColor[3 * id + k];
+						auto color                        = (color0 + color1) * 0.5;
+						particleColor[3 * pair.first + k] = color0 + (color - color0) * colorDiffusionCoeff;
+						particleColor[3 * id + k]         = color1 + (color - color1) * colorDiffusionCoeff;
 					}
 				}
 			}
 		}
+	};
+
+	for (int iter = 0; iter < numIters; iter++) {
+		for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), pushParticles);
 	}
 }
 
@@ -201,8 +208,8 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 
 
 	for (int i = 0; i < maxParticles; i++) {
-		auto x = particlePos[2 * i];
-		auto y = particlePos[2 * i + 1];
+		auto x = particleMap[i].particlePosX;
+		auto y = particleMap[i].particlePosY;
 
 		auto dx = x - obstacleX;
 		auto dy = y - obstacleY;
@@ -233,8 +240,8 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 			y                      = maxY;
 			particleVel[2 * i + 1] = 0.0;
 		}
-		particlePos[2 * i]     = x;
-		particlePos[2 * i + 1] = y;
+		particleMap[i].particlePosX = x;
+		particleMap[i].particlePosY = y;
 	}
 }
 
@@ -247,8 +254,8 @@ void FlipFluid::updateParticleDensity()
 	std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
 
 	for (auto i = 0; i < maxParticles; i++) {
-		auto x = particlePos[2 * i];
-		auto y = particlePos[2 * i + 1];
+		auto x = particleMap[i].particlePosX;
+		auto y = particleMap[i].particlePosY;
 
 		x = std::clamp(x, h, (fNumX - 1) * h);
 		y = std::clamp(y, h, (fNumY - 1) * h);
@@ -309,7 +316,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
 
 		for (int i = 0; i < maxParticles; i++) {
-			int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
+			int cellNr = cellNumber({ particleMap[i].particlePosX, particleMap[i].particlePosY }, fBorder, fInvSpacing);
 			if (cellType[cellNr] == constants::CellType::Air)
 				cellType[cellNr] = constants::CellType::Fluid;
 		}
@@ -324,8 +331,8 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		std::vector<double>& d     = component == 0 ? du : dv;
 
 		for (int i = 0; i < maxParticles; i++) {
-			auto x = particlePos[2 * i];
-			auto y = particlePos[2 * i + 1];
+			auto x = particleMap[i].particlePosX;
+			auto y = particleMap[i].particlePosY;
 
 			x = std::clamp(x, h, (fNumX - 1) * h);
 			y = std::clamp(y, h, (fNumY - 1) * h);
@@ -465,7 +472,7 @@ void FlipFluid::updateParticleColors()
 		particleColor[3 * i + 1] = std::clamp(particleColor[3 * i + 1] - s, 0.0, 1.0);
 		particleColor[3 * i + 2] = std::clamp(particleColor[3 * i + 2] + s, 0.0, 1.0);
 
-		int cellNr = cellNumber({ particlePos[2 * i], particlePos[2 * i + 1] }, fBorder, fInvSpacing);
+		int cellNr = cellNumber({ particleMap[i].particlePosX, particleMap[i].particlePosY }, fBorder, fInvSpacing);
 
 		auto d0 = particleRestDensity;
 

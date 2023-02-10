@@ -59,12 +59,16 @@ void fluid::setupScene()
 	m_f = FlipFluid(density, tankWidth, tankHeight, h, r, maxParticles);
 
 	// create particles
-	auto r2 = r * 2.0;
-	int p   = 0;
+	auto r2   = r * 2.0;
+	int p     = 0;
+	int count = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			m_f.particlePos[p++] = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			m_f.particlePos[p++] = h + r + dy * j;
+			//m_f.particlePos[p++]    = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			//m_f.particlePos[p++]    = h + r + dy * j;
+			const auto particlePosX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			const auto particlePosY = h + r + dy * j;
+			m_f.particleMap.insert({ count++, { particlePosX, particlePosY } });
 		}
 	}
 
@@ -116,7 +120,8 @@ void fluid::setupScene()
 		for (auto i = 0; i < m_f.maxParticles; i++) {
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
-			m_particleItems.at(i)->setPos(m_f.particlePos[2 * i] - r, m_f.particlePos[2 * i + 1] - r);
+
+			m_particleItems.at(i)->setPos(m_f.particleMap[i].particlePosX - r, m_f.particleMap[i].particlePosY - r);
 			m_particleItems.at(i)->setData(0, i);
 		}
 	}
@@ -178,7 +183,7 @@ void fluid::draw()
 		auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
 			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
-			item->setPos(m_f.particlePos[2 * i] - m_f.particleRadius, m_f.particlePos[2 * i + 1] - m_f.particleRadius);
+			item->setPos(m_f.particleMap[i].particlePosX - m_f.particleRadius, m_f.particleMap[i].particlePosY - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
 			item->setPen(QPen(particleColor));
 		};
