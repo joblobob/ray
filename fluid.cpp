@@ -138,7 +138,6 @@ void fluid::simulate()
 {
 	if (!m_paused) {
 		auto result = m_f.simulate(constants::dt,
-		    constants::gravity,
 		    constants::flipRatio,
 		    constants::numPressureIters,
 		    constants::numParticleIters,

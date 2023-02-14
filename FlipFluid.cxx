@@ -81,19 +81,20 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 	obstacleVelY = vy;
 }
 
-void FlipFluid::integrateParticles(double dt, double gravity)
+void FlipFluid::integrateParticles(double dt)
 {
-	auto integration = [&](auto& pair) {
-		pair.second.particleVelY += dt * gravity;
-		pair.second.particlePosX += pair.second.particleVelX * dt;
-		pair.second.particlePosY += pair.second.particleVelY * dt;
+	auto integration = [](auto& pair) {
+		auto& p { pair.second };
+		p.particleVelY += constants::dt * constants::gravity;
+		p.particlePosX += p.particleVelX * constants::dt;
+		p.particlePosY += p.particleVelY * constants::dt;
 	};
-	std::for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), integration);
+	std::for_each(std::execution::unseq, particleMap.begin(), particleMap.end(), integration);
 }
 
 void FlipFluid::pushParticlesApart(int numIters)
 {
-	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
+	std::fill(std::execution::par_unseq, numCellParticles.begin(), numCellParticles.end(), 0);
 
 	// count particles per cell
 	auto countParticlesInCell = [&](auto& pair) {
@@ -126,8 +127,8 @@ void FlipFluid::pushParticlesApart(int numIters)
 
 	auto pushParticles = [&](auto& pair) {
 		auto& particleValue = pair.second;
-		auto px            = particleValue.particlePosX;
-		auto py            = particleValue.particlePosY;
+		auto px             = particleValue.particlePosX;
+		auto py             = particleValue.particlePosY;
 
 		int pxi = floor(px * pInvSpacing);
 		int pyi = floor(py * pInvSpacing);
@@ -178,12 +179,13 @@ void FlipFluid::pushParticlesApart(int numIters)
 	}
 }
 
-constexpr void FlipFluid::calcColor(double& p1Color, double& p2Color) {
-	auto color0                       = p1Color;
-	auto color1                       = p2Color;
-	auto color                        = (color0 + color1) * 0.5;
-	p1Color                           = color0 + (color - color0) * constants::colorDiffusionCoeff;
-	p2Color                           = color1 + (color - color1) * constants::colorDiffusionCoeff;
+constexpr void FlipFluid::calcColor(double& p1Color, double& p2Color)
+{
+	auto color0 = p1Color;
+	auto color1 = p2Color;
+	auto color  = (color0 + color1) * 0.5;
+	p1Color     = color0 + (color - color0) * constants::colorDiffusionCoeff;
+	p2Color     = color1 + (color - color1) * constants::colorDiffusionCoeff;
 }
 
 void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius)
@@ -215,19 +217,19 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 		// wall collisions
 
 		if (x < minX) {
-			x                  = minX;
+			x                        = minX;
 			pair.second.particleVelX = 0.0;
 		}
 		if (x > maxX) {
-			x                  = maxX;
+			x                        = maxX;
 			pair.second.particleVelX = 0.0;
 		}
 		if (y < minY) {
-			y                      = minY;
+			y                        = minY;
 			pair.second.particleVelY = 0.0;
 		}
 		if (y > maxY) {
-			y                      = maxY;
+			y                        = maxY;
 			pair.second.particleVelY = 0.0;
 		}
 		pair.second.particlePosX = x;
@@ -238,11 +240,11 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 
 void FlipFluid::updateParticleDensity()
 {
-	int n    = fNumY;
-	auto h1  = fInvSpacing;
+	int n     = fNumY;
+	auto h1   = fInvSpacing;
 	double h2 = 0.5 * h;
 
-	std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
+	std::fill(std::execution::par_unseq, particleDensity.begin(), particleDensity.end(), 0.0);
 
 	auto solveParticleDensity = [&](auto& pair) {
 		auto x = pair.second.particlePosX;
@@ -292,18 +294,18 @@ void FlipFluid::updateParticleDensity()
 
 void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 {
-	auto n   = fNumY;
-	auto h1  = fInvSpacing;
+	auto n    = fNumY;
+	auto h1   = fInvSpacing;
 	double h2 = 0.5 * h;
 
 	if (toGrid) {
 		prevU = u;
 		prevV = v;
 
-		std::fill(du.begin(), du.end(), 0.0);
-		std::fill(dv.begin(), dv.end(), 0.0);
-		std::fill(u.begin(), u.end(), 0.0);
-		std::fill(v.begin(), v.end(), 0.0);
+		std::fill(std::execution::par_unseq, du.begin(), du.end(), 0.0);
+		std::fill(std::execution::par_unseq, dv.begin(), dv.end(), 0.0);
+		std::fill(std::execution::par_unseq, u.begin(), u.end(), 0.0);
+		std::fill(std::execution::par_unseq, v.begin(), v.end(), 0.0);
 
 		for (int i = 0; i < fNumCells; i++)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
@@ -380,7 +382,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 					            d;
 					auto flipV = v + corr;
 
-					auto newVelValue                        = (1.0 - flipRatio) * picV + flipRatio * flipV;
+					auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
 					if (component == 0)
 						pair.second.particleVelX = newVelValue;
 					else
@@ -470,9 +472,9 @@ void FlipFluid::updateParticleColors()
 	auto parseParticleColors = [&](auto& pair) {
 		auto s = 0.01;
 
-		pair.second.particleColorR  = std::clamp(pair.second.particleColorR - s, 0.0, 1.0);
+		pair.second.particleColorR = std::clamp(pair.second.particleColorR - s, 0.0, 1.0);
 		pair.second.particleColorG = std::clamp(pair.second.particleColorG - s, 0.0, 1.0);
-		pair.second.particleColorB  = std::clamp(pair.second.particleColorB + s, 0.0, 1.0);
+		pair.second.particleColorB = std::clamp(pair.second.particleColorB + s, 0.0, 1.0);
 
 		int cellNr = cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, fBorder, fInvSpacing);
 
@@ -481,7 +483,7 @@ void FlipFluid::updateParticleColors()
 		if (d0 > 0.0) {
 			auto relDensity = particleDensity[cellNr] / d0;
 			if (relDensity < 0.7) {
-				auto s                   = 0.8;
+				auto s                     = 0.8;
 				pair.second.particleColorR = s;
 				pair.second.particleColorG = s;
 				pair.second.particleColorB = 1.0;
@@ -493,11 +495,11 @@ void FlipFluid::updateParticleColors()
 
 void FlipFluid::setSciColor(int cellNr, double val, double minVal, double maxVal)
 {
-	val     = std::min(std::max(val, minVal), maxVal - 0.0001);
-	auto d  = maxVal - minVal;
-	val     = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
+	val      = std::min(std::max(val, minVal), maxVal - 0.0001);
+	auto d   = maxVal - minVal;
+	val      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
 	double m = 0.25;
-	int num = floor(val / m);
+	int num  = floor(val / m);
 	double s = (val - num * m) / m;
 	double r, g, b;
 
@@ -531,7 +533,7 @@ void FlipFluid::setSciColor(int cellNr, double val, double minVal, double maxVal
 
 void FlipFluid::updateCellColors()
 {
-	std::fill(cellColor.begin(), cellColor.end(), 0.0);
+	std::fill(std::execution::par_unseq, cellColor.begin(), cellColor.end(), 0.0);
 
 	for (int i = 0; i < fNumCells; i++) {
 		if (cellType[i] == constants::CellType::Solid) {
@@ -548,7 +550,6 @@ void FlipFluid::updateCellColors()
 }
 
 std::vector<ExecutionLog> FlipFluid::simulate(double dt,
-    double gravity,
     double flipRatio,
     int numPressureIters,
     int numParticleIters,
@@ -569,7 +570,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 	if (instrument)
 		timer.start();
 	for (int step = 0; step < numSubSteps; step++) {
-		integrateParticles(sdt, gravity);
+		integrateParticles(sdt);
 		if (instrument) {
 			log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
 			timer.restart();
