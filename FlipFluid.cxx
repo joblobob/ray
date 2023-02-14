@@ -94,11 +94,11 @@ void FlipFluid::integrateParticles()
 
 void FlipFluid::pushParticlesApart(int numIters)
 {
-	std::fill(std::execution::unseq, numCellParticles.begin(), numCellParticles.end(), 0);
+	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
 	// count particles per cell
-	auto countParticlesInCell = [&](auto& pair) {
-		numCellParticles[cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, pBorder, pInvSpacing)]++;
+	auto countParticlesInCell = [&](const auto& pair) {
+		numCellParticles[cellNumber(pair.second.particlePosX, pair.second.particlePosY, pBorder, pInvSpacing)]++;
 	};
 	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), countParticlesInCell);
 
@@ -113,7 +113,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 
 	// fill particles into cells
 	auto fillParticleIntoCell = [&](auto& pair) {
-		int cellNr = cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, pBorder, pInvSpacing);
+		int cellNr = cellNumber(pair.second.particlePosX, pair.second.particlePosY, pBorder, pInvSpacing);
 		firstCellParticle[cellNr]--;
 		cellParticleIds[firstCellParticle[cellNr]] = pair.first;
 	};
@@ -122,41 +122,41 @@ void FlipFluid::pushParticlesApart(int numIters)
 
 	// push particles apart
 
-	auto minDist  = 2.0 * particleRadius;
-	auto minDist2 = minDist * minDist;
+	const auto minDist  = 2.0 * particleRadius;
+	const auto minDist2 = minDist * minDist;
 
 	auto pushParticles = [&](auto& pair) {
 		auto& particleValue = pair.second;
-		auto px             = particleValue.particlePosX;
-		auto py             = particleValue.particlePosY;
+		const auto px       = particleValue.particlePosX;
+		const auto py       = particleValue.particlePosY;
 
-		int pxi = floor(px * pInvSpacing);
-		int pyi = floor(py * pInvSpacing);
-		int x0  = std::max(pxi - 1, 0);
-		int y0  = std::max(pyi - 1, 0);
-		int x1  = std::min(pxi + 1, pNumX - 1);
-		int y1  = std::min(pyi + 1, pNumY - 1);
+		const int pxi = floor(px * pInvSpacing);
+		const int pyi = floor(py * pInvSpacing);
+		const int x0  = std::max(pxi - 1, 0);
+		const int y0  = std::max(pyi - 1, 0);
+		const int x1  = std::min(pxi + 1, pNumX - 1);
+		const int y1  = std::min(pyi + 1, pNumY - 1);
 
 		for (int xi = x0; xi <= x1; xi++) {
 			for (int yi = y0; yi <= y1; yi++) {
-				int cellNr = xi * pNumY + yi;
-				int first  = firstCellParticle[cellNr];
-				int last   = firstCellParticle[cellNr + 1];
+				const int cellNr = xi * pNumY + yi;
+				const int first  = firstCellParticle[cellNr];
+				const int last   = firstCellParticle[cellNr + 1];
 				for (int j = first; j < last; j++) {
 					int id = cellParticleIds[j];
 					if (id == pair.first)
 						continue;
 					auto& particleAtId { particleMap[id] };
-					auto qx = particleAtId.particlePosX;
-					auto qy = particleAtId.particlePosY;
+					const auto qx = particleAtId.particlePosX;
+					const auto qy = particleAtId.particlePosY;
 
-					auto dx = qx - px;
-					auto dy = qy - py;
-					auto d2 = dx * dx + dy * dy;
+					auto dx       = qx - px;
+					auto dy       = qy - py;
+					const auto d2 = dx * dx + dy * dy;
 					if (d2 > minDist2 || isVeryCloseToZero(d2))
 						continue;
-					auto d = sqrt(d2);
-					auto s = 0.5 * (minDist - d) / d;
+					const auto d = sqrt(d2);
+					const auto s = 0.5 * (minDist - d) / d;
 					dx *= s;
 					dy *= s;
 					particleValue.particlePosX -= dx;
@@ -244,7 +244,7 @@ void FlipFluid::updateParticleDensity()
 	auto h1   = fInvSpacing;
 	double h2 = 0.5 * h;
 
-	std::fill(std::execution::par_unseq, particleDensity.begin(), particleDensity.end(), 0.0);
+	std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
 
 	auto solveParticleDensity = [&](auto& pair) {
 		auto x = pair.second.particlePosX;
@@ -302,10 +302,10 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		prevU = u;
 		prevV = v;
 
-		std::fill(std::execution::par_unseq, du.begin(), du.end(), 0.0);
-		std::fill(std::execution::par_unseq, dv.begin(), dv.end(), 0.0);
-		std::fill(std::execution::par_unseq, u.begin(), u.end(), 0.0);
-		std::fill(std::execution::par_unseq, v.begin(), v.end(), 0.0);
+		std::fill(du.begin(), du.end(), 0.0);
+		std::fill(dv.begin(), dv.end(), 0.0);
+		std::fill(u.begin(), u.end(), 0.0);
+		std::fill(v.begin(), v.end(), 0.0);
 
 		for (int i = 0; i < fNumCells; i++)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
@@ -533,7 +533,7 @@ void FlipFluid::setSciColor(int cellNr, double val, double minVal, double maxVal
 
 void FlipFluid::updateCellColors()
 {
-	std::fill(std::execution::par_unseq, cellColor.begin(), cellColor.end(), 0.0);
+	std::fill(cellColor.begin(), cellColor.end(), 0.0);
 
 	for (int i = 0; i < fNumCells; i++) {
 		if (cellType[i] == constants::CellType::Solid) {
