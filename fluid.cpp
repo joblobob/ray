@@ -64,8 +64,6 @@ void fluid::setupScene()
 	int count = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			//m_f.particlePos[p++]    = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			//m_f.particlePos[p++]    = h + r + dy * j;
 			const auto particlePosX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
 			const auto particlePosY = h + r + dy * j;
 			m_f.particleMap.insert({ count++, { particlePosX, particlePosY } });
@@ -118,7 +116,7 @@ void fluid::setupScene()
 		auto pointSize = 2.0 * r;
 		qCritical() << pointSize;
 		for (auto i = 0; i < m_f.maxParticles; i++) {
-			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
+			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].particleColorR, m_f.particleMap[i].particleColorG, m_f.particleMap[i].particleColorB);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
 
 			m_particleItems.at(i)->setPos(m_f.particleMap[i].particlePosX - r, m_f.particleMap[i].particlePosY - r);
@@ -182,7 +180,7 @@ void fluid::draw()
 	if (constants::showParticles) {
 		auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
-			auto particleColor = QColor::fromRgbF(m_f.particleColor[3 * i], m_f.particleColor[3 * i + 1], m_f.particleColor[3 * i + 2]);
+			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].particleColorR, m_f.particleMap[i].particleColorG, m_f.particleMap[i].particleColorB);
 			item->setPos(m_f.particleMap[i].particlePosX - m_f.particleRadius, m_f.particleMap[i].particlePosY - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
 			item->setPen(QPen(particleColor));

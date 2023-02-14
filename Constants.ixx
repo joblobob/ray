@@ -25,6 +25,7 @@ constexpr double numParticleIters = 2;
 const double gravity = -9.81 * scale;
 
 constexpr double flipRatio       = 0.9;
+constexpr double colorDiffusionCoeff    = 0.001;
 constexpr bool compensateDrift   = true;
 constexpr bool separateParticles = true;
 constexpr bool paused            = false;
