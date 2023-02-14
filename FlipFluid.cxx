@@ -81,20 +81,20 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 	obstacleVelY = vy;
 }
 
-void FlipFluid::integrateParticles(double dt)
+void FlipFluid::integrateParticles()
 {
 	auto integration = [](auto& pair) {
-		auto& p { pair.second };
-		p.particleVelY += constants::dt * constants::gravity;
+		Particle& p { pair.second };
+		p.particleVelY += constants::integ; //dt * gravity
 		p.particlePosX += p.particleVelX * constants::dt;
 		p.particlePosY += p.particleVelY * constants::dt;
 	};
-	std::for_each(std::execution::unseq, particleMap.begin(), particleMap.end(), integration);
+	std::for_each(std::execution::seq, particleMap.begin(), particleMap.end(), integration);
 }
 
 void FlipFluid::pushParticlesApart(int numIters)
 {
-	std::fill(std::execution::par_unseq, numCellParticles.begin(), numCellParticles.end(), 0);
+	std::fill(std::execution::unseq, numCellParticles.begin(), numCellParticles.end(), 0);
 
 	// count particles per cell
 	auto countParticlesInCell = [&](auto& pair) {
@@ -561,53 +561,51 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 {
 	std::vector<ExecutionLog> log;
 
-	auto numSubSteps = 1;
-	auto sdt         = dt / numSubSteps;
 
 
 	QElapsedTimer timer;
 
 	if (instrument)
 		timer.start();
-	for (int step = 0; step < numSubSteps; step++) {
-		integrateParticles(sdt);
+
+	integrateParticles();
+	if (instrument) {
+		log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	if (separateParticles) {
+		pushParticlesApart(numParticleIters);
 		if (instrument) {
-			log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
-			timer.restart();
-		}
-		if (separateParticles) {
-			pushParticlesApart(numParticleIters);
-			if (instrument) {
-				log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
-				timer.restart();
-			}
-		}
-		handleParticleCollisions(obstacleX, obstacleY, obstacleRadius);
-		if (instrument) {
-			log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
-			timer.restart();
-		}
-		transferVelocities(true, flipRatio);
-		if (instrument) {
-			log.push_back(ExecutionLog { "transferVelocitiesTrue", timer.nsecsElapsed() });
-			timer.restart();
-		}
-		updateParticleDensity();
-		if (instrument) {
-			log.push_back(ExecutionLog { "updateParticleDensity", timer.nsecsElapsed() });
-			timer.restart();
-		}
-		solveIncompressibility(numPressureIters, sdt, overRelaxation, compensateDrift);
-		if (instrument) {
-			log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
-			timer.restart();
-		}
-		transferVelocities(false, flipRatio);
-		if (instrument) {
-			log.push_back(ExecutionLog { "transferVelocitiesFalse", timer.nsecsElapsed() });
+			log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
 			timer.restart();
 		}
 	}
+	handleParticleCollisions(obstacleX, obstacleY, obstacleRadius);
+	if (instrument) {
+		log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	transferVelocities(true, flipRatio);
+	if (instrument) {
+		log.push_back(ExecutionLog { "transferVelocitiesTrue", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	updateParticleDensity();
+	if (instrument) {
+		log.push_back(ExecutionLog { "updateParticleDensity", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	solveIncompressibility(numPressureIters, constants::dt, overRelaxation, compensateDrift);
+	if (instrument) {
+		log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
+		timer.restart();
+	}
+	transferVelocities(false, flipRatio);
+	if (instrument) {
+		log.push_back(ExecutionLog { "transferVelocitiesFalse", timer.nsecsElapsed() });
+		timer.restart();
+	}
+
 
 	updateParticleColors();
 	if (instrument) {

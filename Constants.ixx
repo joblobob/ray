@@ -22,15 +22,17 @@ constexpr double dt               = 1.0 / 60.0;
 constexpr double numPressureIters = 50;
 constexpr double numParticleIters = 2;
 
-const double gravity = -9.81 * scale;
+constexpr double gravity = -9.81 * scale;
 
-constexpr double flipRatio       = 0.9;
-constexpr double colorDiffusionCoeff    = 0.001;
-constexpr bool compensateDrift   = true;
-constexpr bool separateParticles = true;
-constexpr bool paused            = false;
-constexpr bool showObstacle      = true;
-constexpr bool showParticles     = true;
-constexpr bool showGrid          = true;
+constexpr double integ = dt * gravity;
+
+constexpr double flipRatio           = 0.9;
+constexpr double colorDiffusionCoeff = 0.001;
+constexpr bool compensateDrift       = true;
+constexpr bool separateParticles     = true;
+constexpr bool paused                = false;
+constexpr bool showObstacle          = true;
+constexpr bool showParticles         = true;
+constexpr bool showGrid              = true;
 
 } // namespace constants
