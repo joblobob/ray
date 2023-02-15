@@ -83,11 +83,10 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 
 void FlipFluid::integrateParticles()
 {
-	auto integration = [](auto& pair) {
-		Particle& p { pair.second };
-		p.particleVelY += constants::integ; //dt * gravity
-		p.particlePosX += p.particleVelX * constants::dt;
-		p.particlePosY += p.particleVelY * constants::dt;
+	auto integration = [](Particle& particle) {
+		particle.particleVelY += constants::integ; //dt * gravity
+		particle.particlePosX += particle.particleVelX * constants::dt;
+		particle.particlePosY += particle.particleVelY * constants::dt;
 	};
 	std::for_each(std::execution::seq, particleMap.begin(), particleMap.end(), integration);
 }
@@ -97,8 +96,8 @@ void FlipFluid::pushParticlesApart(int numIters)
 	std::fill(numCellParticles.begin(), numCellParticles.end(), 0);
 
 	// count particles per cell
-	auto countParticlesInCell = [&](const auto& pair) {
-		numCellParticles[cellNumber(pair.second.particlePosX, pair.second.particlePosY, pBorder, pInvSpacing)]++;
+	auto countParticlesInCell = [&](const Particle& particle) {
+		numCellParticles[cellNumber(particle.particlePosX, particle.particlePosY, pBorder, pInvSpacing)]++;
 	};
 	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), countParticlesInCell);
 
@@ -112,10 +111,10 @@ void FlipFluid::pushParticlesApart(int numIters)
 	firstCellParticle[pNumCells] = first; // guard
 
 	// fill particles into cells
-	auto fillParticleIntoCell = [&](auto& pair) {
-		int cellNr = cellNumber(pair.second.particlePosX, pair.second.particlePosY, pBorder, pInvSpacing);
+	auto fillParticleIntoCell = [&](const Particle& p) {
+		int cellNr = cellNumber(p.particlePosX, p.particlePosY, pBorder, pInvSpacing);
 		firstCellParticle[cellNr]--;
-		cellParticleIds[firstCellParticle[cellNr]] = pair.first;
+		cellParticleIds[firstCellParticle[cellNr]] = p.particleId;
 	};
 	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), fillParticleIntoCell);
 
@@ -125,10 +124,9 @@ void FlipFluid::pushParticlesApart(int numIters)
 	const auto minDist  = 2.0 * particleRadius;
 	const auto minDist2 = minDist * minDist;
 
-	auto pushParticles = [&](auto& pair) {
-		auto& particleValue = pair.second;
-		const auto px       = particleValue.particlePosX;
-		const auto py       = particleValue.particlePosY;
+	auto pushParticles = [&](auto& particle) {
+		const auto px = particle.particlePosX;
+		const auto py = particle.particlePosY;
 
 		const int pxi = floor(px * pInvSpacing);
 		const int pyi = floor(py * pInvSpacing);
@@ -144,7 +142,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 				const int last   = firstCellParticle[cellNr + 1];
 				for (int j = first; j < last; j++) {
 					int id = cellParticleIds[j];
-					if (id == pair.first)
+					if (id == particle.particleId)
 						continue;
 					auto& particleAtId { particleMap[id] };
 					const auto qx = particleAtId.particlePosX;
@@ -159,16 +157,16 @@ void FlipFluid::pushParticlesApart(int numIters)
 					const auto s = 0.5 * (minDist - d) / d;
 					dx *= s;
 					dy *= s;
-					particleValue.particlePosX -= dx;
-					particleValue.particlePosY -= dy;
+					particle.particlePosX -= dx;
+					particle.particlePosY -= dy;
 					particleAtId.particlePosX += dx;
 					particleAtId.particlePosY += dy;
 
 					// diffuse colors
 
-					calcColor(particleValue.particleColorR, particleAtId.particleColorR);
-					calcColor(particleValue.particleColorG, particleAtId.particleColorG);
-					calcColor(particleValue.particleColorB, particleAtId.particleColorB);
+					calcColor(particle.particleColorR, particleAtId.particleColorR);
+					calcColor(particle.particleColorG, particleAtId.particleColorG);
+					calcColor(particle.particleColorB, particleAtId.particleColorB);
 				}
 			}
 		}
@@ -200,9 +198,9 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 	auto minY = h + r;
 	auto maxY = (fNumY - 1) * h - r;
 
-	auto particleCollision = [&](auto& pair) {
-		auto x = pair.second.particlePosX;
-		auto y = pair.second.particlePosY;
+	auto particleCollision = [&](auto& particle) {
+		auto x = particle.particlePosX;
+		auto y = particle.particlePosY;
 
 		auto dx = x - obstacleX;
 		auto dy = y - obstacleY;
@@ -211,29 +209,29 @@ void FlipFluid::handleParticleCollisions(double obstacleX, double obstacleY, dou
 		// obstacle collision
 
 		if (d2 < minDist2) {
-			pair.second.particleVelX = obstacleVelX;
-			pair.second.particleVelY = obstacleVelY;
+			particle.particleVelX    = obstacleVelX;
+			particle.particleVelY = obstacleVelY;
 		}
 		// wall collisions
 
 		if (x < minX) {
 			x                        = minX;
-			pair.second.particleVelX = 0.0;
+			particle.particleVelX = 0.0;
 		}
 		if (x > maxX) {
 			x                        = maxX;
-			pair.second.particleVelX = 0.0;
+			particle.particleVelX = 0.0;
 		}
 		if (y < minY) {
 			y                        = minY;
-			pair.second.particleVelY = 0.0;
+			particle.particleVelY = 0.0;
 		}
 		if (y > maxY) {
 			y                        = maxY;
-			pair.second.particleVelY = 0.0;
+			particle.particleVelY = 0.0;
 		}
-		pair.second.particlePosX = x;
-		pair.second.particlePosY = y;
+		particle.particlePosX = x;
+		particle.particlePosY = y;
 	};
 	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), particleCollision);
 }
@@ -246,12 +244,9 @@ void FlipFluid::updateParticleDensity()
 
 	std::fill(particleDensity.begin(), particleDensity.end(), 0.0);
 
-	auto solveParticleDensity = [&](auto& pair) {
-		auto x = pair.second.particlePosX;
-		auto y = pair.second.particlePosY;
-
-		x = std::clamp(x, h, (fNumX - 1) * h);
-		y = std::clamp(y, h, (fNumY - 1) * h);
+	auto solveParticleDensity = [&](const Particle& p) {
+		auto x = std::clamp(p.particlePosX, h, (fNumX - 1) * h);
+		auto y = std::clamp(p.particlePosY, h, (fNumY - 1) * h);
 
 		int x0  = floor((x - h2) * h1);
 		auto tx = ((x - h2) - x0 * h) * h1;
@@ -310,8 +305,8 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		for (int i = 0; i < fNumCells; i++)
 			cellType[i] = isVeryCloseToZero(s[i]) ? constants::CellType::Solid : constants::CellType::Air;
 
-		auto setCellType = [&](auto& pair) {
-			int cellNr = cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, fBorder, fInvSpacing);
+		auto setCellType = [&](const Particle& p) {
+			int cellNr = cellNumber({ p.particlePosX, p.particlePosY }, fBorder, fInvSpacing);
 			if (cellType[cellNr] == constants::CellType::Air)
 				cellType[cellNr] = constants::CellType::Fluid;
 		};
@@ -327,12 +322,9 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		std::vector<double>& prevF = component == 0 ? prevU : prevV;
 		std::vector<double>& d     = component == 0 ? du : dv;
 
-		auto parseVelocities = [&](auto& pair) {
-			auto x = pair.second.particlePosX;
-			auto y = pair.second.particlePosY;
-
-			x = std::clamp(x, h, (fNumX - 1) * h);
-			y = std::clamp(y, h, (fNumY - 1) * h);
+		auto parseVelocities = [&](Particle& particle) {
+			const auto x = std::clamp(particle.particlePosX, h, (fNumX - 1) * h);
+			const auto y  = std::clamp(particle.particlePosY, h, (fNumY - 1) * h);
 
 			int x0  = std::min((int)floor((x - dx) * h1), fNumX - 2);
 			auto tx = ((x - dx) - x0 * h) * h1;
@@ -356,7 +348,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 			int nr3 = x0 * n + y1;
 
 			if (toGrid) {
-				auto pv = component == 0 ? pair.second.particleVelX : pair.second.particleVelY;
+				auto pv = component == 0 ? particle.particleVelX : particle.particleVelY;
 				f[nr0] += pv * d0;
 				d[nr0] += d0;
 				f[nr1] += pv * d1;
@@ -372,7 +364,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 				auto valid2 = cellType[nr2] != constants::CellType::Air || cellType[nr2 - offset] != constants::CellType::Air ? 1.0 : 0.0;
 				auto valid3 = cellType[nr3] != constants::CellType::Air || cellType[nr3 - offset] != constants::CellType::Air ? 1.0 : 0.0;
 
-				auto v = component == 0 ? pair.second.particleVelX : pair.second.particleVelY;
+				auto v = component == 0 ? particle.particleVelX : particle.particleVelY;
 				auto d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 				if (d > 0.0) {
@@ -384,9 +376,9 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 
 					auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
 					if (component == 0)
-						pair.second.particleVelX = newVelValue;
+						particle.particleVelX = newVelValue;
 					else
-						pair.second.particleVelY = newVelValue;
+						particle.particleVelY = newVelValue;
 				}
 			}
 		};
@@ -469,24 +461,24 @@ void FlipFluid::updateParticleColors()
 {
 	auto h1 = fInvSpacing;
 
-	auto parseParticleColors = [&](auto& pair) {
+	auto parseParticleColors = [&](Particle& particle) {
 		auto s = 0.01;
 
-		pair.second.particleColorR = std::clamp(pair.second.particleColorR - s, 0.0, 1.0);
-		pair.second.particleColorG = std::clamp(pair.second.particleColorG - s, 0.0, 1.0);
-		pair.second.particleColorB = std::clamp(pair.second.particleColorB + s, 0.0, 1.0);
+		particle.particleColorR    = std::clamp(particle.particleColorR - s, 0.0, 1.0);
+		particle.particleColorG = std::clamp(particle.particleColorG - s, 0.0, 1.0);
+		particle.particleColorB    = std::clamp(particle.particleColorB + s, 0.0, 1.0);
 
-		int cellNr = cellNumber({ pair.second.particlePosX, pair.second.particlePosY }, fBorder, fInvSpacing);
+		int cellNr = cellNumber({ particle.particlePosX, particle.particlePosY }, fBorder, fInvSpacing);
 
 		auto d0 = particleRestDensity;
 
 		if (d0 > 0.0) {
-			auto relDensity = particleDensity[cellNr] / d0;
+			const auto relDensity = particleDensity[cellNr] / d0;
 			if (relDensity < 0.7) {
-				auto s                     = 0.8;
-				pair.second.particleColorR = s;
-				pair.second.particleColorG = s;
-				pair.second.particleColorB = 1.0;
+				const auto s                     = 0.8;
+				particle.particleColorR    = s;
+				particle.particleColorG    = s;
+				particle.particleColorB    = 1.0;
 			}
 		}
 	};

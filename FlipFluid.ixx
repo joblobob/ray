@@ -18,6 +18,7 @@ export struct ExecutionLog {
 };
 
 export struct Particle {
+	int particleId;
 	double particlePosX = 0.0, particlePosY = 0.0, particleVelX = 0.0, particleVelY = 0.0;
 	double particleColorR = 0.0, particleColorG = 0.0, particleColorB = 1.0;
 };
@@ -29,7 +30,7 @@ export struct FlipFluid {
 	std::vector<int> numCellParticles, firstCellParticle, cellParticleIds;
 	std::vector<constants::CellType> cellType;
 
-	std::unordered_map<int, Particle> particleMap; // cell x particle
+	std::vector<Particle> particleMap; // cell x particle
 
 	Border pBorder;
 	Border fBorder;

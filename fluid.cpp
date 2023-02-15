@@ -66,7 +66,7 @@ void fluid::setupScene()
 		for (int j = 0; j < numY; j++) {
 			const auto particlePosX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
 			const auto particlePosY = h + r + dy * j;
-			m_f.particleMap.insert({ count++, { particlePosX, particlePosY } });
+			m_f.particleMap.push_back({ count++, particlePosX, particlePosY });
 		}
 	}
 
