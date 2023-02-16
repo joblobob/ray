@@ -18,19 +18,25 @@ export struct ExecutionLog {
 };
 
 export struct Particle {
-	int particleId;
-	double particlePosX = 0.0, particlePosY = 0.0, particleVelX = 0.0, particleVelY = 0.0;
-	double particleColorR = 0.0, particleColorG = 0.0, particleColorB = 1.0;
+	int id;
+	double posX = 0.0, posY = 0.0, velX = 0.0, velY = 0.0;
+	double colorR = 0.0, colorG = 0.0, colorB = 1.0;
+};
+
+struct ParticleInCells {
+	int numCellParticles = 0, firstCellParticle = 0;
 };
 
 export struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells;
 	std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particleDensity;
-	std::vector<int> numCellParticles, firstCellParticle, cellParticleIds;
+	std::vector<int> cellParticleIds;
 	std::vector<constants::CellType> cellType;
 
-	std::vector<Particle> particleMap; // cell x particle
+	std::vector<Particle> particleMap; // particles
+
+	std::vector<ParticleInCells> particleCells; // particlesincellinfo
 
 	Border pBorder;
 	Border fBorder;

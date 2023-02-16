@@ -64,9 +64,9 @@ void fluid::setupScene()
 	int count = 0;
 	for (int i = 0; i < numX; i++) {
 		for (int j = 0; j < numY; j++) {
-			const auto particlePosX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			const auto particlePosY = h + r + dy * j;
-			m_f.particleMap.push_back({ count++, particlePosX, particlePosY });
+			const auto posX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			const auto posY = h + r + dy * j;
+			m_f.particleMap.push_back({ count++, posX, posY });
 		}
 	}
 
@@ -116,10 +116,10 @@ void fluid::setupScene()
 		auto pointSize = 2.0 * r;
 		qCritical() << pointSize;
 		for (auto i = 0; i < m_f.maxParticles; i++) {
-			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].particleColorR, m_f.particleMap[i].particleColorG, m_f.particleMap[i].particleColorB);
+			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
 
-			m_particleItems.at(i)->setPos(m_f.particleMap[i].particlePosX - r, m_f.particleMap[i].particlePosY - r);
+			m_particleItems.at(i)->setPos(m_f.particleMap[i].posX - r, m_f.particleMap[i].posY - r);
 			m_particleItems.at(i)->setData(0, i);
 		}
 	}
@@ -179,8 +179,8 @@ void fluid::draw()
 	if (constants::showParticles) {
 		auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
-			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].particleColorR, m_f.particleMap[i].particleColorG, m_f.particleMap[i].particleColorB);
-			item->setPos(m_f.particleMap[i].particlePosX - m_f.particleRadius, m_f.particleMap[i].particlePosY - m_f.particleRadius);
+			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
+			item->setPos(m_f.particleMap[i].posX - m_f.particleRadius, m_f.particleMap[i].posY - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
 			item->setPen(QPen(particleColor));
 		};
