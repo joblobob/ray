@@ -63,10 +63,10 @@ void fluid::setupScene()
 	int p     = 0;
 	int count = 0;
 	for (int i = 0; i < numX; i++) {
-		for (int j = 0; j < numY; j++) {
-			const auto posX = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			const auto posY = h + r + dy * j;
-			m_f.particleMap.push_back({ count++, posX, posY });
+		for (int j = 0; j < numY; j++, count++) {
+			const auto posX        = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
+			const auto posY        = h + r + dy * j;
+			m_f.particleMap[count] = { count, posX, posY };
 		}
 	}
 
@@ -74,13 +74,16 @@ void fluid::setupScene()
 	// setup grid cells for tank
 
 	double n = m_f.fNumY;
-
+	count    = 0;
 	for (int i = 0; i < m_f.fNumX; i++) {
 		for (int j = 0; j < m_f.fNumY; j++) {
 			double s = 1.0; // fluid
 			if (i == 0 || i == m_f.fNumX - 1 || j == 0)
 				s = 0.0; // solid
-			m_f.s[i * n + j] = s;
+			m_f.gridCells[i * n + j].s        = s;
+			m_f.gridCells[i * n + j].cellNumX = i;
+			m_f.gridCells[i * n + j].cellNumY = j;
+			count++;
 		}
 	}
 
@@ -94,39 +97,31 @@ void fluid::setupScene()
 	if (constants::showGrid) {
 		auto gridPen         = QPen(QColor(127, 127, 127));
 		int yesMyIndexAtHand = 0;
-		for (auto i = 0; i < m_f.fNumX; i++) {
-			for (auto j = 0; j < m_f.fNumY; j++) {
-				auto item = m_scene->addRect(0,
-				    0,
-				    pointSizeGrid,
-				    pointSizeGrid,
-				    gridPen,
-				    QBrush(QColor::fromRgbF(m_f.cellColor[3 * i + j], m_f.cellColor[3 * i + j + 1], m_f.cellColor[3 * i + j + 2])));
-				m_gridItems.push_back(item);
-				item->setPos(i * pointSizeGrid, j * pointSizeGrid);
-				item->setData(0, yesMyIndexAtHand);
-				yesMyIndexAtHand++;
-			}
-		}
+
+		auto setGridItems = [&](const Cell& cell) {
+			auto item = m_scene->addRect(0, 0, pointSizeGrid, pointSizeGrid, gridPen, QBrush(QColor::fromRgbF(cell.colorR, cell.colorG, cell.colorB)));
+			m_gridItems.push_back(item);
+			item->setPos(cell.cellNumX * pointSizeGrid, cell.cellNumY * pointSizeGrid);
+			item->setData(0, yesMyIndexAtHand);
+			yesMyIndexAtHand++;
+		};
+		std::for_each(std::execution::seq, m_f.gridCells.begin(), m_f.gridCells.end(), setGridItems);
 	}
 
 	//setup particles of water
 	m_particleItems.reserve(m_f.maxParticles);
 	if (constants::showParticles) {
 		auto pointSize = 2.0 * r;
-		qCritical() << pointSize;
-		for (auto i = 0; i < m_f.maxParticles; i++) {
-			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
+		for (auto i = 0; i < m_f.maxParticles; i++) {}
+		auto setParticleItems = [&](const Particle& particle) {
+			auto particleColor = QColor::fromRgbF(particle.colorR, particle.colorG, particle.colorB);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
 
-			m_particleItems.at(i)->setPos(m_f.particleMap[i].posX - r, m_f.particleMap[i].posY - r);
-			m_particleItems.at(i)->setData(0, i);
-		}
+			m_particleItems[particle.id]->setPos(particle.posX - r, particle.posY - r);
+			m_particleItems[particle.id]->setData(0, particle.id);
+		};
+		std::for_each(std::execution::seq, m_f.particleMap.cbegin(), m_f.particleMap.cend(), setParticleItems);
 	}
-
-	//for (auto i : m_f.particleMap) {
-	//	m_particleItems.at(i.first)->setPos(i.second.particlePosX - r, i.second.particlePosY - r);
-	//}
 
 
 	m_f.setupObstacle(0.0, 0.0, true);
@@ -166,8 +161,9 @@ void fluid::draw()
 	if (constants::showGrid) {
 		auto gridPen      = QPen(QColor(0, 0, 0));
 		auto setCellColor = [&](QGraphicsRectItem* item) {
-			auto i = item->data(0).toInt();
-			item->setBrush(QBrush(QColor::fromRgbF(m_f.cellColor[3 * i], m_f.cellColor[3 * i + 1], m_f.cellColor[3 * i + 2])));
+			auto i          = item->data(0).toInt();
+			const Cell cell = m_f.gridCells[i];
+			item->setBrush(QBrush(QColor::fromRgbF(cell.colorR, cell.colorG, cell.colorB)));
 			item->setPen(gridPen);
 		};
 
