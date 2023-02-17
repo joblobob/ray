@@ -156,31 +156,31 @@ void FlipFluid::pushParticlesApart(int numIters)
 				const int last   = particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {
 					int id = cellParticleIds[j];
-					if (id == particle.id)
-						continue;
-					auto& particleAtId { particleMap[id] };
-					const auto qx = particleAtId.posX;
-					const auto qy = particleAtId.posY;
+					if (id != particle.id) {
+						auto& particleAtId { particleMap[id] };
+						const auto qx = particleAtId.posX;
+						const auto qy = particleAtId.posY;
 
-					auto dx       = qx - px;
-					auto dy       = qy - py;
-					const auto d2 = dx * dx + dy * dy;
-					if (d2 > minDist2 || isVeryCloseToZero(d2))
-						continue;
-					const auto d = sqrt(d2);
-					const auto s = 0.5 * (minDist - d) / d;
-					dx *= s;
-					dy *= s;
-					particle.posX -= dx;
-					particle.posY -= dy;
-					particleAtId.posX += dx;
-					particleAtId.posY += dy;
+						auto dx       = qx - px;
+						auto dy       = qy - py;
+						const auto d2 = dx * dx + dy * dy;
+						if (!(d2 > minDist2 || isVeryCloseToZero(d2))) {
+							const auto d = sqrt(d2);
+							const auto s = 0.5 * (minDist - d) / d;
+							dx *= s;
+							dy *= s;
+							particle.posX -= dx;
+							particle.posY -= dy;
+							particleAtId.posX += dx;
+							particleAtId.posY += dy;
 
-					// diffuse colors
+							// diffuse colors
 
-					calcColor(particle.colorR, particleAtId.colorR);
-					calcColor(particle.colorG, particleAtId.colorG);
-					calcColor(particle.colorB, particleAtId.colorB);
+							calcColor(particle.colorR, particleAtId.colorR);
+							calcColor(particle.colorG, particleAtId.colorG);
+							calcColor(particle.colorB, particleAtId.colorB);
+						}
+					}
 				}
 			}
 		}
@@ -306,7 +306,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 	double h2 = 0.5 * h;
 
 	if (toGrid) {
-		auto prepareCellType = [&](Cell& cell) {
+		for (Cell& cell : gridCells) {
 			cell.prevU = cell.u;
 			cell.prevV = cell.v;
 
@@ -314,7 +314,9 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 			cell.dv = 0.0;
 			cell.u  = 0.0;
 			cell.v  = 0.0;
+		}
 
+		auto prepareCellType = [&](Cell& cell) {
 			cell.cellType = isVeryCloseToZero(cell.s) ? constants::CellType::Solid : constants::CellType::Air;
 		};
 		for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
@@ -454,51 +456,89 @@ void FlipFluid::solveIncompressibility(int numIters, double dt, double overRelax
 	auto n  = fNumY;
 	auto cp = density * h / dt;
 
+	for (Cell& cell : gridCells) {
+		cell.prevU = cell.u;
+		cell.prevV = cell.v;
+	}
+
 
 	for (int iter = 0; iter < numIters; iter++) {
+		/*for (int i = 1; i < fNumX - 1; i++) {
+			for (int j = 1; j < fNumY - 1; j++) {
+				if (gridCells[i * n + j].cellType != constants::CellType::Fluid)
+					continue;
+
+				int center = i * n + j;
+				int left   = (i - 1) * n + j;
+				int right  = (i + 1) * n + j;
+				int bottom = i * n + j - 1;
+				int top    = i * n + j + 1;
+
+				auto sx0 = gridCells[left].s;
+				auto sx1 = gridCells[right].s;
+				auto sy0 = gridCells[bottom].s;
+				auto sy1 = gridCells[top].s;
+				auto s   = sx0 + sx1 + sy0 + sy1;
+				if (isVeryCloseToZero(s))
+					continue;
+
+				auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
+
+				if (particleRestDensity > 0.0 && compensateDrift) {
+					auto k           = 1.0;
+					auto compression = gridCells[i * n + j].particleDensity - particleRestDensity;
+					if (compression > 0.0)
+						div = div - k * compression;
+				}
+				auto pValue = -div / s;
+				pValue *= overRelaxation;
+				gridCells[center].u -= sx0 * pValue;
+				gridCells[right].u += sx1 * pValue;
+				gridCells[center].v -= sy0 * pValue;
+				gridCells[top].v += sy1 * pValue;
+			}*/
+
+
+
 		auto parseIncompressibility = [&](Cell& cell) {
-			cell.prevU = cell.u;
-			cell.prevV = cell.v;
+			if (cell.cellType == constants::CellType::Fluid) {
+				int i      = cell.cellNumX;
+				int j      = cell.cellNumY;
+				int center = i * n + j;
+				int left   = (i - 1) * n + j;
+				int right  = (i + 1) * n + j;
+				int bottom = i * n + j - 1;
+				int top    = i * n + j + 1;
 
-			if (cell.cellType != constants::CellType::Fluid)
-				return;
+				auto sx0 = gridCells[left].s;
+				auto sx1 = gridCells[right].s;
+				auto sy0 = gridCells[bottom].s;
+				auto sy1 = gridCells[top].s;
+				auto s   = sx0 + sx1 + sy0 + sy1;
+				if (!isVeryCloseToZero(s)) {
+					auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
 
-			int i      = cell.cellNumX;
-			int j      = cell.cellNumY;
-			int center = i * n + j;
-			int left   = (i - 1) * n + j;
-			int right  = (i + 1) * n + j;
-			int bottom = i * n + j - 1;
-			int top    = i * n + j + 1;
+					if (particleRestDensity > 0.0 && compensateDrift) {
+						auto k           = 1.0;
+						auto compression = cell.particleDensity - particleRestDensity;
+						if (compression > 0.0)
+							div = div - k * compression;
+					}
 
-			auto sx0 = gridCells[left].s;
-			auto sx1 = gridCells[right].s;
-			auto sy0 = gridCells[bottom].s;
-			auto sy1 = gridCells[top].s;
-			auto s   = sx0 + sx1 + sy0 + sy1;
-			if (isVeryCloseToZero(s))
-				return;
+					auto pValue = -div / s;
+					pValue *= overRelaxation;
 
-			auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
-
-			if (particleRestDensity > 0.0 && compensateDrift) {
-				auto k           = 1.0;
-				auto compression = cell.particleDensity - particleRestDensity;
-				if (compression > 0.0)
-					div = div - k * compression;
+					gridCells[center].u -= sx0 * pValue;
+					gridCells[right].u += sx1 * pValue;
+					gridCells[center].v -= sy0 * pValue;
+					gridCells[top].v += sy1 * pValue;
+				}
 			}
-
-			auto pValue = -div / s;
-			pValue *= overRelaxation;
-
-			gridCells[center].u -= sx0 * pValue;
-			gridCells[right].u += sx1 * pValue;
-			gridCells[center].v -= sy0 * pValue;
-			gridCells[top].v += sy1 * pValue;
 		};
 		for_each(std::execution::seq, gridCells.begin(), gridCells.end(), parseIncompressibility);
 	}
 }
+//}
 
 void FlipFluid::updateParticleColors()
 {
