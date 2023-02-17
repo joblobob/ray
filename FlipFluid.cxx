@@ -62,28 +62,41 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 	auto n    = fNumY;
 	auto cd   = sqrt(2.0) * h;
 
+	for (auto i = 1; i < fNumX - 2; i++) {
+		for (auto j = 1; j < fNumY - 2; j++) {
+			gridCells[i * n + j].s = 1.0;
+			auto dx                = (i + 0.5) * h - x;
+			auto dy                = (j + 0.5) * h - y;
+			if (dx * dx + dy * dy < r * r) {
+				gridCells[i * n + j].s       = 0.0;
+				gridCells[i * n + j].u       = vx;
+				gridCells[(i + 1) * n + j].u = vx;
+				gridCells[i * n + j].v       = vy;
+				gridCells[i * n + j + 1].v   = vy;
+			}
+		}
+	}
 	auto setObstableValues = [&](Cell& cell) {
 		int i = cell.cellNumX;
 		int j = cell.cellNumY;
 
-		if (j == 0)
-			return;
+		if (j != 0) {
+			cell.s = 1.0;
 
-		cell.s = 1.0;
+			auto dx = (i + 0.5) * h - x;
+			auto dy = (j + 0.5) * h - y;
 
-		auto dx = (i + 0.5) * h - x;
-		auto dy = (j + 0.5) * h - y;
+			if (dx * dx + dy * dy < r * r) {
+				cell.s                       = 0.0;
+				cell.u                       = vx;
+				gridCells[(i + 1) * n + j].u = vx;
 
-		if (dx * dx + dy * dy < r * r) {
-			cell.s                       = 0.0;
-			cell.u                       = vx;
-			gridCells[(i + 1) * n + j].u = vx;
-
-			cell.v                     = vy;
-			gridCells[i * n + j + 1].u = vx;
+				cell.v                     = vy;
+				gridCells[i * n + j + 1].u = vx;
+			}
 		}
 	};
-	std::for_each(std::execution::seq, gridCells.begin() + fNumY, gridCells.end() - fNumY, setObstableValues);
+	//std::for_each(std::execution::seq, gridCells.begin() + fNumY, gridCells.end() - fNumY, setObstableValues);
 
 	//scene.showObstacle = true;
 	obstacleVelX = vx;
@@ -187,7 +200,7 @@ void FlipFluid::pushParticlesApart(int numIters)
 	};
 
 	for (int iter = 0; iter < numIters; iter++) {
-		for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), pushParticles);
+		for_each(std::execution::seq, particleMap.begin(), particleMap.end(), pushParticles);
 	}
 }
 
@@ -309,7 +322,8 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 		for (Cell& cell : gridCells) {
 			cell.prevU = cell.u;
 			cell.prevV = cell.v;
-
+		}
+		for (Cell& cell : gridCells) {
 			cell.du = 0.0;
 			cell.dv = 0.0;
 			cell.u  = 0.0;
@@ -430,7 +444,31 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 
 
 		if (toGrid) {
+			//double& f     = component == 0 ? cell.u : cell.v;
+			//double& prevF = component == 0 ? cell.prevU : cell.prevV;
+			//double& d     = component == 0 ? cell.du : cell.dv;
+
 			// restore solid cells
+			///	for (int i = 0; i < f.size(); i++) {
+			//		if (d[i] > 0.0)
+			//			f[i] /= d[i];
+			//	}
+
+			int count = 0;
+			for (int i = 0; i < fNumX; i++) {
+				for (int j = 0; j < fNumY; count++, j++) {
+					double& f = component == 0 ? gridCells[i * n + j].u : gridCells[i * n + j].v;
+					double& d = component == 0 ? gridCells[i * n + j].du : gridCells[i * n + j].dv;
+					if (d > 0.0)
+						f /= d;
+					auto solid = gridCells[i * n + j].cellType == constants::CellType::Solid;
+					if (solid || (i > 0 && gridCells[(i - 1) * n + j].cellType == constants::CellType::Solid))
+						gridCells[i * n + j].u = gridCells[i * n + j].prevU;
+					if (solid || (j > 0 && gridCells[i * n + j - 1].cellType == constants::CellType::Solid))
+						gridCells[i * n + j].v = gridCells[i * n + j].prevV;
+				}
+			}
+
 
 			auto restoreSolidCells = [&](Cell& cell) {
 				double& f     = component == 0 ? cell.u : cell.v;
@@ -446,7 +484,7 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 				if (solid || (cell.cellNumY > 0 && gridCells[cell.cellNumX * n + cell.cellNumY - 1].cellType == constants::CellType::Solid))
 					cell.v = cell.prevV;
 			};
-			for_each(std::execution::seq, gridCells.begin(), gridCells.end(), restoreSolidCells);
+			//for_each(std::execution::seq, gridCells.begin(), gridCells.end(), restoreSolidCells);
 		}
 	}
 }
@@ -463,7 +501,7 @@ void FlipFluid::solveIncompressibility(int numIters, double dt, double overRelax
 
 
 	for (int iter = 0; iter < numIters; iter++) {
-		/*for (int i = 1; i < fNumX - 1; i++) {
+		for (int i = 1; i < fNumX - 1; i++) {
 			for (int j = 1; j < fNumY - 1; j++) {
 				if (gridCells[i * n + j].cellType != constants::CellType::Fluid)
 					continue;
@@ -496,49 +534,49 @@ void FlipFluid::solveIncompressibility(int numIters, double dt, double overRelax
 				gridCells[right].u += sx1 * pValue;
 				gridCells[center].v -= sy0 * pValue;
 				gridCells[top].v += sy1 * pValue;
-			}*/
-
-
-
-		auto parseIncompressibility = [&](Cell& cell) {
-			if (cell.cellType == constants::CellType::Fluid) {
-				int i      = cell.cellNumX;
-				int j      = cell.cellNumY;
-				int center = i * n + j;
-				int left   = (i - 1) * n + j;
-				int right  = (i + 1) * n + j;
-				int bottom = i * n + j - 1;
-				int top    = i * n + j + 1;
-
-				auto sx0 = gridCells[left].s;
-				auto sx1 = gridCells[right].s;
-				auto sy0 = gridCells[bottom].s;
-				auto sy1 = gridCells[top].s;
-				auto s   = sx0 + sx1 + sy0 + sy1;
-				if (!isVeryCloseToZero(s)) {
-					auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
-
-					if (particleRestDensity > 0.0 && compensateDrift) {
-						auto k           = 1.0;
-						auto compression = cell.particleDensity - particleRestDensity;
-						if (compression > 0.0)
-							div = div - k * compression;
-					}
-
-					auto pValue = -div / s;
-					pValue *= overRelaxation;
-
-					gridCells[center].u -= sx0 * pValue;
-					gridCells[right].u += sx1 * pValue;
-					gridCells[center].v -= sy0 * pValue;
-					gridCells[top].v += sy1 * pValue;
-				}
 			}
-		};
-		for_each(std::execution::seq, gridCells.begin(), gridCells.end(), parseIncompressibility);
+
+
+
+			auto parseIncompressibility = [&](Cell& cell) {
+				if (cell.cellType == constants::CellType::Fluid) {
+					int i      = cell.cellNumX;
+					int j      = cell.cellNumY;
+					int center = i * n + j;
+					int left   = (i - 1) * n + j;
+					int right  = (i + 1) * n + j;
+					int bottom = i * n + j - 1;
+					int top    = i * n + j + 1;
+
+					auto sx0 = gridCells[left].s;
+					auto sx1 = gridCells[right].s;
+					auto sy0 = gridCells[bottom].s;
+					auto sy1 = gridCells[top].s;
+					auto s   = sx0 + sx1 + sy0 + sy1;
+					if (!isVeryCloseToZero(s)) {
+						auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
+
+						if (particleRestDensity > 0.0 && compensateDrift) {
+							auto k           = 1.0;
+							auto compression = cell.particleDensity - particleRestDensity;
+							if (compression > 0.0)
+								div = div - k * compression;
+						}
+
+						auto pValue = -div / s;
+						pValue *= overRelaxation;
+
+						gridCells[center].u -= sx0 * pValue;
+						gridCells[right].u += sx1 * pValue;
+						gridCells[center].v -= sy0 * pValue;
+						gridCells[top].v += sy1 * pValue;
+					}
+				}
+			};
+			//for_each(std::execution::seq, gridCells.begin() + fNumY, gridCells.end() - fNumY, parseIncompressibility);
+		}
 	}
 }
-//}
 
 void FlipFluid::updateParticleColors()
 {
@@ -565,7 +603,7 @@ void FlipFluid::updateParticleColors()
 			}
 		}
 	};
-	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), parseParticleColors);
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), parseParticleColors);
 }
 
 void FlipFluid::setSciColor(Cell& cell, double val, double minVal, double maxVal)
