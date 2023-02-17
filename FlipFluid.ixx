@@ -57,7 +57,7 @@ export struct FlipFluid {
 	void handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius);
 	void updateParticleDensity();
 	void transferVelocitiesToGrid();
-	void transferVelocities(bool toGrid, double flipRatio);
+	void transferVelocitiesToParticles();
 	void solveIncompressibility(int numIters, double dt, double overRelaxation, bool compensateDrift = true);
 
 	void updateParticleColors();
@@ -75,4 +75,10 @@ export struct FlipFluid {
 	    bool separateParticles,
 	    double obstacleRadius,
 	    bool instrument);
+
+private:
+	void parseVelocitiesV(Particle& particle);
+	void restoreSolidCellsV(Cell& cell);
+
+	void setVelComponent(double& f, double& d, double pv, double delta);
 };

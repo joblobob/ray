@@ -281,38 +281,16 @@ void FlipFluid::updateParticleDensity()
 	}
 }
 
-void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
+void FlipFluid::transferVelocitiesToParticles()
 {
 	auto n    = fNumY;
 	auto h1   = fInvSpacing;
 	double h2 = 0.5 * h;
 
-	if (toGrid) {
-		auto prepareCellType = [&](Cell& cell) {
-			cell.prevU    = cell.u;
-			cell.prevV    = cell.v;
-			cell.du       = 0.0;
-			cell.dv       = 0.0;
-			cell.u        = 0.0;
-			cell.v        = 0.0;
-			cell.cellType = isVeryCloseToZero(cell.s) ? constants::CellType::Solid : constants::CellType::Air;
-		};
-		for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
-
-		auto setCellType = [&](const Particle& p) {
-			int cellNr     = cellNumber(p.posX, p.posY, fBorder, fInvSpacing);
-			auto& cellType = gridCells[cellNr].cellType;
-			if (cellType == constants::CellType::Air)
-				cellType = constants::CellType::Fluid;
-		};
-		for_each(std::execution::seq, particleMap.begin(), particleMap.end(), setCellType);
-	}
-
 
 	for (int component = 0; component < 2; component++) {
 		auto dx = component == 0 ? 0.0 : h2;
 		auto dy = component == 0 ? h2 : 0.0;
-
 
 		auto parseVelocities = [&](Particle& particle) {
 			const auto x = std::clamp(particle.posX, h, (fNumX - 1) * h);
@@ -339,88 +317,95 @@ void FlipFluid::transferVelocities(bool toGrid, double flipRatio)
 			int nr2 = x1 * n + y1;
 			int nr3 = x0 * n + y1;
 
-
 			Cell& cell0 = gridCells[nr0];
 			Cell& cell1 = gridCells[nr1];
 			Cell& cell2 = gridCells[nr2];
 			Cell& cell3 = gridCells[nr3];
 
+			// specific
+
 			double& cf0     = component == 0 ? cell0.u : cell0.v;
 			double& cprevF0 = component == 0 ? cell0.prevU : cell0.prevV;
-			double& cd0     = component == 0 ? cell0.du : cell0.dv;
 
 			double& cf1     = component == 0 ? cell1.u : cell1.v;
 			double& cprevF1 = component == 0 ? cell1.prevU : cell1.prevV;
-			double& cd1     = component == 0 ? cell1.du : cell1.dv;
 
 			double& cf2     = component == 0 ? cell2.u : cell2.v;
 			double& cprevF2 = component == 0 ? cell2.prevU : cell2.prevV;
-			double& cd2     = component == 0 ? cell2.du : cell2.dv;
 
 			double& cf3     = component == 0 ? cell3.u : cell3.v;
 			double& cprevF3 = component == 0 ? cell3.prevU : cell3.prevV;
-			double& cd3     = component == 0 ? cell3.du : cell3.dv;
 
-			if (toGrid) {
-				auto pv = component == 0 ? particle.velX : particle.velY;
-				cf0 += pv * d0;
-				cd0 += d0;
-				cf1 += pv * d1;
-				cd1 += d1;
-				cf2 += pv * d2;
-				cd2 += d2;
-				cf3 += pv * d3;
-				cd3 += d3;
-			} else {
-				int offset             = component == 0 ? n : 1;
-				const Cell cellOffset0 = gridCells[nr0 - offset];
-				const Cell cellOffset1 = gridCells[nr1 - offset];
-				const Cell cellOffset2 = gridCells[nr2 - offset];
-				const Cell cellOffset3 = gridCells[nr3 - offset];
 
-				auto valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
-				auto valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
-				auto valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
-				auto valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
 
-				auto v = component == 0 ? particle.velX : particle.velY;
-				auto d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
+			int offset             = component == 0 ? n : 1;
+			const Cell cellOffset0 = gridCells[nr0 - offset];
+			const Cell cellOffset1 = gridCells[nr1 - offset];
+			const Cell cellOffset2 = gridCells[nr2 - offset];
+			const Cell cellOffset3 = gridCells[nr3 - offset];
 
-				if (d > 0.0) {
-					auto picV  = (valid0 * d0 * cf0 + valid1 * d1 * cf1 + valid2 * d2 * cf2 + valid3 * d3 * cf3) / d;
-					auto corr  = (valid0 * d0 * (cf0 - cprevF0) + valid1 * d1 * (cf1 - cprevF1) + valid2 * d2 * (cf2 - cprevF2) + valid3 * d3 * (cf3 - cprevF3)) / d;
-					auto flipV = v + corr;
+			auto valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
+			auto valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
+			auto valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
+			auto valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
 
-					auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
-					if (component == 0)
-						particle.velX = newVelValue;
-					else
-						particle.velY = newVelValue;
-				}
+			auto v = component == 0 ? particle.velX : particle.velY;
+			auto d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
+
+			if (d > 0.0) {
+				auto picV  = (valid0 * d0 * cf0 + valid1 * d1 * cf1 + valid2 * d2 * cf2 + valid3 * d3 * cf3) / d;
+				auto corr  = (valid0 * d0 * (cf0 - cprevF0) + valid1 * d1 * (cf1 - cprevF1) + valid2 * d2 * (cf2 - cprevF2) + valid3 * d3 * (cf3 - cprevF3)) / d;
+				auto flipV = v + corr;
+
+				auto newVelValue = (1.0 - constants::flipRatio) * picV + constants::flipRatio * flipV;
+				if (component == 0)
+					particle.velX = newVelValue;
+				else
+					particle.velY = newVelValue;
 			}
 		};
 		for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), parseVelocities);
-
-
-		if (toGrid) {
-			auto restoreSolidCells = [&](Cell& cell) {
-				double& f     = component == 0 ? cell.u : cell.v;
-				double& prevF = component == 0 ? cell.prevU : cell.prevV;
-				double& d     = component == 0 ? cell.du : cell.dv;
-
-				if (d > 0.0)
-					f /= d;
-
-				auto solid = cell.cellType == constants::CellType::Solid;
-				if (solid || (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * n + cell.cellNumY].cellType == constants::CellType::Solid))
-					cell.u = cell.prevU;
-				if (solid || (cell.cellNumY > 0 && gridCells[cell.cellNumX * n + cell.cellNumY - 1].cellType == constants::CellType::Solid))
-					cell.v = cell.prevV;
-			};
-			for_each(std::execution::seq, gridCells.begin(), gridCells.end(), restoreSolidCells);
-		}
 	}
 }
+
+void FlipFluid::transferVelocitiesToGrid()
+{
+	auto n    = fNumY;
+	auto h1   = fInvSpacing;
+	double h2 = 0.5 * h;
+
+	auto prepareCellType = [&](Cell& cell) {
+		cell.prevU    = cell.u;
+		cell.prevV    = cell.v;
+		cell.du       = 0.0;
+		cell.dv       = 0.0;
+		cell.u        = 0.0;
+		cell.v        = 0.0;
+		cell.cellType = isVeryCloseToZero(cell.s) ? constants::CellType::Solid : constants::CellType::Air;
+	};
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
+
+	auto setCellType = [&](const Particle& p) {
+		int cellNr     = cellNumber(p.posX, p.posY, fBorder, fInvSpacing);
+		auto& cellType = gridCells[cellNr].cellType;
+		if (cellType == constants::CellType::Air)
+			cellType = constants::CellType::Fluid;
+	};
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), setCellType);
+
+
+	auto parseVelocities = [&](Particle& particle) {
+		parseVelocitiesV(particle);
+	};
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), parseVelocities);
+
+
+	auto restoreSolidCells = [&](Cell& cell) {
+		restoreSolidCellsV(cell);
+	};
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), restoreSolidCells);
+}
+
 
 void FlipFluid::solveIncompressibility(int numIters, double dt, double overRelaxation, bool compensateDrift)
 {
@@ -598,7 +583,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 		log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	transferVelocities(true, flipRatio);
+	transferVelocitiesToGrid();
 	if (instrument) {
 		log.push_back(ExecutionLog { "transferVelocitiesTrue", timer.nsecsElapsed() });
 		timer.restart();
@@ -613,7 +598,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 		log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	transferVelocities(false, flipRatio);
+	transferVelocitiesToParticles();
 	if (instrument) {
 		log.push_back(ExecutionLog { "transferVelocitiesFalse", timer.nsecsElapsed() });
 		timer.restart();
@@ -631,4 +616,107 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 		timer.restart();
 	}
 	return log;
+}
+
+
+void FlipFluid::parseVelocitiesV(Particle& particle)
+{
+	double h2 = 0.5 * h;
+	auto n    = fNumY;
+
+	auto dx = 0.0;
+	auto dy = h2;
+
+	const auto x = std::clamp(particle.posX, h, (fNumX - 1) * h);
+	const auto y = std::clamp(particle.posY, h, (fNumY - 1) * h);
+
+	int x0  = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
+	auto tx = ((x - dx) - x0 * h) * fInvSpacing;
+	int x1  = std::min(x0 + 1, fNumX - 2);
+
+	int y0  = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
+	auto ty = ((y - dy) - y0 * h) * fInvSpacing;
+	int y1  = std::min(y0 + 1, fNumY - 2);
+
+	auto sx = 1.0 - tx;
+	auto sy = 1.0 - ty;
+
+	auto d0 = sx * sy;
+	auto d1 = tx * sy;
+	auto d2 = tx * ty;
+	auto d3 = sx * ty;
+
+	int nr0 = x0 * n + y0;
+	int nr1 = x1 * n + y0;
+	int nr2 = x1 * n + y1;
+	int nr3 = x0 * n + y1;
+
+	Cell& cell0 = gridCells[nr0];
+	Cell& cell1 = gridCells[nr1];
+	Cell& cell2 = gridCells[nr2];
+	Cell& cell3 = gridCells[nr3];
+
+	//specific
+
+	setVelComponent(cell0.u, cell0.du, particle.velX, d0);
+	setVelComponent(cell1.u, cell1.du, particle.velX, d1);
+	setVelComponent(cell2.u, cell2.du, particle.velX, d2);
+	setVelComponent(cell3.u, cell3.du, particle.velX, d3);
+
+
+	dx = h2;
+	dy = 0.0;
+
+	x0 = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
+	tx = ((x - dx) - x0 * h) * fInvSpacing;
+	x1 = std::min(x0 + 1, fNumX - 2);
+
+	y0 = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
+	ty = ((y - dy) - y0 * h) * fInvSpacing;
+	y1 = std::min(y0 + 1, fNumY - 2);
+
+	sx = 1.0 - tx;
+	sy = 1.0 - ty;
+
+	d0 = sx * sy;
+	d1 = tx * sy;
+	d2 = tx * ty;
+	d3 = sx * ty;
+
+	nr0 = x0 * n + y0;
+	nr1 = x1 * n + y0;
+	nr2 = x1 * n + y1;
+	nr3 = x0 * n + y1;
+
+	Cell& cell0v = gridCells[nr0];
+	Cell& cell1v = gridCells[nr1];
+	Cell& cell2v = gridCells[nr2];
+	Cell& cell3v = gridCells[nr3];
+
+	setVelComponent(cell0v.v, cell0v.dv, particle.velY, d0);
+	setVelComponent(cell1v.v, cell1v.dv, particle.velY, d1);
+	setVelComponent(cell2v.v, cell2v.dv, particle.velY, d2);
+	setVelComponent(cell3v.v, cell3v.dv, particle.velY, d3);
+}
+
+void FlipFluid::setVelComponent(double& f, double& d, double pv, double delta)
+{
+	f += pv * delta;
+	d += delta;
+}
+
+
+void FlipFluid::restoreSolidCellsV(Cell& cell)
+{
+	if (cell.du > 0.0)
+		cell.u /= cell.du;
+
+	if (cell.dv > 0.0)
+		cell.v /= cell.dv;
+
+	auto solid = cell.cellType == constants::CellType::Solid;
+	if (solid || (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * fNumY + cell.cellNumY].cellType == constants::CellType::Solid))
+		cell.u = cell.prevU;
+	if (solid || (cell.cellNumY > 0 && gridCells[cell.cellNumX * fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid))
+		cell.v = cell.prevV;
 }
