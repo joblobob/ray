@@ -37,9 +37,7 @@ export struct Cell {
 export struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells;
-	//std::vector<double> u, v, du, dv, prevU, prevV, s, cellColor, particleDensity;
 	std::vector<int> cellParticleIds;
-	//std::vector<constants::CellType> cellType;
 
 	std::vector<Particle> particleMap; // particles
 
