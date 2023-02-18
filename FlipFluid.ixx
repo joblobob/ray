@@ -80,5 +80,7 @@ private:
 	void parseVelocitiesV(Particle& particle);
 	void restoreSolidCellsV(Cell& cell);
 
+	void parseVelocitiesParticles(Particle& particle);
+
 	void setVelComponent(double& f, double& d, double pv, double delta);
 };
