@@ -394,16 +394,9 @@ void FlipFluid::transferVelocitiesToGrid()
 	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), setCellType);
 
 
-	auto parseVelocities = [&](Particle& particle) {
-		parseVelocitiesV(particle);
-	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), parseVelocities);
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), [&](Particle& particle) { parseVelocitiesV(particle); });
 
-
-	auto restoreSolidCells = [&](Cell& cell) {
-		restoreSolidCellsV(cell);
-	};
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), restoreSolidCells);
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCellsV(cell); });
 }
 
 
