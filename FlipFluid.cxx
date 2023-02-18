@@ -9,6 +9,8 @@ module;
 
 module FlipFluid;
 
+import ParticleIntegration;
+
 
 FlipFluid::FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
     density(density),
@@ -70,16 +72,6 @@ void FlipFluid::setupObstacle(double x, double y, bool reset)
 	//scene.showObstacle = true;
 	obstacleVelX = vx;
 	obstacleVelY = vy;
-}
-
-void FlipFluid::integrateParticles()
-{
-	auto integration = [](Particle& particle) {
-		particle.velY += constants::integ; //dt * gravity
-		particle.posX += particle.velX * constants::dt;
-		particle.posY += particle.velY * constants::dt;
-	};
-	std::for_each(std::execution::seq, particleMap.begin(), particleMap.end(), integration);
 }
 
 void FlipFluid::pushParticlesApart(int numIters)
@@ -473,7 +465,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 	if (instrument)
 		timer.start();
 
-	integrateParticles();
+	integrateParticles(particleMap);
 	if (instrument) {
 		log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
 		timer.restart();

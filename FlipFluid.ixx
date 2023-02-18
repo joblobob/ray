@@ -9,29 +9,13 @@ module;
 
 export module FlipFluid;
 
+import BaseStructures;
 import Constants;
 import CellCalculations;
 
 export struct ExecutionLog {
 	QString message;
 	long long nsElapsed;
-};
-
-export struct Particle {
-	int id;
-	double posX = 0.0, posY = 0.0, velX = 0.0, velY = 0.0;
-	double colorR = 0.0, colorG = 0.0, colorB = 1.0;
-};
-
-struct ParticleInCells {
-	int numCellParticles = 0, firstCellParticle = 0;
-};
-
-export struct Cell {
-	int cellNumX, cellNumY;
-	double u, v, du, dv, prevU, prevV, s, particleDensity = 0.0;
-	double colorR = 0.0, colorG = 0.0, colorB = 0.0;
-	constants::CellType cellType = constants::CellType::Solid;
 };
 
 export struct FlipFluid {
@@ -52,7 +36,6 @@ export struct FlipFluid {
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
 	void setupObstacle(double x, double y, bool reset);
-	void integrateParticles();
 	void pushParticlesApart(int numIters);
 	void handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius);
 	void updateParticleDensity();
