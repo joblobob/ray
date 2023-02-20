@@ -21,12 +21,8 @@ export struct ExecutionLog {
 export struct FlipFluid {
 	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells;
-	std::vector<int> cellParticleIds;
 
-	std::vector<Particle> particleMap; // particles
-
-	std::vector<ParticleInCells> particleCells; // particlesincellinfo
-
+	std::vector<Particle> particleMap;
 	std::vector<Cell> gridCells;
 
 	Border pBorder;
@@ -36,7 +32,6 @@ export struct FlipFluid {
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
 	void setupObstacle(double x, double y, bool reset);
-	void pushParticlesApart(int numIters);
 	void handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius);
 	void updateParticleDensity();
 	void transferVelocitiesToGrid();
@@ -46,7 +41,6 @@ export struct FlipFluid {
 	void updateParticleColors();
 	void setSciColor(Cell& cell, double val, double minVal, double maxVal);
 	void updateCellColors();
-	constexpr void calcColor(double& p1Color, double& p2Color);
 
 
 	std::vector<ExecutionLog> simulate(double dt,
