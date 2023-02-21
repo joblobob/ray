@@ -137,8 +137,6 @@ void fluid::simulate()
 		    constants::numPressureIters,
 		    constants::numParticleIters,
 		    constants::overRelaxation,
-		    constants::compensateDrift,
-		    constants::separateParticles,
 		    constants::obstacleRadius,
 		    true);
 		if (result.size() > 0) {

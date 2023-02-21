@@ -51,6 +51,7 @@ target_sources(ray1
         fluid/ParticleCollision.ixx
         fluid/ParticleDensity.ixx 
         fluid/ParticleIntegration.ixx 
+        fluid/ParticleIncompressibility.ixx
         fluid/PushParticles.ixx
 )
 

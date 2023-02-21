@@ -28,8 +28,6 @@ constexpr double integ = dt * gravity;
 
 constexpr double flipRatio           = 0.9;
 constexpr double colorDiffusionCoeff = 0.001;
-constexpr bool compensateDrift       = true;
-constexpr bool separateParticles     = true;
 constexpr bool paused                = false;
 constexpr bool showObstacle          = true;
 constexpr bool showParticles         = true;

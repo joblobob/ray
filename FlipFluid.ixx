@@ -34,7 +34,6 @@ export struct FlipFluid {
 	void setupObstacle(double x, double y, bool reset);
 	void transferVelocitiesToGrid();
 	void transferVelocitiesToParticles();
-	void solveIncompressibility(int numIters, double dt, double overRelaxation, bool compensateDrift = true);
 
 	void updateParticleColors();
 	void setSciColor(Cell& cell, double val, double minVal, double maxVal);
@@ -42,15 +41,8 @@ export struct FlipFluid {
 
 
 
-	std::vector<ExecutionLog> simulate(double dt,
-	    double flipRatio,
-	    int numPressureIters,
-	    int numParticleIters,
-	    double overRelaxation,
-	    bool compensateDrift,
-	    bool separateParticles,
-	    double obstacleRadius,
-	    bool instrument);
+	std::vector<ExecutionLog>
+	simulate(double dt, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation, double obstacleRadius, bool instrument);
 
 private:
 	void parseVelocitiesV(Particle& particle);
