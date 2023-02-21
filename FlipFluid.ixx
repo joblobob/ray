@@ -32,7 +32,6 @@ export struct FlipFluid {
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
 	void setupObstacle(double x, double y, bool reset);
-	void handleParticleCollisions(double obstacleX, double obstacleY, double obstacleRadius);
 	void updateParticleDensity();
 	void transferVelocitiesToGrid();
 	void transferVelocitiesToParticles();

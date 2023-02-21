@@ -48,6 +48,7 @@ target_sources(ray1
         fluid/BaseStructures.ixx
         fluid/CellCalculations.ixx 
         fluid/Constants.ixx
+        fluid/ParticleCollision.ixx
         fluid/ParticleIntegration.ixx 
         fluid/PushParticles.ixx
 )
