@@ -49,6 +49,7 @@ target_sources(ray1
         fluid/CellCalculations.ixx 
         fluid/CellColor.ixx
         fluid/Constants.ixx
+        fluid/CellVelocities.ixx
         fluid/ParticleCollision.ixx
         fluid/ParticleColor.ixx
         fluid/ParticleDensity.ixx 

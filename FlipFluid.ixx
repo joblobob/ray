@@ -31,17 +31,11 @@ export struct FlipFluid {
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
 	void setupObstacle(double x, double y, bool reset);
-	void transferVelocitiesToGrid();
 	void transferVelocitiesToParticles();
 
 	std::vector<ExecutionLog>
 	simulate(double dt, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation, double obstacleRadius, bool instrument);
 
 private:
-	void parseVelocitiesV(Particle& particle);
-	void restoreSolidCellsV(Cell& cell);
-
 	void parseVelocitiesParticles(Particle& particle);
-
-	void setVelComponent(double& f, double& d, double pv, double delta);
 };
