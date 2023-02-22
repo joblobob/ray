@@ -29,29 +29,29 @@ export void solveIncompressibility(std::vector<Cell>& gridCells,
 	for (int iter = 0; iter < numIters; iter++) {
 		auto parseIncompressibility = [&](Cell& cell) {
 			if (cell.cellType == constants::CellType::Fluid) {
-				int i      = cell.cellNumX;
-				int j      = cell.cellNumY;
-				int center = i * n + j;
-				int left   = (i - 1) * n + j;
-				int right  = (i + 1) * n + j;
-				int bottom = i * n + j - 1;
-				int top    = i * n + j + 1;
+				const int i      = cell.cellNumX;
+				const int j      = cell.cellNumY;
+				const int center = i * n + j;
+				const int left   = (i - 1) * n + j;
+				const int right  = (i + 1) * n + j;
+				const int bottom = i * n + j - 1;
+				const int top    = i * n + j + 1;
 
-				auto sx0 = gridCells[left].s;
-				auto sx1 = gridCells[right].s;
-				auto sy0 = gridCells[bottom].s;
-				auto sy1 = gridCells[top].s;
-				auto s   = sx0 + sx1 + sy0 + sy1;
+				const double sx0 = gridCells[left].s;
+				const double sx1 = gridCells[right].s;
+				const double sy0 = gridCells[bottom].s;
+				const double sy1 = gridCells[top].s;
+				const double s   = sx0 + sx1 + sy0 + sy1;
 				if (!isVeryCloseToZero(s)) {
-					auto div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
+					double div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
 
-					auto k           = 1.0;
-					auto compression = cell.particleDensity - particleRestDensity;
+					const double k           = 1.0;
+					const double compression = cell.particleDensity - particleRestDensity;
 					if (compression > 0.0)
 						div = div - k * compression;
 
-					auto pValue = -div / s;
-					pValue *= overRelaxation;
+					const double pValue = (-div / s) * overRelaxation;
+
 
 					gridCells[center].u -= sx0 * pValue;
 					gridCells[right].u += sx1 * pValue;
