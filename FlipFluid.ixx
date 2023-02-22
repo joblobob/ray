@@ -30,8 +30,6 @@ export struct FlipFluid {
 	FlipFluid() = default;
 	FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles);
 
-	void setupObstacle(double x, double y, bool reset);
-
 	std::vector<ExecutionLog>
 	simulate(double dt, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation, double obstacleRadius, bool instrument);
 };

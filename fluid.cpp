@@ -8,6 +8,9 @@
 #include "ui_fluid.h"
 
 
+import Obstacle;
+
+
 fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 {
 	ui->setupUi(this);
@@ -124,7 +127,7 @@ void fluid::setupScene()
 	}
 
 
-	m_f.setupObstacle(0.0, 0.0, true);
+	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacleX, m_f.obstacleY, m_f.obstacleVelX, m_f.obstacleVelY, h, m_f.fNumX, m_f.fNumY, true);
 	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::red), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 }
@@ -189,7 +192,17 @@ void fluid::update()
 {
 	m_timer.restart();
 
-	m_f.setupObstacle(((double)m_obstacleItem->x() + (constants::obstacleRadius)), ((double)m_obstacleItem->y() + (constants::obstacleRadius)), false);
+	setupObstacle(m_f.gridCells,
+	    ((double)m_obstacleItem->x() + (constants::obstacleRadius)),
+	    ((double)m_obstacleItem->y() + (constants::obstacleRadius)),
+	    m_f.obstacleX,
+	    m_f.obstacleY,
+	    m_f.obstacleVelX,
+	    m_f.obstacleVelY,
+	    m_f.h,
+	    m_f.fNumX,
+	    m_f.fNumY,
+	    false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();

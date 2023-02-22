@@ -50,6 +50,7 @@ target_sources(ray1
         fluid/CellColor.ixx
         fluid/Constants.ixx
         fluid/CellVelocities.ixx
+        fluid/Obstacle.ixx
         fluid/ParticleCollision.ixx
         fluid/ParticleColor.ixx
         fluid/ParticleDensity.ixx 
