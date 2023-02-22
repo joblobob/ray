@@ -50,6 +50,7 @@ target_sources(ray1
         fluid/CellColor.ixx
         fluid/Constants.ixx
         fluid/ParticleCollision.ixx
+        fluid/ParticleColor.ixx
         fluid/ParticleDensity.ixx 
         fluid/ParticleIntegration.ixx 
         fluid/ParticleIncompressibility.ixx

@@ -2,6 +2,10 @@ export module BaseStructures;
 
 import Constants;
 
+export struct Border {
+	int minX = 0, minY = 0, maxX = constants::maxwidth, maxY = constants::maxwidth;
+};
+
 export struct Particle {
 	int id;
 	double posX = 0.0, posY = 0.0, velX = 0.0, velY = 0.0;

@@ -2,7 +2,6 @@ module;
 
 #include <algorithm>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include <QString>
@@ -34,8 +33,6 @@ export struct FlipFluid {
 	void setupObstacle(double x, double y, bool reset);
 	void transferVelocitiesToGrid();
 	void transferVelocitiesToParticles();
-
-	void updateParticleColors();
 
 	std::vector<ExecutionLog>
 	simulate(double dt, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation, double obstacleRadius, bool instrument);
