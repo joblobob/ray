@@ -17,9 +17,12 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	m_scene = new QGraphicsScene(this);
 
 	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
-	ui->m_graphView->setOptimizationFlags(QGraphicsView::DontSavePainterState);
+	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontSavePainterState, true);
+	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
+	ui->m_graphView->setOptimizationFlag(QGraphicsView::IndirectPainting, true);
 	ui->m_graphView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 	ui->m_graphView->setCacheMode(QGraphicsView::CacheBackground);
+
 
 	m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
@@ -106,6 +109,7 @@ void fluid::setupScene()
 			m_gridItems.push_back(item);
 			item->setPos(cell.cellNumX * pointSizeGrid, cell.cellNumY * pointSizeGrid);
 			item->setData(0, yesMyIndexAtHand);
+			item->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 			yesMyIndexAtHand++;
 		};
 		std::for_each(std::execution::seq, m_f.gridCells.begin(), m_f.gridCells.end(), setGridItems);
@@ -118,8 +122,9 @@ void fluid::setupScene()
 		for (auto i = 0; i < m_f.maxParticles; i++) {}
 		auto setParticleItems = [&](const Particle& particle) {
 			auto particleColor = QColor::fromRgbF(particle.colorR, particle.colorG, particle.colorB);
-			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(particleColor), QBrush(particleColor)));
+			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(Qt::NoPen), QBrush(particleColor)));
 
+			m_particleItems[particle.id]->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 			m_particleItems[particle.id]->setPos(particle.posX - r, particle.posY - r);
 			m_particleItems[particle.id]->setData(0, particle.id);
 		};
@@ -128,8 +133,9 @@ void fluid::setupScene()
 
 
 	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacleX, m_f.obstacleY, m_f.obstacleVelX, m_f.obstacleVelY, h, m_f.fNumX, m_f.fNumY, true);
-	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::red), QBrush(Qt::red));
+	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
+	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 }
 
 void fluid::simulate()
@@ -160,12 +166,10 @@ void fluid::draw()
 {
 	//grid
 	if (constants::showGrid) {
-		auto gridPen      = QPen(QColor(0, 0, 0));
 		auto setCellColor = [&](QGraphicsRectItem* item) {
 			auto i          = item->data(0).toInt();
 			const Cell cell = m_f.gridCells[i];
 			item->setBrush(QBrush(QColor::fromRgbF(cell.colorR, cell.colorG, cell.colorB)));
-			item->setPen(gridPen);
 		};
 
 		std::for_each(std::execution::par_unseq, m_gridItems.begin(), m_gridItems.end(), setCellColor);
@@ -179,7 +183,6 @@ void fluid::draw()
 			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
 			item->setPos(m_f.particleMap[i].posX - m_f.particleRadius, m_f.particleMap[i].posY - m_f.particleRadius);
 			item->setBrush(QBrush(particleColor));
-			item->setPen(QPen(particleColor));
 		};
 
 		std::for_each(std::execution::par_unseq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);
