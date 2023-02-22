@@ -36,10 +36,6 @@ export struct FlipFluid {
 	void transferVelocitiesToParticles();
 
 	void updateParticleColors();
-	void setSciColor(Cell& cell, double val, double minVal, double maxVal);
-	void updateCellColors();
-
-
 
 	std::vector<ExecutionLog>
 	simulate(double dt, double flipRatio, int numPressureIters, int numParticleIters, double overRelaxation, double obstacleRadius, bool instrument);

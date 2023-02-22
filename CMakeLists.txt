@@ -47,6 +47,7 @@ target_sources(ray1
         FlipFluid.ixx 
         fluid/BaseStructures.ixx
         fluid/CellCalculations.ixx 
+        fluid/CellColor.ixx
         fluid/Constants.ixx
         fluid/ParticleCollision.ixx
         fluid/ParticleDensity.ixx 

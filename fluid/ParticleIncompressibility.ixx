@@ -1,9 +1,7 @@
 module;
 
-#include <QDebug>
 #include <algorithm>
 #include <execution>
-#include <iostream>
 
 export module ParticleIncompressibility;
 
