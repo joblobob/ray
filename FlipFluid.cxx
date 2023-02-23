@@ -19,25 +19,13 @@ import ParticleDensity;
 import ParticleIncompressibility;
 import ParticleVelocities;
 
+using namespace constants;
 
 FlipFluid::FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
-    density(density),
-    fNumX(floor(width / spacing) + 1),
-    fNumY(floor(height / spacing) + 1),
-    fNumCells(fNumX * fNumY),
-    // fluid
-    particleRadius(particleRadius),
+
+
     // particles
-    maxParticles(maxParticles),
-    particleRestDensity(0.0),
-    pInvSpacing(1.0 / (2.2 * particleRadius)),
-    pNumX(floor(width * pInvSpacing) + 1),
-    pNumY(floor(height * pInvSpacing) + 1),
-    pNumCells(pNumX * pNumY),
-    pBorder { .maxX = pNumX, .maxY = pNumY },
-    fBorder { .maxX = fNumX, .maxY = fNumY },
-    particleMap(maxParticles),
-    gridCells(fNumCells)
+    particleRestDensity(0.0), fBorder { .maxX = fNumX, .maxY = fNumY }, particleMap(maxParticles), gridCells(fNumCells)
 {
 	h           = std::max(width / (double)fNumX, height / (double)fNumY);
 	fInvSpacing = 1.0 / h;
@@ -66,12 +54,12 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 		log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	pushParticlesApart(particleMap, numParticleIters, pNumCells, pNumX, pNumY, maxParticles, pBorder, pInvSpacing, particleRadius);
+	pushParticlesApart(particleMap, numParticleIters, pNumCells, pNumX, pNumY, maxParticles, pInvSpacing, r);
 	if (instrument) {
 		log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	handleParticleCollisions(particleMap, fNumX, fNumY, fInvSpacing, obstacleX, obstacleY, obstacleVelX, obstacleVelY, obstacleRadius, particleRadius);
+	handleParticleCollisions(particleMap, fNumX, fNumY, fInvSpacing, obstacleX, obstacleY, obstacleVelX, obstacleVelY, obstacleRadius, r);
 	if (instrument) {
 		log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
 		timer.restart();

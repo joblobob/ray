@@ -17,13 +17,14 @@ inline void calcColor(double& p1Color, double& p2Color)
 	p2Color          = p2Color + (color - p2Color) * constants::colorDiffusionCoeff;
 }
 
+static const Border pBorder { .maxX = constants::pNumX, .maxY = constants::pNumY };
+
 export void pushParticlesApart(std::vector<Particle>& particleMap,
     const int numIters,
     const int pNumCells,
     const int pNumX,
     const int pNumY,
     const int maxParticles,
-    const Border& pBorder,
     const double pInvSpacing,
     const double particleRadius)
 {
@@ -56,7 +57,8 @@ export void pushParticlesApart(std::vector<Particle>& particleMap,
 
 	// fill particles into cells
 	auto fillParticleIntoCell = [&](const Particle& p) {
-		cellParticleIds[particleCells[cellNumbers[p.id]].firstCellParticle--] = p.id;
+		particleCells[cellNumbers[p.id]].firstCellParticle--;
+		cellParticleIds[particleCells[cellNumbers[p.id]].firstCellParticle] = p.id;
 	};
 	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), fillParticleIntoCell);
 

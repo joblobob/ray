@@ -18,13 +18,11 @@ export struct ExecutionLog {
 };
 
 export struct FlipFluid {
-	double density, fInvSpacing, particleRestDensity, pInvSpacing, particleRadius, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
-	int fNumX, fNumY, fNumCells, maxParticles, pNumX, pNumY, pNumCells;
+	double fInvSpacing, particleRestDensity, h, obstacleVelX, obstacleVelY, obstacleX, obstacleY;
 
 	std::vector<Particle> particleMap;
 	std::vector<Cell> gridCells;
 
-	Border pBorder;
 	Border fBorder;
 
 	FlipFluid() = default;
