@@ -6,16 +6,14 @@ module;
 export module ParticleCollision;
 
 import BaseStructures;
+import Obstacle;
 
 
 export void handleParticleCollisions(std::vector<Particle>& particleMap,
     const int fNumX,
     const int fNumY,
     const double fInvSpacing,
-    const double obstacleX,
-    const double obstacleY,
-    const double obstacleVelX,
-    const double obstacleVelY,
+    const Obstacle obstacle,
     const double obstacleRadius,
     const double particleRadius)
 {
@@ -33,15 +31,15 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap,
 		auto x = particle.posX;
 		auto y = particle.posY;
 
-		const auto dx = x - obstacleX;
-		const auto dy = y - obstacleY;
+		const auto dx = x - obstacle.x;
+		const auto dy = y - obstacle.y;
 		const auto d2 = dx * dx + dy * dy;
 
 		// obstacle collision
 
 		if (d2 < minDist2) {
-			particle.velX = obstacleVelX;
-			particle.velY = obstacleVelY;
+			particle.velX = obstacle.velX;
+			particle.velY = obstacle.velY;
 		}
 		// wall collisions
 

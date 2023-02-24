@@ -8,13 +8,14 @@ export module Obstacle;
 import BaseStructures;
 import Constants;
 
+export struct Obstacle {
+	double x = 0.0, y = 0.0, velX = 0.0, velY = 0.0;
+};
+
 export void setupObstacle(std::vector<Cell>& gridCells,
     const double newX,
     const double newY,
-    double& obstacleX,
-    double& obstacleY,
-    double& obstacleVelX,
-    double& obstacleVelY,
+    Obstacle& obstacle,
     const double h,
     const int fNumX,
     const int fNumY,
@@ -24,15 +25,15 @@ export void setupObstacle(std::vector<Cell>& gridCells,
 	double vy = 0.0;
 
 	if (!reset) {
-		vx = (newX - obstacleX) / constants::dt;
-		vy = (newY - obstacleY) / constants::dt;
+		vx = (newX - obstacle.x) / constants::dt;
+		vy = (newY - obstacle.y) / constants::dt;
 	}
 
-	obstacleX = newX;
-	obstacleY = newY;
-	auto r    = constants::obstacleRadius;
-	auto n    = fNumY;
-	auto cd   = sqrt(2.0) * h;
+	obstacle.x = newX;
+	obstacle.y = newY;
+	auto r     = constants::obstacleRadius;
+	auto n     = fNumY;
+	auto cd    = sqrt(2.0) * h;
 
 	for (auto i = 1; i < fNumX - 2; i++) {
 		for (auto j = 1; j < fNumY - 2; j++) {
@@ -50,6 +51,6 @@ export void setupObstacle(std::vector<Cell>& gridCells,
 	}
 
 	//scene.showObstacle = true;
-	obstacleVelX = vx;
-	obstacleVelY = vy;
+	obstacle.velX = vx;
+	obstacle.velY = vy;
 }

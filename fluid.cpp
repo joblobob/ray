@@ -110,7 +110,7 @@ void fluid::setupScene()
 	}
 
 
-	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacleX, m_f.obstacleY, m_f.obstacleVelX, m_f.obstacleVelY, h, fNumX, fNumY, true);
+	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, h, fNumX, fNumY, true);
 	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
@@ -176,10 +176,7 @@ void fluid::update()
 	setupObstacle(m_f.gridCells,
 	    ((double)m_obstacleItem->x() + (constants::obstacleRadius)),
 	    ((double)m_obstacleItem->y() + (constants::obstacleRadius)),
-	    m_f.obstacleX,
-	    m_f.obstacleY,
-	    m_f.obstacleVelX,
-	    m_f.obstacleVelY,
+	    m_f.obstacle,
 	    m_f.h,
 	    fNumX,
 	    fNumY,

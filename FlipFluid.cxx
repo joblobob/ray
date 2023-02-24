@@ -25,7 +25,7 @@ FlipFluid::FlipFluid(double density, double width, double height, double spacing
 
 
     // particles
-    particleRestDensity(0.0), fBorder { .maxX = fNumX, .maxY = fNumY }, particleMap(maxParticles), gridCells(fNumCells)
+    particleRestDensity(0.0), fBorder { .maxX = fNumX, .maxY = fNumY }, particleMap(maxParticles), gridCells(fNumCells), obstacle()
 {
 	h           = std::max(width / (double)fNumX, height / (double)fNumY);
 	fInvSpacing = 1.0 / h;
@@ -59,7 +59,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt,
 		log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	handleParticleCollisions(particleMap, fNumX, fNumY, fInvSpacing, obstacleX, obstacleY, obstacleVelX, obstacleVelY, obstacleRadius, r);
+	handleParticleCollisions(particleMap, fNumX, fNumY, fInvSpacing, obstacle, obstacleRadius, r);
 	if (instrument) {
 		log.push_back(ExecutionLog { "handleParticleCollisions", timer.nsecsElapsed() });
 		timer.restart();
