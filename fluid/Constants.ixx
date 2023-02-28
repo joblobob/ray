@@ -9,7 +9,7 @@ struct Border;
 export namespace constants {
 constexpr int maxwidth { 500 };
 constexpr int maxheight { 500 };
-constexpr double simheight { 3.0 };
+constexpr double simheight { 500.0 };
 constexpr double scale { (double)maxheight / simheight };
 constexpr double simwidth { (double)maxwidth / scale };
 
@@ -22,7 +22,7 @@ enum class CellType
 
 
 //setupScene
-constexpr double obstacleRadius = 0.20 * constants::scale;
+constexpr double obstacleRadius = 20.00 * constants::scale;
 constexpr double overRelaxation = 1.9;
 
 constexpr double dt               = 1.0 / 60.0;

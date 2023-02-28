@@ -45,7 +45,7 @@ export void solveIncompressibility(std::vector<Cell>& gridCells,
 				if (!isVeryCloseToZero(s)) {
 					double div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
 
-					const double k           = 1.0 * constants::scale;
+					const double k           = 1.0;
 					const double compression = cell.particleDensity - particleRestDensity;
 					if (compression > 0.0)
 						div = div - k * compression;
