@@ -10,6 +10,11 @@ import Constants;
 import CellCalculations;
 
 //constants
+constexpr double pInvSpacing = 1.0 / (2.2 * constants::particleRadius);
+constexpr int pNumX          = int_floor(constants::maxwidth * pInvSpacing) + 1;
+constexpr int pNumY          = int_floor(constants::maxheight * pInvSpacing) + 1;
+constexpr int pNumCells      = pNumX * pNumY;
+
 constexpr double numParticleIters    = 2;
 constexpr double colorDiffusionCoeff = 0.001;
 constexpr double minDist             = 2.0 * constants::particleRadius;
@@ -22,17 +27,17 @@ inline void calcColor(double& p1Color, double& p2Color)
 	p2Color            = p2Color + (color - p2Color) * colorDiffusionCoeff;
 }
 
-static const Border pBorder { .maxX = constants::pNumX, .maxY = constants::pNumY };
+static const Border pBorder { .maxX = pNumX, .maxY = pNumY };
 
 export void pushParticlesApart(std::vector<Particle>& particleMap)
 {
-	std::vector<ParticleInCells> particleCells(constants::pNumCells + 1, { 0, 0 }); // particlesincellinfo
+	std::vector<ParticleInCells> particleCells(pNumCells + 1, { 0, 0 }); // particlesincellinfo
 
 	std::vector<int> cellNumbers(constants::maxParticles, 0);
 
 	// count particles per cell
 	const auto countParticlesInCell = [&](const Particle& particle) {
-		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, constants::pInvSpacing);
+		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
 		cellNumbers[particle.id] = cellnum;
 		particleCells[cellnum].numCellParticles++;
 	};
@@ -49,7 +54,7 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 	for_each(std::execution::seq, particleCells.begin(), particleCells.end(), countFirstCell);
 
 
-	particleCells[constants::pNumCells].firstCellParticle = first; // guard
+	particleCells[pNumCells].firstCellParticle = first; // guard
 
 	std::vector<int> cellParticleIds(constants::maxParticles, 0);
 
@@ -68,16 +73,16 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 		const double px = particle.posX;
 		const double py = particle.posY;
 
-		const int pxi = int_floor(px * constants::pInvSpacing);
-		const int pyi = int_floor(py * constants::pInvSpacing);
+		const int pxi = int_floor(px * pInvSpacing);
+		const int pyi = int_floor(py * pInvSpacing);
 		const int x0  = std::max(pxi - 1, 0);
 		const int y0  = std::max(pyi - 1, 0);
-		const int x1  = std::min(pxi + 1, constants::pNumX - 1);
-		const int y1  = std::min(pyi + 1, constants::pNumY - 1);
+		const int x1  = std::min(pxi + 1, pNumX - 1);
+		const int y1  = std::min(pyi + 1, pNumY - 1);
 
 		for (int xi = x0; xi <= x1; xi++) {
 			for (int yi = y0; yi <= y1; yi++) {
-				const int cellNr = xi * constants::pNumY + yi;
+				const int cellNr = xi * pNumY + yi;
 				const int first  = particleCells[cellNr].firstCellParticle;
 				const int last   = particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {

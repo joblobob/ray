@@ -39,8 +39,7 @@ void fluid::setupScene()
 
 
 	// create fluid
-	m_f = FlipFluid(
-	    constants::density, constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
+	m_f = FlipFluid( constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
 	auto r2   = constants::particleRadius * 2.0;

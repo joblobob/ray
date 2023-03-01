@@ -11,6 +11,7 @@ import CellCalculations;
 // constants
 constexpr double overRelaxation { 1.9 };
 constexpr double numPressureIters { 50 };
+constexpr double k { 1.0 };
 
 // code
 export void solveIncompressibility(std::vector<Cell>& gridCells, const double particleRestDensity)
@@ -41,7 +42,7 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const double pa
 
 					const double compression = cell.particleDensity - particleRestDensity;
 					if (compression > 0.0)
-						div = div - constants::k * compression;
+						div = div - k * compression;
 
 					const double pValue = (-div / s) * overRelaxation;
 

@@ -33,11 +33,10 @@ export void setupObstacle(std::vector<Cell>& gridCells,
 		vy = (newY - obstacle.y) / constants::dt;
 	}
 
-	obstacle.x      = newX;
-	obstacle.y      = newY;
-	const double r  = ObstacleConstants::radius;
-	const int n     = fNumY;
-	const double cd = constants::sqrt_of_2 * h;
+	obstacle.x     = newX;
+	obstacle.y     = newY;
+	const double r = ObstacleConstants::radius;
+	const int n    = fNumY;
 
 	for (auto i = 1; i < fNumX - 2; i++) {
 		for (auto j = 1; j < fNumY - 2; j++) {

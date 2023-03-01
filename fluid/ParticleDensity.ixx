@@ -37,7 +37,7 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 		if (x0 < constants::fNumX && y1 < constants::fNumY)
 			gridCells[x0 * constants::fNumY + y1].particleDensity += sx * ty;
 	};
-	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), solveParticleDensity);
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), solveParticleDensity);
 }
 
 export void calculateParticleRestDensity(std::vector<Cell>& gridCells, double& particleRestDensity)

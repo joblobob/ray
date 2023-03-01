@@ -20,7 +20,7 @@ import ParticleIncompressibility;
 import ParticleVelocities;
 
 
-FlipFluid::FlipFluid(double density, double width, double height, double spacing, double particleRadius, int maxParticles) :
+FlipFluid::FlipFluid(double width, double height, double spacing, double particleRadius, int maxParticles) :
 
 
     // particles

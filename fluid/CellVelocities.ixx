@@ -122,7 +122,7 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::ve
 		cell.v        = 0.0;
 		cell.cellType = isVeryCloseToZero(cell.s) ? constants::CellType::Solid : constants::CellType::Air;
 	};
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
+	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), prepareCellType);
 
 	auto setCellType = [&](const Particle& p) {
 		int cellNr     = cellNumber(p.posX, p.posY, fBorder, constants::fInvSpacing);
@@ -130,10 +130,10 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::ve
 		if (cellType == constants::CellType::Air)
 			cellType = constants::CellType::Fluid;
 	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), setCellType);
+	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), setCellType);
 
 
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), [&](Particle& particle) { parseVelocities(gridCells, particle); });
+	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), [&](Particle& particle) { parseVelocities(gridCells, particle); });
 
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCells(cell, gridCells, constants::fNumY); });
+	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCells(cell, gridCells, constants::fNumY); });
 }
