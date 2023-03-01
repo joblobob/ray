@@ -8,14 +8,15 @@ export module CellColor;
 import BaseStructures;
 import CellCalculations;
 
-void setSciColor(Cell& cell, double val, double minVal, double maxVal)
+void setSciColor(Cell& cell, double val, const double minVal, const double maxVal)
 {
-	val      = std::min(std::max(val, minVal), maxVal - 0.0001);
-	double d = maxVal - minVal;
-	val      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
-	double m = 0.25;
-	int num  = floor(val / m);
-	double s = (val - num * m) / m;
+	constexpr double epsilon = 0.0001;
+	val                      = std::min(std::max(val, minVal), maxVal - epsilon);
+	const double d           = maxVal - minVal;
+	val                      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
+	constexpr double m       = 0.25;
+	const int num { int_floor(val / m) };
+	const double s = (val - num * m) / m;
 	double r, g, b;
 
 	switch (num) {
@@ -60,7 +61,7 @@ export void updateCellColors(std::vector<Cell>& gridCells, const double particle
 			cell.colorG = 0.5;
 			cell.colorB = 0.5;
 		} else if (cell.cellType == constants::CellType::Fluid) {
-			auto d = cell.particleDensity;
+			double d = cell.particleDensity;
 			if (particleRestDensity > 0.0)
 				d /= particleRestDensity;
 			setSciColor(cell, d, 0.0, 2.0);

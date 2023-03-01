@@ -12,9 +12,9 @@ import CellCalculations;
 
 inline void calcColor(double& p1Color, double& p2Color)
 {
-	const auto color = (p1Color + p2Color) * 0.5;
-	p1Color          = p1Color + (color - p1Color) * constants::colorDiffusionCoeff;
-	p2Color          = p2Color + (color - p2Color) * constants::colorDiffusionCoeff;
+	const double color = (p1Color + p2Color) * 0.5;
+	p1Color            = p1Color + (color - p1Color) * constants::colorDiffusionCoeff;
+	p2Color            = p2Color + (color - p2Color) * constants::colorDiffusionCoeff;
 }
 
 static const Border pBorder { .maxX = constants::pNumX, .maxY = constants::pNumY };
@@ -64,15 +64,15 @@ export void pushParticlesApart(std::vector<Particle>& particleMap,
 
 
 	// push particles apart
-	const auto minDist  = 2.0 * particleRadius;
-	const auto minDist2 = minDist * minDist;
+	const double minDist  = 2.0 * particleRadius;
+	const double minDist2 = minDist * minDist;
 
 	auto pushParticles = [&](auto& particle) {
-		const auto px = particle.posX;
-		const auto py = particle.posY;
+		const double px = particle.posX;
+		const double py = particle.posY;
 
-		const int pxi = floor(px * pInvSpacing);
-		const int pyi = floor(py * pInvSpacing);
+		const int pxi = int_floor(px * pInvSpacing);
+		const int pyi = int_floor(py * pInvSpacing);
 		const int x0  = std::max(pxi - 1, 0);
 		const int y0  = std::max(pyi - 1, 0);
 		const int x1  = std::min(pxi + 1, pNumX - 1);
@@ -90,12 +90,12 @@ export void pushParticlesApart(std::vector<Particle>& particleMap,
 						const double qx = particleAtId.posX;
 						const double qy = particleAtId.posY;
 
-						double dx     = qx - px;
-						double dy     = qy - py;
-						const auto d2 = dx * dx + dy * dy;
+						double dx       = qx - px;
+						double dy       = qy - py;
+						const double d2 = dx * dx + dy * dy;
 						if (!(d2 > minDist2 || isVeryCloseToZero(d2))) {
-							const auto d = sqrt(d2);
-							const auto s = 0.5 * (minDist - d) / d;
+							const double d = sqrt(d2);
+							const double s = 0.5 * (minDist - d) / d;
 							dx *= s;
 							dy *= s;
 							particle.posX -= dx;

@@ -10,16 +10,16 @@ import CellCalculations;
 
 
 export void solveIncompressibility(std::vector<Cell>& gridCells,
-    int numIters,
-    int fNumY,
-    double density,
-    double h,
-    double dt,
-    double overRelaxation,
-    double particleRestDensity)
+    const int numIters,
+    const int fNumY,
+    const double density,
+    const double h,
+    const double dt,
+    const double overRelaxation,
+    const double particleRestDensity)
 {
-	auto n  = fNumY;
-	auto cp = density * h / dt;
+	const int n     = fNumY;
+	const double cp = density * h / dt;
 
 	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;

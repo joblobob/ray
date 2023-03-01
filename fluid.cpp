@@ -40,7 +40,7 @@ void fluid::setupScene()
 
 
 	// create fluid
-	m_f = FlipFluid(density, tankWidth, tankHeight, h, r, maxParticles);
+	m_f = FlipFluid(density, maxwidth, maxheight, h, r, maxParticles);
 
 	// create particles
 	auto r2   = r * 2.0;

@@ -26,11 +26,11 @@ export void updateParticleDensity(std::vector<Particle>& particleMap,
 		const double x = std::clamp(p.posX, h, (fNumX - 1) * h);
 		const double y = std::clamp(p.posY, h, (fNumY - 1) * h);
 
-		const int x0    = floor((x - h2) * h1);
+		const int x0    = int_floor((x - h2) * h1);
 		const double tx = ((x - h2) - x0 * h) * h1;
 		const int x1    = std::min(x0 + 1, fNumX - 2);
 
-		const int y0    = floor((y - h2) * h1);
+		const int y0    = int_floor((y - h2) * h1);
 		const double ty = ((y - h2) - y0 * h) * h1;
 		const int y1    = std::min(y0 + 1, fNumY - 2);
 

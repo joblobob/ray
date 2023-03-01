@@ -10,36 +10,36 @@ import BaseStructures;
 
 export void transferVelocitiesToParticles(std::vector<Particle>& particleMap,
     std::vector<Cell>& gridCells,
-    double h,
+    const double h,
     const int fNumX,
     const int fNumY,
     const double fInvSpacing)
 {
 	const auto parseVelocitiesParticles = [&](Particle& particle) {
-		double h2 = 0.5 * h;
-		auto n    = fNumY;
+		const double h2 = 0.5 * h;
+		const int n     = fNumY;
 
-		auto dx = 0.0;
-		auto dy = h2;
+		double dx = 0.0;
+		double dy = h2;
 
-		const auto x = std::clamp(particle.posX, h, (fNumX - 1) * h);
-		const auto y = std::clamp(particle.posY, h, (fNumY - 1) * h);
+		const double x = std::clamp(particle.posX, h, (fNumX - 1) * h);
+		const double y = std::clamp(particle.posY, h, (fNumY - 1) * h);
 
-		int x0  = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
-		auto tx = ((x - dx) - x0 * h) * fInvSpacing;
-		int x1  = std::min(x0 + 1, fNumX - 2);
+		int x0    = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
+		double tx = ((x - dx) - x0 * h) * fInvSpacing;
+		int x1    = std::min(x0 + 1, fNumX - 2);
 
-		int y0  = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
-		auto ty = ((y - dy) - y0 * h) * fInvSpacing;
-		int y1  = std::min(y0 + 1, fNumY - 2);
+		int y0    = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
+		double ty = ((y - dy) - y0 * h) * fInvSpacing;
+		int y1    = std::min(y0 + 1, fNumY - 2);
 
-		auto sx = 1.0 - tx;
-		auto sy = 1.0 - ty;
+		double sx = 1.0 - tx;
+		double sy = 1.0 - ty;
 
-		auto d0 = sx * sy;
-		auto d1 = tx * sy;
-		auto d2 = tx * ty;
-		auto d3 = sx * ty;
+		double d0 = sx * sy;
+		double d1 = tx * sy;
+		double d2 = tx * ty;
+		double d3 = sx * ty;
 
 		int nr0 = x0 * n + y0;
 		int nr1 = x1 * n + y0;
@@ -59,13 +59,13 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap,
 		const Cell cellOffset2 = gridCells[nr2 - offset];
 		const Cell cellOffset3 = gridCells[nr3 - offset];
 
-		auto valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		auto valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		auto valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		auto valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		double valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		double valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		double valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		double valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
 
-		auto v = particle.velX;
-		auto d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
+		double v = particle.velX;
+		double d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0) {
 			auto picV = (valid0 * d0 * cell0.u + valid1 * d1 * cell1.u + valid2 * d2 * cell2.u + valid3 * d3 * cell3.u) / d;
@@ -82,11 +82,11 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap,
 		dx = h2;
 		dy = 0.0;
 
-		x0 = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
+		x0 = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
 		tx = ((x - dx) - x0 * h) * fInvSpacing;
 		x1 = std::min(x0 + 1, fNumX - 2);
 
-		y0 = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
+		y0 = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
 		ty = ((y - dy) - y0 * h) * fInvSpacing;
 		y1 = std::min(y0 + 1, fNumY - 2);
 

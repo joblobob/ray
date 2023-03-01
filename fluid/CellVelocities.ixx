@@ -17,14 +17,14 @@ void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells, const int
 	if (cell.dv > 0.0)
 		cell.v /= cell.dv;
 
-	auto solid = cell.cellType == constants::CellType::Solid;
+	const bool solid = cell.cellType == constants::CellType::Solid;
 	if (solid || (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * fNumY + cell.cellNumY].cellType == constants::CellType::Solid))
 		cell.u = cell.prevU;
 	if (solid || (cell.cellNumY > 0 && gridCells[cell.cellNumX * fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid))
 		cell.v = cell.prevV;
 }
 
-void setVelComponent(double& f, double& d, double pv, double delta)
+void setVelComponent(double& f, double& d, const double pv, const double delta)
 {
 	f += pv * delta;
 	d += delta;
@@ -32,8 +32,8 @@ void setVelComponent(double& f, double& d, double pv, double delta)
 
 void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const double h, const int fNumX, const int fNumY, const double fInvSpacing)
 {
-	double h2 = 0.5 * h;
-	int n     = fNumY;
+	const double h2 = 0.5 * h;
+	const int n     = fNumY;
 
 	double dx = 0.0;
 	double dy = h2;
@@ -41,11 +41,11 @@ void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const dou
 	const double x = std::clamp(particle.posX, h, (fNumX - 1) * h);
 	const double y = std::clamp(particle.posY, h, (fNumY - 1) * h);
 
-	int x0    = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
+	int x0    = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
 	double tx = ((x - dx) - x0 * h) * fInvSpacing;
 	int x1    = std::min(x0 + 1, fNumX - 2);
 
-	int y0    = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
+	int y0    = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
 	double ty = ((y - dy) - y0 * h) * fInvSpacing;
 	int y1    = std::min(y0 + 1, fNumY - 2);
 
@@ -78,11 +78,11 @@ void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const dou
 	dx = h2;
 	dy = 0.0;
 
-	x0 = std::min((int)floor((x - dx) * fInvSpacing), fNumX - 2);
+	x0 = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
 	tx = ((x - dx) - x0 * h) * fInvSpacing;
 	x1 = std::min(x0 + 1, fNumX - 2);
 
-	y0 = std::min((int)floor((y - dy) * fInvSpacing), fNumY - 2);
+	y0 = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
 	ty = ((y - dy) - y0 * h) * fInvSpacing;
 	y1 = std::min(y0 + 1, fNumY - 2);
 

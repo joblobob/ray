@@ -29,17 +29,17 @@ export void setupObstacle(std::vector<Cell>& gridCells,
 		vy = (newY - obstacle.y) / constants::dt;
 	}
 
-	obstacle.x = newX;
-	obstacle.y = newY;
-	auto r     = constants::obstacleRadius;
-	auto n     = fNumY;
-	auto cd    = sqrt(2.0) * h;
+	obstacle.x      = newX;
+	obstacle.y      = newY;
+	const double r  = constants::obstacleRadius;
+	const int n     = fNumY;
+	const double cd = constants::sqrt_of_2 * h;
 
 	for (auto i = 1; i < fNumX - 2; i++) {
 		for (auto j = 1; j < fNumY - 2; j++) {
 			gridCells[i * n + j].s = 1.0;
-			auto dx                = (i + 0.5) * h - newX;
-			auto dy                = (j + 0.5) * h - newY;
+			const double dx        = (i + 0.5) * h - newX;
+			const double dy        = (j + 0.5) * h - newY;
 			if (dx * dx + dy * dy < r * r) {
 				gridCells[i * n + j].s       = 0.0;
 				gridCells[i * n + j].u       = vx;
