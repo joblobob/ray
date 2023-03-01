@@ -6,34 +6,26 @@ module;
 export module ParticleCollision;
 
 import BaseStructures;
+import Constants;
 import Obstacle;
 
+constexpr double minDist  = ObstacleConstants::radius + constants::particleRadius;
+constexpr double minDist2 = minDist * minDist;
 
-export void handleParticleCollisions(std::vector<Particle>& particleMap,
-    const int fNumX,
-    const int fNumY,
-    const double fInvSpacing,
-    const Obstacle obstacle,
-    const double obstacleRadius,
-    const double particleRadius)
+constexpr double minX = constants::cellHeight + constants::particleRadius;
+constexpr double maxX = (constants::fNumX - 1) * constants::cellHeight - constants::particleRadius;
+constexpr double minY = constants::cellHeight + constants::particleRadius;
+constexpr double maxY = (constants::fNumY - 1) * constants::cellHeight - constants::particleRadius;
+
+export void handleParticleCollisions(std::vector<Particle>& particleMap, const Obstacle obstacle)
 {
-	const auto h        = 1.0 / fInvSpacing;
-	const auto r        = particleRadius;
-	const auto minDist  = obstacleRadius + r;
-	const auto minDist2 = minDist * minDist;
+	auto particleCollision = [&](Particle& particle) {
+		double x = particle.posX;
+		double y = particle.posY;
 
-	const auto minX = h + r;
-	const auto maxX = (fNumX - 1) * h - r;
-	const auto minY = h + r;
-	const auto maxY = (fNumY - 1) * h - r;
-
-	auto particleCollision = [&](auto& particle) {
-		auto x = particle.posX;
-		auto y = particle.posY;
-
-		const auto dx = x - obstacle.x;
-		const auto dy = y - obstacle.y;
-		const auto d2 = dx * dx + dy * dy;
+		const double dx = x - obstacle.x;
+		const double dy = y - obstacle.y;
+		const double d2 = dx * dx + dy * dy;
 
 		// obstacle collision
 

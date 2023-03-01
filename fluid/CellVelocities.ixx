@@ -30,24 +30,23 @@ void setVelComponent(double& f, double& d, const double pv, const double delta)
 	d += delta;
 }
 
-void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const double h, const int fNumX, const int fNumY, const double fInvSpacing)
+void parseVelocities(std::vector<Cell>& gridCells, Particle& particle)
 {
-	const double h2 = 0.5 * h;
-	const int n     = fNumY;
+	const int n = constants::fNumY;
 
 	double dx = 0.0;
-	double dy = h2;
+	double dy = constants::halfCellHeight;
 
-	const double x = std::clamp(particle.posX, h, (fNumX - 1) * h);
-	const double y = std::clamp(particle.posY, h, (fNumY - 1) * h);
+	const double x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+	const double y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-	int x0    = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
-	double tx = ((x - dx) - x0 * h) * fInvSpacing;
-	int x1    = std::min(x0 + 1, fNumX - 2);
+	int x0    = std::min(int_floor((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
+	double tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
+	int x1    = std::min(x0 + 1, constants::fNumX - 2);
 
-	int y0    = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
-	double ty = ((y - dy) - y0 * h) * fInvSpacing;
-	int y1    = std::min(y0 + 1, fNumY - 2);
+	int y0    = std::min(int_floor((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
+	double ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
+	int y1    = std::min(y0 + 1, constants::fNumY - 2);
 
 	double sx = 1.0 - tx;
 	double sy = 1.0 - ty;
@@ -75,16 +74,16 @@ void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const dou
 	setVelComponent(cell3.u, cell3.du, particle.velX, d3);
 
 
-	dx = h2;
+	dx = constants::halfCellHeight;
 	dy = 0.0;
 
-	x0 = std::min(int_floor((x - dx) * fInvSpacing), fNumX - 2);
-	tx = ((x - dx) - x0 * h) * fInvSpacing;
-	x1 = std::min(x0 + 1, fNumX - 2);
+	x0 = std::min(int_floor((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
+	tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
+	x1 = std::min(x0 + 1, constants::fNumX - 2);
 
-	y0 = std::min(int_floor((y - dy) * fInvSpacing), fNumY - 2);
-	ty = ((y - dy) - y0 * h) * fInvSpacing;
-	y1 = std::min(y0 + 1, fNumY - 2);
+	y0 = std::min(int_floor((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
+	ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
+	y1 = std::min(y0 + 1, constants::fNumY - 2);
 
 	sx = 1.0 - tx;
 	sy = 1.0 - ty;
@@ -112,13 +111,7 @@ void parseVelocities(std::vector<Cell>& gridCells, Particle& particle, const dou
 
 
 
-export void transferVelocitiesToGrid(std::vector<Particle>& particleMap,
-    std::vector<Cell>& gridCells,
-    const double h,
-    const int fNumX,
-    const int fNumY,
-    const double fInvSpacing,
-    const Border& fBorder)
+export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
 	auto prepareCellType = [&](Cell& cell) {
 		cell.prevU    = cell.u;
@@ -132,7 +125,7 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap,
 	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
 
 	auto setCellType = [&](const Particle& p) {
-		int cellNr     = cellNumber(p.posX, p.posY, fBorder, fInvSpacing);
+		int cellNr     = cellNumber(p.posX, p.posY, fBorder, constants::fInvSpacing);
 		auto& cellType = gridCells[cellNr].cellType;
 		if (cellType == constants::CellType::Air)
 			cellType = constants::CellType::Fluid;
@@ -140,9 +133,7 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap,
 	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), setCellType);
 
 
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), [&](Particle& particle) {
-		parseVelocities(gridCells, particle, h, fNumX, fNumY, fInvSpacing);
-	});
+	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), [&](Particle& particle) { parseVelocities(gridCells, particle); });
 
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCells(cell, gridCells, fNumY); });
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCells(cell, gridCells, constants::fNumY); });
 }

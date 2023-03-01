@@ -23,53 +23,47 @@ enum class CellType
 	Solid
 };
 
-
 //setupScene
-constexpr double obstacleRadius = 20.00;
-constexpr double overRelaxation = 1.9;
 
-constexpr double dt               = 1.0 / 5.0;
-constexpr double numPressureIters = 50;
-constexpr double numParticleIters = 2;
+constexpr double dt = 1.0 / 5.0;
 
-constexpr double gravity = -9.81;
 
-constexpr double integ = dt * gravity;
-
-constexpr double flipRatio           = 0.9;
-constexpr double colorDiffusionCoeff = 0.001;
-constexpr bool paused                = false;
-constexpr bool showObstacle          = true;
-constexpr bool showParticles         = true;
-constexpr bool showGrid              = false;
+constexpr bool paused        = false;
+constexpr bool showObstacle  = true;
+constexpr bool showParticles = true;
+constexpr bool showGrid      = false;
 
 constexpr double res = 100;
 
-constexpr double h       = maxheight / res;
+constexpr double cellHeight     = maxheight / res;
+constexpr double halfCellHeight = 0.5 * constants::cellHeight;
+
 constexpr double density = 1000.0;
+constexpr double k       = 1.0;
 
 constexpr double relWaterHeight = 0.8;
 constexpr double relWaterWidth  = 0.6;
 
 // compute number of particles
 
-constexpr double r  = 0.3 * h; // particle radius w.r.t. cell size
-constexpr double dx = 2.0 * r;
+constexpr double particleRadius = 0.3 * cellHeight; // particle radius w.r.t. cell size
+constexpr double dx             = 2.0 * particleRadius;
 constexpr double sqrt_of_3 { 1.7320508075688772 };
 constexpr double sqrt_of_2 { 1.4142135623730950 };
 constexpr double dy = sqrt_of_3 / 2.0 * dx;
 
-constexpr double numX         = int_floor((relWaterWidth * maxwidth - 2.0 * h - 2.0 * r) / dx);
-constexpr double numY         = int_floor((relWaterHeight * maxheight - 2.0 * h - 2.0 * r) / dy);
+constexpr double numX         = int_floor((relWaterWidth * maxwidth - 2.0 * cellHeight - 2.0 * particleRadius) / dx);
+constexpr double numY         = int_floor((relWaterHeight * maxheight - 2.0 * cellHeight - 2.0 * particleRadius) / dy);
 constexpr double maxParticles = numX * numY;
 
-constexpr int fNumX     = int_floor(maxwidth / h) + 1;
-constexpr int fNumY     = int_floor(maxheight / h) + 1;
-constexpr int fNumCells = fNumX * fNumY;
+constexpr int fNumX          = int_floor(maxwidth / cellHeight);
+constexpr int fNumY          = int_floor(maxheight / cellHeight);
+constexpr int fNumCells      = fNumX * fNumY;
+constexpr double fInvSpacing = 1.0 / cellHeight;
 // fluid
 //
 // particles
-constexpr double pInvSpacing = 1.0 / (2.2 * r);
+constexpr double pInvSpacing = 1.0 / (2.2 * particleRadius);
 constexpr int pNumX          = int_floor(maxwidth * pInvSpacing) + 1;
 constexpr int pNumY          = int_floor(maxheight * pInvSpacing) + 1;
 constexpr int pNumCells      = pNumX * pNumY;

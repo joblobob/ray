@@ -8,34 +8,28 @@ export module ParticleIncompressibility;
 import BaseStructures;
 import CellCalculations;
 
+// constants
+constexpr double overRelaxation { 1.9 };
+constexpr double numPressureIters { 50 };
 
-export void solveIncompressibility(std::vector<Cell>& gridCells,
-    const int numIters,
-    const int fNumY,
-    const double density,
-    const double h,
-    const double dt,
-    const double overRelaxation,
-    const double particleRestDensity)
+// code
+export void solveIncompressibility(std::vector<Cell>& gridCells, const double particleRestDensity)
 {
-	const int n     = fNumY;
-	const double cp = density * h / dt;
-
 	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;
 		cell.prevV = cell.v;
 	});
 
-	for (int iter = 0; iter < numIters; iter++) {
+	for (int iter = 0; iter < numPressureIters; iter++) {
 		auto parseIncompressibility = [&](Cell& cell) {
 			if (cell.cellType == constants::CellType::Fluid) {
 				const int i      = cell.cellNumX;
 				const int j      = cell.cellNumY;
-				const int center = i * n + j;
-				const int left   = (i - 1) * n + j;
-				const int right  = (i + 1) * n + j;
-				const int bottom = i * n + j - 1;
-				const int top    = i * n + j + 1;
+				const int center = i * constants::fNumY + j;
+				const int left   = (i - 1) * constants::fNumY + j;
+				const int right  = (i + 1) * constants::fNumY + j;
+				const int bottom = i * constants::fNumY + j - 1;
+				const int top    = i * constants::fNumY + j + 1;
 
 				const double sx0 = gridCells[left].s;
 				const double sx1 = gridCells[right].s;
@@ -45,13 +39,11 @@ export void solveIncompressibility(std::vector<Cell>& gridCells,
 				if (!isVeryCloseToZero(s)) {
 					double div = gridCells[right].u - gridCells[center].u + gridCells[top].v - gridCells[center].v;
 
-					const double k           = 1.0;
 					const double compression = cell.particleDensity - particleRestDensity;
 					if (compression > 0.0)
-						div = div - k * compression;
+						div = div - constants::k * compression;
 
 					const double pValue = (-div / s) * overRelaxation;
-
 
 					gridCells[center].u -= sx0 * pValue;
 					gridCells[right].u += sx1 * pValue;

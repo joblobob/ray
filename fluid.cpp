@@ -11,7 +11,6 @@
 import Obstacle;
 import Constants;
 
-using namespace constants;
 
 fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 {
@@ -40,16 +39,17 @@ void fluid::setupScene()
 
 
 	// create fluid
-	m_f = FlipFluid(density, maxwidth, maxheight, h, r, maxParticles);
+	m_f = FlipFluid(
+	    constants::density, constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
-	auto r2   = r * 2.0;
+	auto r2   = constants::particleRadius * 2.0;
 	int p     = 0;
 	int count = 0;
-	for (int i = 0; i < numX; i++) {
-		for (int j = 0; j < numY; j++, count++) {
-			const auto posX        = h + r + dx * i + (j % 2 == 0 ? 0.0 : r);
-			const auto posY        = h + r + dy * j;
+	for (int i = 0; i < constants::numX; i++) {
+		for (int j = 0; j < constants::numY; j++, count++) {
+			const auto posX        = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0 : constants::particleRadius);
+			const auto posY        = constants::cellHeight + constants::particleRadius + constants::dy * j;
 			m_f.particleMap[count] = { count, posX, posY };
 		}
 	}
@@ -57,12 +57,12 @@ void fluid::setupScene()
 
 	// setup grid cells for tank
 
-	double n = fNumY;
+	double n = constants::fNumY;
 	count    = 0;
-	for (int i = 0; i < fNumX; i++) {
-		for (int j = 0; j < fNumY; j++) {
+	for (int i = 0; i < constants::fNumX; i++) {
+		for (int j = 0; j < constants::fNumY; j++) {
 			double s = 1.0; // fluid
-			if (i == 0 || i == fNumX - 1 || j == 0)
+			if (i == 0 || i == constants::fNumX - 1 || j == 0)
 				s = 0.0; // solid
 			m_f.gridCells[i * n + j].s        = s;
 			m_f.gridCells[i * n + j].cellNumX = i;
@@ -71,13 +71,13 @@ void fluid::setupScene()
 		}
 	}
 
-	double sizeRect = h;
+	double sizeRect = constants::cellHeight;
 
 	//setup grid
-	int nbGridItems = fNumX * fNumY;
+	int nbGridItems = constants::fNumX * constants::fNumY;
 	m_gridItems.reserve(nbGridItems);
 
-	auto pointSizeGrid = m_f.h;
+	auto pointSizeGrid = constants::cellHeight;
 	if (constants::showGrid) {
 		auto gridPen         = QPen(QColor(127, 127, 127));
 		int yesMyIndexAtHand = 0;
@@ -94,24 +94,24 @@ void fluid::setupScene()
 	}
 
 	//setup particles of water
-	m_particleItems.reserve(maxParticles);
+	m_particleItems.reserve(constants::maxParticles);
 	if (constants::showParticles) {
-		auto pointSize = 2.0 * r;
-		for (auto i = 0; i < maxParticles; i++) {}
+		auto pointSize = 2.0 * constants::particleRadius;
+		for (auto i = 0; i < constants::maxParticles; i++) {}
 		auto setParticleItems = [&](const Particle& particle) {
 			auto particleColor = QColor::fromRgbF(particle.colorR, particle.colorG, particle.colorB);
 			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(Qt::NoPen), QBrush(particleColor)));
 
 			m_particleItems[particle.id]->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
-			m_particleItems[particle.id]->setPos(particle.posX - r, particle.posY - r);
+			m_particleItems[particle.id]->setPos(particle.posX - constants::particleRadius, particle.posY - constants::particleRadius);
 			m_particleItems[particle.id]->setData(0, particle.id);
 		};
 		std::for_each(std::execution::seq, m_f.particleMap.cbegin(), m_f.particleMap.cend(), setParticleItems);
 	}
 
 
-	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, h, fNumX, fNumY, true);
-	m_obstacleItem = m_scene->addEllipse(0, 0, constants::obstacleRadius * 2.0, constants::obstacleRadius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
+	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, constants::cellHeight, constants::fNumX, constants::fNumY, true);
+	m_obstacleItem = m_scene->addEllipse(0, 0, ObstacleConstants::radius * 2.0, ObstacleConstants::radius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 }
@@ -119,13 +119,7 @@ void fluid::setupScene()
 void fluid::simulate()
 {
 	if (!m_paused) {
-		auto result = m_f.simulate(constants::dt,
-		    constants::flipRatio,
-		    constants::numPressureIters,
-		    constants::numParticleIters,
-		    constants::overRelaxation,
-		    constants::obstacleRadius,
-		    true);
+		auto result = m_f.simulate(constants::dt, true);
 		if (result.size() > 0) {
 			ui->label_2->setText(result[0].message + ": " + QString::number(result[0].nsElapsed * 0.001) + " us");
 			ui->label_3->setText(result[1].message + ": " + QString::number(result[1].nsElapsed * 0.001) + " us");
@@ -159,7 +153,7 @@ void fluid::draw()
 		auto setParticleColor = [&](QGraphicsEllipseItem* item) {
 			auto i             = item->data(0).toInt();
 			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
-			item->setPos(m_f.particleMap[i].posX - r, m_f.particleMap[i].posY - r);
+			item->setPos(m_f.particleMap[i].posX - constants::particleRadius, m_f.particleMap[i].posY - constants::particleRadius);
 			item->setBrush(QBrush(particleColor));
 		};
 
@@ -174,12 +168,12 @@ void fluid::update()
 	m_timer.restart();
 
 	setupObstacle(m_f.gridCells,
-	    ((double)m_obstacleItem->x() + (constants::obstacleRadius)),
-	    ((double)m_obstacleItem->y() + (constants::obstacleRadius)),
+	    ((double)m_obstacleItem->x() + ObstacleConstants::radius),
+	    ((double)m_obstacleItem->y() + ObstacleConstants::radius),
 	    m_f.obstacle,
-	    m_f.h,
-	    fNumX,
-	    fNumY,
+	    constants::cellHeight,
+	    constants::fNumX,
+	    constants::fNumY,
 	    false);
 
 	//while (timer.elapsed() < 16.666f)

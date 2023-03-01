@@ -8,6 +8,10 @@ export module Obstacle;
 import BaseStructures;
 import Constants;
 
+export namespace ObstacleConstants {
+constexpr double radius { 20.00 };
+}
+
 export struct Obstacle {
 	double x = 0.0, y = 0.0, velX = 0.0, velY = 0.0;
 };
@@ -31,7 +35,7 @@ export void setupObstacle(std::vector<Cell>& gridCells,
 
 	obstacle.x      = newX;
 	obstacle.y      = newY;
-	const double r  = constants::obstacleRadius;
+	const double r  = ObstacleConstants::radius;
 	const int n     = fNumY;
 	const double cd = constants::sqrt_of_2 * h;
 

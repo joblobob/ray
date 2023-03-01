@@ -8,10 +8,13 @@ export module ParticleIntegration;
 import BaseStructures;
 import Constants;
 
+constexpr double gravity = -9.81;
+constexpr double integ   = constants::dt * gravity;
+
 export void integrateParticles(std::vector<Particle>& particleMap)
 {
 	auto integration = [](Particle& particle) {
-		particle.velY += constants::integ; //dt * gravity
+		particle.velY += integ; //dt * gravity
 		particle.posX += particle.velX * constants::dt;
 		particle.posY += particle.velY * constants::dt;
 	};
