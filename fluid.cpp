@@ -29,6 +29,7 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
+	ui->m_graphView->setSceneRect(0.0, 0.0, constants::maxwidth, constants::maxheight);
 }
 
 void fluid::setupScene()
@@ -39,7 +40,7 @@ void fluid::setupScene()
 
 
 	// create fluid
-	m_f = FlipFluid( constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
+	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
 	auto r2   = constants::particleRadius * 2.0;
