@@ -24,25 +24,17 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const double pa
 	for (int iter = 0; iter < numPressureIters; iter++) {
 		auto parseIncompressibility = [&](Cell& cell) {
 			if (cell.cellType == constants::CellType::Fluid) {
-				const int i      = cell.cellNumX;
-				const int j      = cell.cellNumY;
-				const int left   = (i - 1) * constants::fNumY + j;
-				const int right  = (i + 1) * constants::fNumY + j;
-				const int bottom = i * constants::fNumY + j - 1;
-				const int top    = i * constants::fNumY + j + 1;
+				const int i = cell.cellNumX;
+				const int j = cell.cellNumY;
 
-				auto cellLeft   = gridCells[left];
-				auto& cellRight = gridCells[right];
-				auto cellBottom = gridCells[bottom];
-				auto& cellTop   = gridCells[top];
+				Cell& cellLeft   = gridCells[(i - 1) * constants::fNumY + j]; //left
+				Cell& cellRight  = gridCells[(i + 1) * constants::fNumY + j]; //right
+				Cell& cellBottom = gridCells[i * constants::fNumY + j - 1];   //bottom
+				Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
 
 
-				const double sx0 = cellLeft.s;
-				const double sx1 = cellRight.s;
-				const double sy0 = cellBottom.s;
-				const double sy1 = cellTop.s;
-				const double s   = sx0 + sx1 + sy0 + sy1;
-				if (!isVeryCloseToZero(s)) {
+				const double s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
+				if (s > 0.1) {
 					double div = cellRight.u - cell.u + cellTop.v - cell.v;
 
 					const double compression = cell.particleDensity - particleRestDensity;
@@ -51,10 +43,10 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const double pa
 
 					const double pValue = (-div / s) * overRelaxation;
 
-					cell.u -= sx0 * pValue;
-					cellRight.u += sx1 * pValue;
-					cell.v -= sy0 * pValue;
-					cellTop.v += sy1 * pValue;
+					cell.u -= cellLeft.s * pValue;
+					cellRight.u += cellRight.s * pValue;
+					cell.v -= cellBottom.s * pValue;
+					cellTop.v += cellTop.s * pValue;
 				}
 			}
 		};
