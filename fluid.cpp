@@ -43,9 +43,9 @@ void fluid::setupScene()
 	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
-	auto r2   = constants::particleRadius * 2.0;
-	int p     = 0;
-	int count = 0;
+	auto r2 = constants::particleRadius * 2.0;
+
+	unsigned int count = 0;
 	for (int i = 0; i < constants::numX; i++) {
 		for (int j = 0; j < constants::numY; j++, count++) {
 			const auto posX        = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0 : constants::particleRadius);

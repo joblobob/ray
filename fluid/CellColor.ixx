@@ -15,7 +15,7 @@ void setSciColor(Cell& cell, double val, const double minVal, const double maxVa
 	const double d           = maxVal - minVal;
 	val                      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
 	constexpr double m       = 0.25;
-	const int num { int_floor(val / m) };
+	const unsigned int num { static_cast<unsigned int>(val / m) };
 	const double s = (val - num * m) / m;
 	double r, g, b;
 

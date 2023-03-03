@@ -19,13 +19,13 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		const double x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 		const double y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-		int x0    = std::min(int_floor((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
-		double tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
-		int x1    = std::min(x0 + 1, constants::fNumX - 2);
+		unsigned int x0 = std::min(static_cast<unsigned int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
+		double tx       = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
+		unsigned int x1 = std::min(x0 + 1, constants::fNumX - 2);
 
-		int y0    = std::min(int_floor((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
-		double ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
-		int y1    = std::min(y0 + 1, constants::fNumY - 2);
+		unsigned int y0 = std::min(static_cast<unsigned int>((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
+		double ty       = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
+		unsigned int y1 = std::min(y0 + 1, constants::fNumY - 2);
 
 		double sx = 1.0 - tx;
 		double sy = 1.0 - ty;
@@ -35,10 +35,10 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		double d2 = tx * ty;
 		double d3 = sx * ty;
 
-		int nr0 = x0 * constants::fNumY + y0;
-		int nr1 = x1 * constants::fNumY + y0;
-		int nr2 = x1 * constants::fNumY + y1;
-		int nr3 = x0 * constants::fNumY + y1;
+		unsigned int nr0 = x0 * constants::fNumY + y0;
+		unsigned int nr1 = x1 * constants::fNumY + y0;
+		unsigned int nr2 = x1 * constants::fNumY + y1;
+		unsigned int nr3 = x0 * constants::fNumY + y1;
 
 		Cell& cell0 = gridCells[nr0];
 		Cell& cell1 = gridCells[nr1];
@@ -74,11 +74,11 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		dx = constants::halfCellHeight;
 		dy = 0.0;
 
-		x0 = std::min(int_floor((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
+		x0 = std::min(static_cast<unsigned int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
 		tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
 		x1 = std::min(x0 + 1, constants::fNumX - 2);
 
-		y0 = std::min(int_floor((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
+		y0 = std::min(static_cast<unsigned int>((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
 		ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
 		y1 = std::min(y0 + 1, constants::fNumY - 2);
 

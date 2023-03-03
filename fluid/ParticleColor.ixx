@@ -20,7 +20,7 @@ export void updateParticleColors(std::vector<Particle>& particleMap,
 		particle.colorG = std::clamp(particle.colorG - s, 0.0, 1.0);
 		particle.colorB = std::clamp(particle.colorB + s, 0.0, 1.0);
 
-		const int cellNr = cellNumber(particle.posX, particle.posY, fBorder, constants::fInvSpacing);
+		const unsigned int cellNr = cellNumber(particle.posX, particle.posY, fBorder, constants::fInvSpacing);
 
 		if (particleRestDensity > 0.0) {
 			const double relDensity = gridCells[cellNr].particleDensity / particleRestDensity;

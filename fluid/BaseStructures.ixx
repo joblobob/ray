@@ -3,21 +3,21 @@ export module BaseStructures;
 import Constants;
 
 export struct Border {
-	int minX = 0, minY = 0, maxX = constants::maxwidth, maxY = constants::maxwidth;
+	unsigned int minX = 0, minY = 0, maxX = constants::maxwidth, maxY = constants::maxwidth;
 };
 
 export struct Particle {
-	int id;
+	unsigned int id;
 	double posX = 0.0, posY = 0.0, velX = 0.0, velY = 0.0;
 	double colorR = 0.0, colorG = 0.0, colorB = 1.0;
 };
 
 export struct ParticleInCells {
-	int numCellParticles = 0, firstCellParticle = 0;
+	unsigned int numCellParticles = 0, firstCellParticle = 0;
 };
 
 export struct Cell {
-	int cellNumX, cellNumY;
+	unsigned int cellNumX, cellNumY;
 	double u, v, du, dv, prevU, prevV, s, particleDensity = 0.0;
 	double colorR = 0.0, colorG = 0.0, colorB = 0.0;
 	constants::CellType cellType = constants::CellType::Solid;
