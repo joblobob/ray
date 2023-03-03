@@ -18,10 +18,3 @@ constexpr double my_abs(const double x) noexcept
 {
 	return x < 0.0 ? -x : x;
 }
-
-export constexpr bool isVeryCloseToZero(const double val)
-{
-	constexpr double epsilon = std::numeric_limits<double>::epsilon();
-	return my_abs(val) <= epsilon * my_abs(val);
-	// see Knuth section 4.2.2 pages 217-218
-}

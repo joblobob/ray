@@ -8,7 +8,7 @@ export module ParticleIntegration;
 import BaseStructures;
 import Constants;
 
-constexpr double gravity = -9.81;
+constexpr double gravity = -9.81 * 40.0;
 constexpr double integ   = constants::dt * gravity;
 
 export void integrateParticles(std::vector<Particle>& particleMap)

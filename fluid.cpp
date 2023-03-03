@@ -30,6 +30,8 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
 	ui->m_graphView->setSceneRect(0.0, 0.0, constants::maxwidth, constants::maxheight);
+
+	QTimer::singleShot(0, this, &fluid::update);
 }
 
 void fluid::setupScene()
@@ -110,7 +112,7 @@ void fluid::setupScene()
 	}
 
 
-	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, constants::cellHeight, constants::fNumX, constants::fNumY, true);
+	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, true);
 	m_obstacleItem = m_scene->addEllipse(0, 0, ObstacleConstants::radius * 2.0, ObstacleConstants::radius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
@@ -171,21 +173,22 @@ void fluid::update()
 	    ((double)m_obstacleItem->x() + ObstacleConstants::radius),
 	    ((double)m_obstacleItem->y() + ObstacleConstants::radius),
 	    m_f.obstacle,
-	    constants::cellHeight,
-	    constants::fNumX,
-	    constants::fNumY,
 	    false);
 
 	//while (timer.elapsed() < 16.666f)
 	simulate();
-	auto elapsed = m_timer.nsecsElapsed() * 0.001;
-	m_timer.restart();
+	//auto elapsed = m_timer.nsecsElapsed() * 0.001;
+	//m_timer.restart();
 	draw();
 
-	ui->label->setText("Simulate: " + QString::number(elapsed) + " us" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.001) + " us");
-
-
+	ui->label->setText("Simulate: " + QString::number(fps) + " fps" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.000001) + " ms");
+	fps++;
 	//callback to update
 	//callback in 0ms
-	QTimer::singleShot(16, this, &fluid::update);
+	//
+	//
+	QCoreApplication::processEvents();
+	if (!m_paused)
+		update();
+	//QTimer::singleShot(0, this, &fluid::update);
 }

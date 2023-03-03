@@ -6,6 +6,7 @@
 #include <QElapsedTimer>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
+#include <QTimer>
 
 import FlipFluid;
 
@@ -53,6 +54,7 @@ private:
 	void simulate();
 	void draw();
 
+	unsigned int fps = 0;
 
 	QElapsedTimer m_timer;
 };

@@ -95,7 +95,7 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 						double dx       = qx - px;
 						double dy       = qy - py;
 						const double d2 = dx * dx + dy * dy;
-						if (!(d2 > minDist2 || isVeryCloseToZero(d2))) {
+						if (!(d2 > minDist2 || d2 < 0.1)) {
 							const double d = sqrt(d2);
 							const double s = 0.5 * (minDist - d) / d;
 							dx *= s;

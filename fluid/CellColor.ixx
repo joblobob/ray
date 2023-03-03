@@ -13,7 +13,7 @@ void setSciColor(Cell& cell, double val, const double minVal, const double maxVa
 	constexpr double epsilon = 0.0001;
 	val                      = std::min(std::max(val, minVal), maxVal - epsilon);
 	const double d           = maxVal - minVal;
-	val                      = isVeryCloseToZero(d) ? 0.5 : (val - minVal) / d;
+	val                      = d < 0.1 ? 0.5 : (val - minVal) / d;
 	constexpr double m       = 0.25;
 	const unsigned int num { static_cast<unsigned int>(val / m) };
 	const double s = (val - num * m) / m;

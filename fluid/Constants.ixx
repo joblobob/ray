@@ -5,7 +5,7 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr unsigned int maxwidth { 500 };
+constexpr unsigned int maxwidth { 800 };
 constexpr unsigned int maxheight { 500 };
 
 enum class CellType
@@ -17,7 +17,7 @@ enum class CellType
 
 //setupScene
 
-constexpr double dt = 1.0 / 5.0;
+constexpr double dt = 1.0 / 20.0;
 
 
 constexpr bool paused        = false;

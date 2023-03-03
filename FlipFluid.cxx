@@ -68,7 +68,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(double dt, bool instrument)
 		log.push_back(ExecutionLog { "updateParticleDensity", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	if (isVeryCloseToZero(particleRestDensity)) {
+	if (particleRestDensity < 0.1) {
 		calculateParticleRestDensity(gridCells, particleRestDensity);
 	}
 	solveIncompressibility(gridCells, particleRestDensity);
