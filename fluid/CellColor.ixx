@@ -2,6 +2,7 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <ranges>
 
 export module CellColor;
 
@@ -49,7 +50,7 @@ void setSciColor(Cell& cell, double val, const double minVal, const double maxVa
 
 export void updateCellColors(std::vector<Cell>& gridCells, const double particleRestDensity)
 {
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [](Cell& c) {
+	std::ranges::for_each(gridCells, [](Cell& c) {
 		c.colorR = 0.0;
 		c.colorG = 0.0;
 		c.colorB = 0.0;
