@@ -54,7 +54,7 @@ private:
 	void simulate();
 	void draw();
 
-	unsigned int fps = 0;
+	int fps = 0;
 
 	QElapsedTimer m_timer;
 };

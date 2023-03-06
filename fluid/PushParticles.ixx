@@ -10,10 +10,10 @@ import Constants;
 import CellCalculations;
 
 //constants
-constexpr double pInvSpacing     = 1.0 / (2.2 * constants::particleRadius);
-constexpr unsigned int pNumX     = static_cast<unsigned int>((constants::maxwidth * pInvSpacing) + 1);
-constexpr unsigned int pNumY     = static_cast<unsigned int>((constants::maxheight * pInvSpacing) + 1);
-constexpr unsigned int pNumCells = pNumX * pNumY;
+constexpr double pInvSpacing = 1.0 / (2.2 * constants::particleRadius);
+constexpr int pNumX          = static_cast<int>((constants::maxwidth * pInvSpacing) + 1);
+constexpr int pNumY          = static_cast<int>((constants::maxheight * pInvSpacing) + 1);
+constexpr int pNumCells      = pNumX * pNumY;
 
 constexpr double numParticleIters    = 2;
 constexpr double colorDiffusionCoeff = 0.001;
@@ -37,14 +37,14 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 
 	// count particles per cell
 	const auto countParticlesInCell = [&](const Particle& particle) {
-		const unsigned int cellnum = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
-		cellNumbers[particle.id]   = cellnum;
+		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
+		cellNumbers[particle.id] = cellnum;
 		particleCells[cellnum].numCellParticles++;
 	};
 	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), countParticlesInCell);
 
 	// partial sums
-	unsigned int first = 0;
+	int first = 0;
 
 	//count first cell
 	const auto countFirstCell = [&](ParticleInCells& pIncell) {
@@ -56,7 +56,7 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 
 	particleCells[pNumCells].firstCellParticle = first; // guard
 
-	std::vector<unsigned int> cellParticleIds(constants::maxParticles, 0);
+	std::vector<int> cellParticleIds(constants::maxParticles, 0);
 
 	// fill particles into cells
 	auto fillParticleIntoCell = [&](const Particle& p) {
@@ -73,18 +73,18 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 		const double px = particle.posX;
 		const double py = particle.posY;
 
-		const unsigned int pxi = static_cast<unsigned int>(px * pInvSpacing);
-		const unsigned int pyi = static_cast<unsigned int>(py * pInvSpacing);
-		const unsigned int x0  = std::max(pxi - 1, 0U);
-		const unsigned int y0  = std::max(pyi - 1, 0U);
-		const unsigned int x1  = std::min(pxi + 1, pNumX - 1);
-		const unsigned int y1  = std::min(pyi + 1, pNumY - 1);
+		const int pxi = static_cast<int>(px * pInvSpacing);
+		const int pyi = static_cast<int>(py * pInvSpacing);
+		const int x0  = std::max(pxi - 1, 0);
+		const int y0  = std::max(pyi - 1, 0);
+		const int x1  = std::min(pxi + 1, pNumX - 1);
+		const int y1  = std::min(pyi + 1, pNumY - 1);
 
-		for (unsigned int xi = x0; xi <= x1; xi++) {
-			for (unsigned int yi = y0; yi <= y1; yi++) {
-				const unsigned int cellNr = xi * pNumY + yi;
-				const unsigned int first  = particleCells[cellNr].firstCellParticle;
-				const unsigned int last   = particleCells[cellNr + 1].firstCellParticle;
+		for (int xi = x0; xi <= x1; xi++) {
+			for (int yi = y0; yi <= y1; yi++) {
+				const int cellNr = xi * pNumY + yi;
+				const int first  = particleCells[cellNr].firstCellParticle;
+				const int last   = particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {
 					const int id = cellParticleIds[j];
 					if (id != particle.id) {

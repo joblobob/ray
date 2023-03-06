@@ -21,11 +21,11 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const double pa
 		cell.prevV = cell.v;
 	});
 
-	for (unsigned int iter = 0; iter < numPressureIters; iter++) {
+	for (int iter = 0; iter < numPressureIters; iter++) {
 		auto parseIncompressibility = [&](Cell& cell) {
 			if (cell.cellType == constants::CellType::Fluid) {
-				const unsigned int i = cell.cellNumX;
-				const unsigned int j = cell.cellNumY;
+				const int i = cell.cellNumX;
+				const int j = cell.cellNumY;
 
 				Cell& cellLeft   = gridCells[(i - 1) * constants::fNumY + j]; //left
 				Cell& cellRight  = gridCells[(i + 1) * constants::fNumY + j]; //right

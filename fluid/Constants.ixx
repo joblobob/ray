@@ -5,8 +5,8 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr unsigned int maxwidth { 1200 };
-constexpr unsigned int maxheight { 800 };
+constexpr int maxwidth { 1200 };
+constexpr int maxheight { 800 };
 
 enum class CellType
 {
@@ -43,13 +43,13 @@ constexpr double dy = sqrt_of_3 / 2.0 * dx;
 
 constexpr double relWaterHeight     = 0.8;
 constexpr double relWaterWidth      = 0.6;
-constexpr unsigned int numX         = static_cast<unsigned int>((relWaterWidth * maxwidth - 2.0 * cellHeight - 2.0 * particleRadius) / dx);
-constexpr unsigned int numY         = static_cast<unsigned int>((relWaterHeight * maxheight - 2.0 * cellHeight - 2.0 * particleRadius) / dy);
-constexpr unsigned int maxParticles = numX * numY;
+constexpr int numX         = static_cast<int>((relWaterWidth * maxwidth - 2.0 * cellHeight - 2.0 * particleRadius) / dx);
+constexpr int numY         = static_cast<int>((relWaterHeight * maxheight - 2.0 * cellHeight - 2.0 * particleRadius) / dy);
+constexpr int maxParticles = numX * numY;
 
-constexpr unsigned int fNumX     = static_cast<int>(maxwidth / cellHeight);
-constexpr unsigned int fNumY     = static_cast<int>(maxheight / cellHeight);
-constexpr unsigned int fNumCells = fNumX * fNumY;
+constexpr int fNumX     = static_cast<int>(maxwidth / cellHeight);
+constexpr int fNumY     = static_cast<int>(maxheight / cellHeight);
+constexpr int fNumCells = fNumX * fNumY;
 constexpr double fInvSpacing     = 1.0 / cellHeight;
 
 

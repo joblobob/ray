@@ -16,7 +16,7 @@ void fluidColor(Cell& cell, double val, const double minVal, const double maxVal
 	const double d           = maxVal - minVal;
 	val                      = d < 0.1 ? 0.5 : (val - minVal) / d;
 	constexpr double m       = 0.25;
-	const unsigned int num { static_cast<unsigned int>(val / m) };
+	const int num { static_cast<int>(val / m) };
 	const double s = (val - num * m) / m;
 	double r, g, b;
 

@@ -9,7 +9,7 @@ import BaseStructures;
 import CellCalculations;
 
 
-void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells, const unsigned int fNumY)
+void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells, const int fNumY)
 {
 	if (cell.du > 0.0)
 		cell.u /= cell.du;
@@ -35,13 +35,13 @@ void parseVelocitiesU(std::vector<Cell>& gridCells, const Particle& particle)
 	const double x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const double y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-	const unsigned int x0 = std::min(static_cast<unsigned int>(x * constants::fInvSpacing), constants::fNumX - 2);
+	const int x0 = std::min(static_cast<int>(x * constants::fInvSpacing), constants::fNumX - 2);
 	const double tx       = (x - x0 * constants::cellHeight) * constants::fInvSpacing;
-	const unsigned int x1 = std::min(x0 + 1, constants::fNumX - 2);
+	const int x1 = std::min(x0 + 1, constants::fNumX - 2);
 
-	const unsigned int y0 = std::min(static_cast<unsigned int>((y - constants::halfCellHeight) * constants::fInvSpacing), constants::fNumY - 2);
+	const int y0 = std::min(static_cast<int>((y - constants::halfCellHeight) * constants::fInvSpacing), constants::fNumY - 2);
 	const double ty       = ((y - constants::halfCellHeight) - y0 * constants::cellHeight) * constants::fInvSpacing;
-	const unsigned int y1 = std::min(y0 + 1, constants::fNumY - 2);
+	const int y1 = std::min(y0 + 1, constants::fNumY - 2);
 
 	const double sx = 1.0 - tx;
 	const double sy = 1.0 - ty;
@@ -63,13 +63,13 @@ void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
 	const double x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const double y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-	const unsigned int x0 = std::min(static_cast<unsigned int>((x - constants::halfCellHeight) * constants::fInvSpacing), constants::fNumX - 2);
+	const int x0 = std::min(static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing), constants::fNumX - 2);
 	const double tx       = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
-	const unsigned int x1 = std::min(x0 + 1, constants::fNumX - 2);
+	const int x1 = std::min(x0 + 1, constants::fNumX - 2);
 
-	const unsigned int y0 = std::min(static_cast<unsigned int>((y - 0.0) * constants::fInvSpacing), constants::fNumY - 2);
+	const int y0 = std::min(static_cast<int>((y - 0.0) * constants::fInvSpacing), constants::fNumY - 2);
 	const double ty       = ((y - 0.0) - y0 * constants::cellHeight) * constants::fInvSpacing;
-	const unsigned int y1 = std::min(y0 + 1, constants::fNumY - 2);
+	const int y1 = std::min(y0 + 1, constants::fNumY - 2);
 
 	const double sx = 1.0 - tx;
 	const double sy = 1.0 - ty;
