@@ -9,7 +9,7 @@ export module CellColor;
 import BaseStructures;
 import CellCalculations;
 
-void setSciColor(Cell& cell, double val, const double minVal, const double maxVal)
+void fluidColor(Cell& cell, double val, const double minVal, const double maxVal)
 {
 	constexpr double epsilon = 0.0001;
 	val                      = std::min(std::max(val, minVal), maxVal - epsilon);
@@ -48,25 +48,47 @@ void setSciColor(Cell& cell, double val, const double minVal, const double maxVa
 	cell.colorB = b;
 }
 
+bool isSolid(const Cell& cell)
+{
+	return cell.cellType == constants::CellType::Solid;
+}
+bool isFluid(const Cell& cell)
+{
+	return cell.cellType == constants::CellType::Fluid;
+}
+bool isAir(const Cell& cell)
+{
+	return cell.cellType == constants::CellType::Air;
+}
+
+void solidCellColor(Cell& cell)
+{
+	cell.colorR = 0.5;
+	cell.colorG = 0.5;
+	cell.colorB = 0.5;
+}
+
+void airCellColor(Cell& cell)
+{
+	cell.colorR = 0.0;
+	cell.colorG = 0.0;
+	cell.colorB = 0.0;
+}
+
 export void updateCellColors(std::vector<Cell>& gridCells, const double particleRestDensity)
 {
-	std::ranges::for_each(gridCells, [](Cell& c) {
-		c.colorR = 0.0;
-		c.colorG = 0.0;
-		c.colorB = 0.0;
-	});
+	// Solid
+	//gridCells | std::views::filter(isSolid) | std::views::transform(solidCellColor) | std::ranges::to<std::vector>(); //slower, meh
+	for (Cell& cell : gridCells | std::views::filter(isSolid)) {
+		solidCellColor(cell);
+	}
+	// Air
+	for (Cell& cell : gridCells | std::views::filter(isAir)) {
+		airCellColor(cell);
+	}
 
-	auto calcCellColor = [&](Cell& cell) {
-		if (cell.cellType == constants::CellType::Solid) {
-			cell.colorR = 0.5;
-			cell.colorG = 0.5;
-			cell.colorB = 0.5;
-		} else if (cell.cellType == constants::CellType::Fluid) {
-			double d = cell.particleDensity;
-			if (particleRestDensity > 0.0)
-				d /= particleRestDensity;
-			setSciColor(cell, d, 0.0, 2.0);
-		}
-	};
-	std::ranges::for_each(gridCells, calcCellColor);
+	// Fluid
+	for (Cell& cell : gridCells | std::views::filter(isFluid)) {
+		fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0, 2.0);
+	}
 }
