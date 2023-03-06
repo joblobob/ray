@@ -9,12 +9,12 @@ import BaseStructures;
 import CellCalculations;
 
 // constants
-constexpr double overRelaxation { 1.9 };
-constexpr double numPressureIters { 50 };
-constexpr double k { 1.0 };
+constexpr float overRelaxation { 1.9f };
+constexpr int numPressureIters { 50 };
+constexpr float k { 1.0f };
 
 // code
-export void solveIncompressibility(std::vector<Cell>& gridCells, const double particleRestDensity)
+export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
 	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;
@@ -33,15 +33,15 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const double pa
 				Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
 
 
-				const double s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
-				if (s > 0.1) {
-					double div = cellRight.u - cell.u + cellTop.v - cell.v;
+				const float s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
+				if (s > 0.1f) {
+					float div = cellRight.u - cell.u + cellTop.v - cell.v;
 
-					const double compression = cell.particleDensity - particleRestDensity;
-					if (compression > 0.0)
+					const float compression = cell.particleDensity - particleRestDensity;
+					if (compression > 0.0f)
 						div = div - k * compression;
 
-					const double pValue = (-div / s) * overRelaxation;
+					const float pValue = (-div / s) * overRelaxation;
 
 					cell.u -= cellLeft.s * pValue;
 					cellRight.u += cellRight.s * pValue;

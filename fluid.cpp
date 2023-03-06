@@ -28,8 +28,8 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
 	ui->m_graphView->setScene(m_scene);
-	ui->m_graphView->scale(1.0, -1.0); // invert Y axis
-	ui->m_graphView->setSceneRect(0.0, 0.0, constants::maxwidth, constants::maxheight);
+	ui->m_graphView->scale(1.0f, -1.0f); // invert Y axis
+	ui->m_graphView->setSceneRect(0.0f, 0.0f, constants::maxwidth, constants::maxheight);
 
 	QTimer::singleShot(0, this, &fluid::update);
 }
@@ -45,13 +45,13 @@ void fluid::setupScene()
 	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
-	auto r2 = constants::particleRadius * 2.0;
+	float r2 = constants::particleRadius * 2.0f;
 
 	int count = 0;
 	for (int i = 0; i < constants::numX; i++) {
 		for (int j = 0; j < constants::numY; j++, count++) {
-			const auto posX        = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0 : constants::particleRadius);
-			const auto posY        = constants::cellHeight + constants::particleRadius + constants::dy * j;
+			const float posX       = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
+			const float posY       = constants::cellHeight + constants::particleRadius + constants::dy * j;
 			m_f.particleMap[count] = { count, posX, posY };
 		}
 	}
@@ -59,13 +59,13 @@ void fluid::setupScene()
 
 	// setup grid cells for tank
 
-	double n = constants::fNumY;
-	count    = 0;
+	float n = constants::fNumY;
+	count   = 0;
 	for (int i = 0; i < constants::fNumX; i++) {
 		for (int j = 0; j < constants::fNumY; j++) {
-			double s = 1.0; // fluid
+			float s = 1.0f; // fluid
 			if (i == 0 || i == constants::fNumX - 1 || j == 0)
-				s = 0.0; // solid
+				s = 0.0f; // solid
 			m_f.gridCells[i * n + j].s        = s;
 			m_f.gridCells[i * n + j].cellNumX = i;
 			m_f.gridCells[i * n + j].cellNumY = j;
@@ -73,7 +73,7 @@ void fluid::setupScene()
 		}
 	}
 
-	double sizeRect = constants::cellHeight;
+	float sizeRect = constants::cellHeight;
 
 	//setup grid
 	int nbGridItems = constants::fNumX * constants::fNumY;
@@ -98,11 +98,11 @@ void fluid::setupScene()
 	//setup particles of water
 	m_particleItems.reserve(constants::maxParticles);
 	if (constants::showParticles) {
-		auto pointSize = 2.0 * constants::particleRadius;
-		for (auto i = 0; i < constants::maxParticles; i++) {}
+		float pointSize = 2.0f * constants::particleRadius;
+		for (int i = 0; i < constants::maxParticles; i++) {}
 		auto setParticleItems = [&](const Particle& particle) {
 			auto particleColor = QColor::fromRgbF(particle.colorR, particle.colorG, particle.colorB);
-			m_particleItems.push_back(m_scene->addEllipse(0.0, 0.0, pointSize, pointSize, QPen(Qt::NoPen), QBrush(particleColor)));
+			m_particleItems.push_back(m_scene->addEllipse(0.0f, 0.0f, pointSize, pointSize, QPen(Qt::NoPen), QBrush(particleColor)));
 
 			m_particleItems[particle.id]->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 			m_particleItems[particle.id]->setPos(particle.posX - constants::particleRadius, particle.posY - constants::particleRadius);
@@ -112,8 +112,8 @@ void fluid::setupScene()
 	}
 
 
-	setupObstacle(m_f.gridCells, 0.0, 0.0, m_f.obstacle, true);
-	m_obstacleItem = m_scene->addEllipse(0, 0, ObstacleConstants::radius * 2.0, ObstacleConstants::radius * 2.0, QPen(Qt::NoPen), QBrush(Qt::red));
+	setupObstacle(m_f.gridCells, 0.0f, 0.0f, m_f.obstacle, true);
+	m_obstacleItem = m_scene->addEllipse(0, 0, ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 }
@@ -123,15 +123,15 @@ void fluid::simulate()
 	if (!m_paused) {
 		auto result = m_f.simulate(constants::dt, true);
 		if (result.size() > 0) {
-			ui->label_2->setText(result[0].message + ": " + QString::number(result[0].nsElapsed * 0.001) + " us");
-			ui->label_3->setText(result[1].message + ": " + QString::number(result[1].nsElapsed * 0.001) + " us");
-			ui->label_4->setText(result[2].message + ": " + QString::number(result[2].nsElapsed * 0.001) + " us");
-			ui->label_5->setText(result[3].message + ": " + QString::number(result[3].nsElapsed * 0.001) + " us");
-			ui->label_6->setText(result[4].message + ": " + QString::number(result[4].nsElapsed * 0.001) + " us");
-			ui->label_7->setText(result[5].message + ": " + QString::number(result[5].nsElapsed * 0.001) + " us");
-			ui->label_8->setText(result[6].message + ": " + QString::number(result[6].nsElapsed * 0.001) + " us");
-			ui->label_9->setText(result[7].message + ": " + QString::number(result[7].nsElapsed * 0.001) + " us");
-			ui->label_10->setText(result[8].message + ": " + QString::number(result[8].nsElapsed * 0.001) + " us");
+			ui->label_2->setText(result[0].message + ": " + QString::number(result[0].nsElapsed * 0.001f) + " us");
+			ui->label_3->setText(result[1].message + ": " + QString::number(result[1].nsElapsed * 0.001f) + " us");
+			ui->label_4->setText(result[2].message + ": " + QString::number(result[2].nsElapsed * 0.001f) + " us");
+			ui->label_5->setText(result[3].message + ": " + QString::number(result[3].nsElapsed * 0.001f) + " us");
+			ui->label_6->setText(result[4].message + ": " + QString::number(result[4].nsElapsed * 0.001f) + " us");
+			ui->label_7->setText(result[5].message + ": " + QString::number(result[5].nsElapsed * 0.001f) + " us");
+			ui->label_8->setText(result[6].message + ": " + QString::number(result[6].nsElapsed * 0.001f) + " us");
+			ui->label_9->setText(result[7].message + ": " + QString::number(result[7].nsElapsed * 0.001f) + " us");
+			ui->label_10->setText(result[8].message + ": " + QString::number(result[8].nsElapsed * 0.001f) + " us");
 		}
 	}
 }
@@ -170,8 +170,8 @@ void fluid::update()
 	m_timer.restart();
 
 	setupObstacle(m_f.gridCells,
-	    ((double)m_obstacleItem->x() + ObstacleConstants::radius),
-	    ((double)m_obstacleItem->y() + ObstacleConstants::radius),
+	    ((float)m_obstacleItem->x() + ObstacleConstants::radius),
+	    ((float)m_obstacleItem->y() + ObstacleConstants::radius),
 	    m_f.obstacle,
 	    false);
 
@@ -181,7 +181,7 @@ void fluid::update()
 	//m_timer.restart();
 	draw();
 
-	ui->label->setText("Simulate: " + QString::number(fps) + " fps" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.000001) + " ms");
+	ui->label->setText("Simulate: " + QString::number(fps) + " fps" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.000001f) + " ms");
 	fps++;
 	//callback to update
 	//callback in 0ms

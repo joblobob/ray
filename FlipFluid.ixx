@@ -19,7 +19,7 @@ export struct ExecutionLog {
 };
 
 export struct FlipFluid {
-	double particleRestDensity;
+	float particleRestDensity;
 
 	Obstacle obstacle;
 	std::vector<Particle> particleMap;
@@ -28,7 +28,7 @@ export struct FlipFluid {
 	Border fBorder;
 
 	FlipFluid() = default;
-	FlipFluid(double width, double height, double spacing, double particleRadius, int maxParticles);
+	FlipFluid(float width, float height, float spacing, float particleRadius, int maxParticles);
 
-	std::vector<ExecutionLog> simulate(double dt, bool instrument);
+	std::vector<ExecutionLog> simulate(float dt, bool instrument);
 };

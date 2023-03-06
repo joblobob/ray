@@ -9,37 +9,37 @@ export module CellColor;
 import BaseStructures;
 import CellCalculations;
 
-void fluidColor(Cell& cell, double val, const double minVal, const double maxVal)
+void fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
 {
-	constexpr double epsilon = 0.0001;
-	val                      = std::min(std::max(val, minVal), maxVal - epsilon);
-	const double d           = maxVal - minVal;
-	val                      = d < 0.1 ? 0.5 : (val - minVal) / d;
-	constexpr double m       = 0.25;
+	constexpr float epsilon = 0.0001f;
+	val                     = std::min(std::max(val, minVal), maxVal - epsilon);
+	const float d           = maxVal - minVal;
+	val                     = d < 0.1f ? 0.5f : (val - minVal) / d;
+	constexpr float m       = 0.25f;
 	const int num { static_cast<int>(val / m) };
-	const double s = (val - num * m) / m;
-	double r, g, b;
+	const float s = (val - num * m) / m;
+	float r, g, b;
 
 	switch (num) {
 		case 0:
-			r = 0.0;
+			r = 0.0f;
 			g = s;
-			b = 1.0;
+			b = 1.0f;
 			break;
 		case 1:
-			r = 0.0;
-			g = 1.0;
-			b = 1.0 - s;
+			r = 0.0f;
+			g = 1.0f;
+			b = 1.0f - s;
 			break;
 		case 2:
 			r = s;
-			g = 1.0;
-			b = 0.0;
+			g = 1.0f;
+			b = 0.0f;
 			break;
 		case 3:
-			r = 1.0;
-			g = 1.0 - s;
-			b = 0.0;
+			r = 1.0f;
+			g = 1.0f - s;
+			b = 0.0f;
 			break;
 	}
 
@@ -63,19 +63,19 @@ bool isAir(const Cell& cell)
 
 void solidCellColor(Cell& cell)
 {
-	cell.colorR = 0.5;
-	cell.colorG = 0.5;
-	cell.colorB = 0.5;
+	cell.colorR = 0.5f;
+	cell.colorG = 0.5f;
+	cell.colorB = 0.5f;
 }
 
 void airCellColor(Cell& cell)
 {
-	cell.colorR = 0.0;
-	cell.colorG = 0.0;
-	cell.colorB = 0.0;
+	cell.colorR = 0.0f;
+	cell.colorG = 0.0f;
+	cell.colorB = 0.0f;
 }
 
-export void updateCellColors(std::vector<Cell>& gridCells, const double particleRestDensity)
+export void updateCellColors(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
 	// Solid
 	//gridCells | std::views::filter(isSolid) | std::views::transform(solidCellColor) | std::ranges::to<std::vector>(); //slower, meh
@@ -89,6 +89,6 @@ export void updateCellColors(std::vector<Cell>& gridCells, const double particle
 
 	// Fluid
 	for (Cell& cell : gridCells | std::views::filter(isFluid)) {
-		fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0, 2.0);
+		fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0f, 2.0f);
 	}
 }

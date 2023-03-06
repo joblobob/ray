@@ -10,23 +10,23 @@ import BaseStructures;
 import Constants;
 import Obstacle;
 
-constexpr double minDist  = ObstacleConstants::radius + constants::particleRadius;
-constexpr double minDist2 = minDist * minDist;
+constexpr float minDist  = ObstacleConstants::radius + constants::particleRadius;
+constexpr float minDist2 = minDist * minDist;
 
-constexpr double minX = constants::cellHeight + constants::particleRadius;
-constexpr double maxX = (constants::fNumX - 1) * constants::cellHeight - constants::particleRadius;
-constexpr double minY = constants::cellHeight + constants::particleRadius;
-constexpr double maxY = (constants::fNumY - 1) * constants::cellHeight - constants::particleRadius;
+constexpr float minX = constants::cellHeight + constants::particleRadius;
+constexpr float maxX = (constants::fNumX - 1) * constants::cellHeight - constants::particleRadius;
+constexpr float minY = constants::cellHeight + constants::particleRadius;
+constexpr float maxY = (constants::fNumY - 1) * constants::cellHeight - constants::particleRadius;
 
 export void handleParticleCollisions(std::vector<Particle>& particleMap, const Obstacle obstacle)
 {
 	auto particleCollision = [&](Particle& particle) {
-		double x = particle.posX;
-		double y = particle.posY;
+		float x = particle.posX;
+		float y = particle.posY;
 
-		const double dx = x - obstacle.x;
-		const double dy = y - obstacle.y;
-		const double d2 = dx * dx + dy * dy;
+		const float dx = x - obstacle.x;
+		const float dy = y - obstacle.y;
+		const float d2 = dx * dx + dy * dy;
 
 		// obstacle collision
 
@@ -38,17 +38,17 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 
 		if (x < minX) {
 			x             = minX;
-			particle.velX = 0.0;
+			particle.velX = 0.0f;
 		} else if (x > maxX) {
 			x             = maxX;
-			particle.velX = 0.0;
+			particle.velX = 0.0f;
 		}
 		if (y < minY) {
 			y             = minY;
-			particle.velY = 0.0;
+			particle.velY = 0.0f;
 		} else if (y > maxY) {
 			y             = maxY;
-			particle.velY = 0.0;
+			particle.velY = 0.0f;
 		}
 		particle.posX = x;
 		particle.posY = y;

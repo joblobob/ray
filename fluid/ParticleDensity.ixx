@@ -11,22 +11,22 @@ import BaseStructures;
 export void updateParticleDensity(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
 {
 	// reset density
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [](Cell& c) { c.particleDensity = 0.0; });
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [](Cell& c) { c.particleDensity = 0.0f; });
 
 	auto solveParticleDensity = [&](const Particle& p) {
-		const double x = std::clamp(p.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-		const double y = std::clamp(p.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+		const float x = std::clamp(p.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+		const float y = std::clamp(p.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-		const int x0 = static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing);
-		const double tx       = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
-		const int x1 = std::min(x0 + 1, constants::fNumX - 2);
+		const int x0   = static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing);
+		const float tx = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
+		const int x1   = std::min(x0 + 1, constants::fNumX - 2);
 
-		const int y0 = static_cast<int>((y - constants::halfCellHeight) * constants::fInvSpacing);
-		const double ty       = ((y - constants::halfCellHeight) - y0 * constants::cellHeight) * constants::fInvSpacing;
-		const int y1 = std::min(y0 + 1, constants::fNumY - 2);
+		const int y0   = static_cast<int>((y - constants::halfCellHeight) * constants::fInvSpacing);
+		const float ty = ((y - constants::halfCellHeight) - y0 * constants::cellHeight) * constants::fInvSpacing;
+		const int y1   = std::min(y0 + 1, constants::fNumY - 2);
 
-		const double sx = 1.0 - tx;
-		const double sy = 1.0 - ty;
+		const float sx = 1.0 - tx;
+		const float sy = 1.0 - ty;
 
 		if (x0 < constants::fNumX && y0 < constants::fNumY)
 			gridCells[x0 * constants::fNumY + y0].particleDensity += sx * sy;
@@ -40,9 +40,9 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), solveParticleDensity);
 }
 
-export void calculateParticleRestDensity(std::vector<Cell>& gridCells, double& particleRestDensity)
+export void calculateParticleRestDensity(std::vector<Cell>& gridCells, float& particleRestDensity)
 {
-	double sum                 = 0.0;
+	float sum         = 0.0f;
 	int numFluidCells = 0;
 
 	auto calculateSum = [&](Cell& cell) {

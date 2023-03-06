@@ -8,32 +8,32 @@ export module ParticleVelocities;
 import BaseStructures;
 
 //constants
-constexpr double flipRatio = 0.9;
+constexpr float flipRatio = 0.9f;
 
 export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
 {
 	const auto parseVelocitiesParticles = [&](Particle& particle) {
-		double dx = 0.0;
-		double dy = constants::halfCellHeight;
+		float dx = 0.0f;
+		float dy = constants::halfCellHeight;
 
-		const double x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-		const double y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+		const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+		const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
-		int x0 = std::min(static_cast<int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
-		double tx       = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
-		int x1 = std::min(x0 + 1, constants::fNumX - 2);
+		int x0   = std::min(static_cast<int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
+		float tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
+		int x1   = std::min(x0 + 1, constants::fNumX - 2);
 
-		int y0 = std::min(static_cast<int>((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
-		double ty       = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
-		int y1 = std::min(y0 + 1, constants::fNumY - 2);
+		int y0   = std::min(static_cast<int>((y - dy) * constants::fInvSpacing), constants::fNumY - 2);
+		float ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
+		int y1   = std::min(y0 + 1, constants::fNumY - 2);
 
-		double sx = 1.0 - tx;
-		double sy = 1.0 - ty;
+		float sx = 1.0f - tx;
+		float sy = 1.0f - ty;
 
-		double d0 = sx * sy;
-		double d1 = tx * sy;
-		double d2 = tx * ty;
-		double d3 = sx * ty;
+		float d0 = sx * sy;
+		float d1 = tx * sy;
+		float d2 = tx * ty;
+		float d3 = sx * ty;
 
 		int nr0 = x0 * constants::fNumY + y0;
 		int nr1 = x1 * constants::fNumY + y0;
@@ -51,13 +51,13 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		const Cell cellOffset2 = gridCells[nr2 - constants::fNumY];
 		const Cell cellOffset3 = gridCells[nr3 - constants::fNumY];
 
-		double valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		double valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		double valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		double valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		float valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		float valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		float valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		float valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
 
-		double v = particle.velX;
-		double d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
+		float v = particle.velX;
+		float d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0) {
 			auto picV = (valid0 * d0 * cell0.u + valid1 * d1 * cell1.u + valid2 * d2 * cell2.u + valid3 * d3 * cell3.u) / d;
@@ -72,7 +72,7 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 
 		// 2eme passe
 		dx = constants::halfCellHeight;
-		dy = 0.0;
+		dy = 0.0f;
 
 		x0 = std::min(static_cast<int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
 		tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -82,8 +82,8 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		ty = ((y - dy) - y0 * constants::cellHeight) * constants::fInvSpacing;
 		y1 = std::min(y0 + 1, constants::fNumY - 2);
 
-		sx = 1.0 - tx;
-		sy = 1.0 - ty;
+		sx = 1.0f - tx;
+		sy = 1.0f - ty;
 
 		d0 = sx * sy;
 		d1 = tx * sy;
@@ -106,22 +106,22 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		const Cell cellOffset2v = gridCells[nr2 - 1];
 		const Cell cellOffset3v = gridCells[nr3 - 1];
 
-		valid0 = cell0.cellType != constants::CellType::Air || cellOffset0v.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		valid1 = cell1.cellType != constants::CellType::Air || cellOffset1v.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		valid2 = cell2.cellType != constants::CellType::Air || cellOffset2v.cellType != constants::CellType::Air ? 1.0 : 0.0;
-		valid3 = cell3.cellType != constants::CellType::Air || cellOffset3v.cellType != constants::CellType::Air ? 1.0 : 0.0;
+		valid0 = cell0.cellType != constants::CellType::Air || cellOffset0v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
+		valid1 = cell1.cellType != constants::CellType::Air || cellOffset1v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
+		valid2 = cell2.cellType != constants::CellType::Air || cellOffset2v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
+		valid3 = cell3.cellType != constants::CellType::Air || cellOffset3v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
 
 		v = particle.velY;
 		d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
-		if (d > 0.0) {
+		if (d > 0.0f) {
 			auto picV = (valid0 * d0 * cell0v.v + valid1 * d1 * cell1v.v + valid2 * d2 * cell2v.v + valid3 * d3 * cell3v.v) / d;
 			auto corr = (valid0 * d0 * (cell0v.v - cell0v.prevV) + valid1 * d1 * (cell1v.v - cell1v.prevV) + valid2 * d2 * (cell2v.v - cell2v.prevV) +
 			                valid3 * d3 * (cell3v.v - cell3v.prevV)) /
 			            d;
 			auto flipV = v + corr;
 
-			auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
+			auto newVelValue = (1.0f - flipRatio) * picV + flipRatio * flipV;
 			particle.velY    = newVelValue;
 		}
 	};

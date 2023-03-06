@@ -20,11 +20,11 @@ import ParticleIncompressibility;
 import ParticleVelocities;
 
 
-FlipFluid::FlipFluid(double width, double height, double spacing, double particleRadius, int maxParticles) :
+FlipFluid::FlipFluid(float width, float height, float spacing, float particleRadius, int maxParticles) :
 
 
     // particles
-    particleRestDensity(0.0),
+    particleRestDensity(0.0f),
     fBorder { .maxX = constants::fNumX, .maxY = constants::fNumY },
     particleMap(maxParticles),
     gridCells(constants::fNumCells),
@@ -32,7 +32,7 @@ FlipFluid::FlipFluid(double width, double height, double spacing, double particl
 {}
 
 
-std::vector<ExecutionLog> FlipFluid::simulate(double dt, bool instrument)
+std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 {
 	std::vector<ExecutionLog> log;
 

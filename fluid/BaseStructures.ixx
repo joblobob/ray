@@ -8,8 +8,8 @@ export struct Border {
 
 export struct Particle {
 	int id;
-	double posX = 0.0, posY = 0.0, velX = 0.0, velY = 0.0;
-	double colorR = 0.0, colorG = 0.0, colorB = 1.0;
+	float posX = 0.0f, posY = 0.0f, velX = 0.0f, velY = 0.0f;
+	float colorR = 0.0f, colorG = 0.0f, colorB = 1.0f;
 };
 
 export struct ParticleInCells {
@@ -18,7 +18,7 @@ export struct ParticleInCells {
 
 export struct Cell {
 	int cellNumX, cellNumY;
-	double u, v, du, dv, prevU, prevV, s, particleDensity = 0.0;
-	double colorR = 0.0, colorG = 0.0, colorB = 0.0;
+	float u, v, du, dv, prevU, prevV, s, particleDensity = 0.0f;
+	float colorR = 0.0f, colorG = 0.0f, colorB = 0.0f;
 	constants::CellType cellType = constants::CellType::Solid;
 };

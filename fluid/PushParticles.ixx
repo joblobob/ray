@@ -10,21 +10,21 @@ import Constants;
 import CellCalculations;
 
 //constants
-constexpr double pInvSpacing = 1.0 / (2.2 * constants::particleRadius);
-constexpr int pNumX          = static_cast<int>((constants::maxwidth * pInvSpacing) + 1);
-constexpr int pNumY          = static_cast<int>((constants::maxheight * pInvSpacing) + 1);
-constexpr int pNumCells      = pNumX * pNumY;
+constexpr float pInvSpacing = 1.0f / (2.2f * constants::particleRadius);
+constexpr int pNumX         = static_cast<int>((constants::maxwidth * pInvSpacing) + 1);
+constexpr int pNumY         = static_cast<int>((constants::maxheight * pInvSpacing) + 1);
+constexpr int pNumCells     = pNumX * pNumY;
 
-constexpr double numParticleIters    = 2;
-constexpr double colorDiffusionCoeff = 0.001;
-constexpr double minDist             = 2.0 * constants::particleRadius;
-constexpr double minDist2            = minDist * minDist;
+constexpr int numParticleIters      = 2;
+constexpr float colorDiffusionCoeff = 0.001f;
+constexpr float minDist             = 2.0f * constants::particleRadius;
+constexpr float minDist2            = minDist * minDist;
 
-inline void calcColor(double& p1Color, double& p2Color)
+inline void calcColor(float& p1Color, float& p2Color)
 {
-	const double color = (p1Color + p2Color) * 0.5;
-	p1Color            = p1Color + (color - p1Color) * colorDiffusionCoeff;
-	p2Color            = p2Color + (color - p2Color) * colorDiffusionCoeff;
+	const float color = (p1Color + p2Color) * 0.5f;
+	p1Color           = p1Color + (color - p1Color) * colorDiffusionCoeff;
+	p2Color           = p2Color + (color - p2Color) * colorDiffusionCoeff;
 }
 
 static const Border pBorder { .maxX = pNumX, .maxY = pNumY };
@@ -70,8 +70,8 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 
 
 	auto pushParticles = [&](Particle& particle) {
-		const double px = particle.posX;
-		const double py = particle.posY;
+		const float px = particle.posX;
+		const float py = particle.posY;
 
 		const int pxi = static_cast<int>(px * pInvSpacing);
 		const int pyi = static_cast<int>(py * pInvSpacing);
@@ -89,15 +89,15 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 					const int id = cellParticleIds[j];
 					if (id != particle.id) {
 						Particle& particleAtId { particleMap[id] };
-						const double qx = particleAtId.posX;
-						const double qy = particleAtId.posY;
+						const float qx = particleAtId.posX;
+						const float qy = particleAtId.posY;
 
-						double dx       = qx - px;
-						double dy       = qy - py;
-						const double d2 = dx * dx + dy * dy;
+						float dx       = qx - px;
+						float dy       = qy - py;
+						const float d2 = dx * dx + dy * dy;
 						if (!(d2 > minDist2 || d2 < 0.1)) {
-							const double d = sqrt(d2);
-							const double s = 0.5 * (minDist - d) / d;
+							const float d = sqrt(d2);
+							const float s = 0.5f * (minDist - d) / d;
 							dx *= s;
 							dy *= s;
 							particle.posX -= dx;
