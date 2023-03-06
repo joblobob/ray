@@ -2,6 +2,7 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <ranges>
 
 export module ParticleCollision;
 
@@ -52,5 +53,5 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 		particle.posX = x;
 		particle.posY = y;
 	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), particleCollision);
+	std::ranges::for_each(particleMap, particleCollision);
 }
