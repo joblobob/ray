@@ -68,5 +68,5 @@ export void updateCellColors(std::vector<Cell>& gridCells, const double particle
 			setSciColor(cell, d, 0.0, 2.0);
 		}
 	};
-	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), calcCellColor);
+	std::ranges::for_each(gridCells, calcCellColor);
 }

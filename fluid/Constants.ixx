@@ -5,8 +5,8 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr unsigned int maxwidth { 800 };
-constexpr unsigned int maxheight { 500 };
+constexpr unsigned int maxwidth { 1200 };
+constexpr unsigned int maxheight { 800 };
 
 enum class CellType
 {
