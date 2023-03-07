@@ -48,19 +48,6 @@ void fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
 	cell.colorB = b;
 }
 
-bool isSolid(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Solid;
-}
-bool isFluid(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Fluid;
-}
-bool isAir(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Air;
-}
-
 void solidCellColor(Cell& cell)
 {
 	cell.colorR = 0.5f;

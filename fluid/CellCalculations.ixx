@@ -14,7 +14,16 @@ export constexpr int cellNumber(const float x, const float y, const Border& bord
 	return xi * border.maxY + yi;
 }
 
-constexpr float my_abs(const float x) noexcept
+
+export bool isSolid(const Cell& cell)
 {
-	return x < 0.0f ? -x : x;
+	return cell.cellType == constants::CellType::Solid;
+}
+export bool isFluid(const Cell& cell)
+{
+	return cell.cellType == constants::CellType::Fluid;
+}
+export bool isAir(const Cell& cell)
+{
+	return cell.cellType == constants::CellType::Air;
 }

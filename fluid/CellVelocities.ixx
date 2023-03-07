@@ -9,7 +9,7 @@ import BaseStructures;
 import CellCalculations;
 
 
-void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells, const int fNumY)
+void restoreCells(Cell& cell, const std::vector<Cell>& gridCells)
 {
 	if (cell.du > 0.0f)
 		cell.u /= cell.du;
@@ -17,10 +17,15 @@ void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells, const int
 	if (cell.dv > 0.0f)
 		cell.v /= cell.dv;
 
-	const bool solid = cell.cellType == constants::CellType::Solid;
-	if (solid || (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * fNumY + cell.cellNumY].cellType == constants::CellType::Solid))
+	if (isSolid(cell))
+		restoreSolidCells(cell, gridCells);
+}
+
+void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells)
+{
+	if (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * constants::fNumY + cell.cellNumY].cellType == constants::CellType::Solid)
 		cell.u = cell.prevU;
-	if (solid || (cell.cellNumY > 0 && gridCells[cell.cellNumX * fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid))
+	if (cell.cellNumY > 0 && gridCells[cell.cellNumX * constants::fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid)
 		cell.v = cell.prevV;
 }
 
@@ -85,34 +90,34 @@ void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
 	setVelComponent(cell3v.v, cell3v.dv, particle.velY, sx * ty);
 }
 
+void prepareCellType(Cell& cell)
+{
+	cell.prevU    = cell.u;
+	cell.prevV    = cell.v;
+	cell.du       = 0.0f;
+	cell.dv       = 0.0f;
+	cell.u        = 0.0f;
+	cell.v        = 0.0f;
+	cell.cellType = cell.s < 0.1f ? constants::CellType::Solid : constants::CellType::Air;
+}
 
+void setCellType(const Particle& p, std::vector<Cell>& gridCells, const Border& fBorder)
+{
+	int cellNr                    = cellNumber(p.posX, p.posY, fBorder, constants::fInvSpacing);
+	constants::CellType& cellType = gridCells[cellNr].cellType;
+	if (cellType == constants::CellType::Air)
+		cellType = constants::CellType::Fluid;
+}
 
 export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
-	auto prepareCellType = [&](Cell& cell) {
-		cell.prevU    = cell.u;
-		cell.prevV    = cell.v;
-		cell.du       = 0.0f;
-		cell.dv       = 0.0f;
-		cell.u        = 0.0f;
-		cell.v        = 0.0f;
-		cell.cellType = cell.s < 0.1f ? constants::CellType::Solid : constants::CellType::Air;
-	};
-	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), prepareCellType);
-
-	auto setCellType = [&](const Particle& p) {
-		int cellNr                    = cellNumber(p.posX, p.posY, fBorder, constants::fInvSpacing);
-		constants::CellType& cellType = gridCells[cellNr].cellType;
-		if (cellType == constants::CellType::Air)
-			cellType = constants::CellType::Fluid;
-	};
-	for_each(std::execution::par_unseq, particleMap.cbegin(), particleMap.cend(), setCellType);
-
+	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
 
 	for_each(std::execution::par_unseq, particleMap.cbegin(), particleMap.cend(), [&](const Particle& particle) {
+		setCellType(particle, gridCells, fBorder);
 		parseVelocitiesU(gridCells, particle);
 		parseVelocitiesV(gridCells, particle);
 	});
 
-	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreSolidCells(cell, gridCells, constants::fNumY); });
+	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), restoreCells);
 }
