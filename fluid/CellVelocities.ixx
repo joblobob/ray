@@ -9,6 +9,14 @@ import BaseStructures;
 import CellCalculations;
 
 
+void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells)
+{
+	if (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * constants::fNumY + cell.cellNumY].cellType == constants::CellType::Solid)
+		cell.u = cell.prevU;
+	if (cell.cellNumY > 0 && gridCells[cell.cellNumX * constants::fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid)
+		cell.v = cell.prevV;
+}
+
 void restoreCells(Cell& cell, const std::vector<Cell>& gridCells)
 {
 	if (cell.du > 0.0f)
@@ -19,14 +27,6 @@ void restoreCells(Cell& cell, const std::vector<Cell>& gridCells)
 
 	if (isSolid(cell))
 		restoreSolidCells(cell, gridCells);
-}
-
-void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells)
-{
-	if (cell.cellNumX > 0 && gridCells[(cell.cellNumX - 1) * constants::fNumY + cell.cellNumY].cellType == constants::CellType::Solid)
-		cell.u = cell.prevU;
-	if (cell.cellNumY > 0 && gridCells[cell.cellNumX * constants::fNumY + cell.cellNumY - 1].cellType == constants::CellType::Solid)
-		cell.v = cell.prevV;
 }
 
 void setVelComponent(float& f, float& d, const float pv, const float delta)
@@ -119,5 +119,5 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::ve
 		parseVelocitiesV(gridCells, particle);
 	});
 
-	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), restoreCells);
+	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
 }
