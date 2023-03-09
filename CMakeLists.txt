@@ -5,7 +5,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 #set(CMAKE_CXX_FLAGS "/W4")
 #set(CMAKE_CXX_FLAGS_DEBUG "/g")
-set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+set(CMAKE_CXX_FLAGS_RELEASE "/O2 /wd5244")
 
 set(CMAKE_PREFIX_PATH C:/Qt/5.15.2/msvc2019_64)
 
@@ -45,6 +45,7 @@ target_sources(ray1
     PRIVATE
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
         FlipFluid.ixx 
+        format.ixx
         fluid/BaseStructures.ixx
         fluid/CellCalculations.ixx 
         fluid/CellColor.ixx

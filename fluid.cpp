@@ -10,7 +10,7 @@
 
 import Obstacle;
 import Constants;
-
+import format;
 
 fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 {
@@ -180,8 +180,8 @@ void fluid::update()
 	//auto elapsed = m_timer.nsecsElapsed() * 0.001;
 	//m_timer.restart();
 	draw();
-
-	ui->label->setText("Simulate: " + QString::number(fps) + " fps" + " Draw: " + QString::number(m_timer.nsecsElapsed() * 0.000001f) + " ms");
+	std::string fpsLabel = std::format("Simulate: {} fps Draw: {:.2f} ms", fps, m_timer.nsecsElapsed() * 0.000001f);
+	ui->label->setText(QString::fromStdString(fpsLabel));
 	fps++;
 	//callback to update
 	//callback in 0ms
