@@ -4,8 +4,6 @@ module;
 #include <string>
 #include <vector>
 
-#include <QString>
-
 export module FlipFluid;
 
 import BaseStructures;
@@ -14,7 +12,7 @@ import CellCalculations;
 import Obstacle;
 
 export struct ExecutionLog {
-	QString message;
+	std::string message;
 	long long nsElapsed;
 };
 

@@ -123,15 +123,16 @@ void fluid::simulate()
 	if (!m_paused) {
 		auto result = m_f.simulate(constants::dt, true);
 		if (result.size() > 0) {
-			ui->label_2->setText(result[0].message + ": " + QString::number(result[0].nsElapsed * 0.001f) + " us");
-			ui->label_3->setText(result[1].message + ": " + QString::number(result[1].nsElapsed * 0.001f) + " us");
-			ui->label_4->setText(result[2].message + ": " + QString::number(result[2].nsElapsed * 0.001f) + " us");
-			ui->label_5->setText(result[3].message + ": " + QString::number(result[3].nsElapsed * 0.001f) + " us");
-			ui->label_6->setText(result[4].message + ": " + QString::number(result[4].nsElapsed * 0.001f) + " us");
-			ui->label_7->setText(result[5].message + ": " + QString::number(result[5].nsElapsed * 0.001f) + " us");
-			ui->label_8->setText(result[6].message + ": " + QString::number(result[6].nsElapsed * 0.001f) + " us");
-			ui->label_9->setText(result[7].message + ": " + QString::number(result[7].nsElapsed * 0.001f) + " us");
-			ui->label_10->setText(result[8].message + ": " + QString::number(result[8].nsElapsed * 0.001f) + " us");
+			constexpr std::string msgFormat { "{}: {:.2f} us" };
+			ui->label_2->setText(std::format(msgFormat, result[0].message, result[0].nsElapsed * 0.001f).data());
+			ui->label_3->setText(std::format(msgFormat, result[1].message, result[1].nsElapsed * 0.001f).data());
+			ui->label_4->setText(std::format(msgFormat, result[2].message, result[2].nsElapsed * 0.001f).data());
+			ui->label_5->setText(std::format(msgFormat, result[3].message, result[3].nsElapsed * 0.001f).data());
+			ui->label_6->setText(std::format(msgFormat, result[4].message, result[4].nsElapsed * 0.001f).data());
+			ui->label_7->setText(std::format(msgFormat, result[5].message, result[5].nsElapsed * 0.001f).data());
+			ui->label_8->setText(std::format(msgFormat, result[6].message, result[6].nsElapsed * 0.001f).data());
+			ui->label_9->setText(std::format(msgFormat, result[7].message, result[7].nsElapsed * 0.001f).data());
+			ui->label_10->setText(std::format(msgFormat, result[8].message, result[8].nsElapsed * 0.001f).data());
 		}
 	}
 }
@@ -167,6 +168,9 @@ void fluid::draw()
 
 void fluid::update()
 {
+	std::string fpsLabel = std::format("Simulate: {} fps Draw: {:.2f} ms", fps, m_timer.nsecsElapsed() * 0.000001f);
+	ui->label->setText(fpsLabel.data());
+
 	m_timer.restart();
 
 	setupObstacle(m_f.gridCells,
@@ -180,8 +184,7 @@ void fluid::update()
 	//auto elapsed = m_timer.nsecsElapsed() * 0.001;
 	//m_timer.restart();
 	draw();
-	std::string fpsLabel = std::format("Simulate: {} fps Draw: {:.2f} ms", fps, m_timer.nsecsElapsed() * 0.000001f);
-	ui->label->setText(QString::fromStdString(fpsLabel));
+
 	fps++;
 	//callback to update
 	//callback in 0ms
