@@ -6,6 +6,7 @@
 #include <QElapsedTimer>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
+#include <QImage>
 #include <QTimer>
 
 import FlipFluid;
@@ -33,7 +34,7 @@ private slots:
 	void on_pauseBtn_clicked()
 	{
 		m_paused = !m_paused;
-		update();
+		//	update();
 	}
 	void on_resetBtn_clicked() { setupScene(); }
 
@@ -57,6 +58,12 @@ private:
 	int fps = 0;
 
 	QElapsedTimer m_timer;
+	QTimer m_drawTimer;
+
+	QImage m_imageCanvas;
+	QGraphicsPixmapItem* m_pixmapSceneItem;
+	QGraphicsScene* m_pixmapScene;
+	void drawImageToScene();
 };
 
 #endif

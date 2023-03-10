@@ -17,7 +17,7 @@ enum class CellType
 
 //setupScene
 
-constexpr float dt = 1.0f / 20.0f;
+constexpr float dt = 1.0f / 60.0f;
 
 
 constexpr bool paused        = false;

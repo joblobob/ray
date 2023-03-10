@@ -2,7 +2,6 @@
 
 #include <QGraphicsView>
 #include <QTimer>
-#include <QtConcurrent/qtconcurrentmap.h>
 #include <execution>
 
 #include "ui_fluid.h"
@@ -12,9 +11,14 @@ import Obstacle;
 import Constants;
 import format;
 
-fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
+fluid::fluid(QWidget* parent) :
+    ui(new Ui::fluid), m_paused(true), m_imageCanvas(constants::maxwidth, constants::maxheight, QImage::Format_RGB32), m_pixmapSceneItem(nullptr)
 {
 	ui->setupUi(this);
+
+	m_imageCanvas.fill(Qt::black);
+	m_pixmapScene = new QGraphicsScene(this);
+
 	m_scene = new QGraphicsScene(this);
 
 	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
@@ -24,14 +28,15 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 	ui->m_graphView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 	ui->m_graphView->setCacheMode(QGraphicsView::CacheBackground);
 
-
 	m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
 	ui->m_graphView->setScene(m_scene);
 	ui->m_graphView->scale(1.0f, -1.0f); // invert Y axis
 	ui->m_graphView->setSceneRect(0.0f, 0.0f, constants::maxwidth, constants::maxheight);
 
-	QTimer::singleShot(0, this, &fluid::update);
+	m_drawTimer.setInterval(16);
+	connect(&m_drawTimer, &QTimer::timeout, this, &fluid::update);
+	m_drawTimer.start();
 }
 
 void fluid::setupScene()
@@ -179,19 +184,16 @@ void fluid::update()
 	    m_f.obstacle,
 	    false);
 
-	//while (timer.elapsed() < 16.666f)
 	simulate();
-	//auto elapsed = m_timer.nsecsElapsed() * 0.001;
-	//m_timer.restart();
 	draw();
-
 	fps++;
-	//callback to update
-	//callback in 0ms
-	//
-	//
-	QCoreApplication::processEvents();
-	if (!m_paused)
-		update();
-	//QTimer::singleShot(0, this, &fluid::update);
+}
+
+void fluid::drawImageToScene()
+{
+	if (m_pixmapSceneItem == nullptr) {
+		m_pixmapSceneItem = m_pixmapScene->addPixmap(QPixmap::fromImage(m_imageCanvas));
+		m_pixmapScene->setSceneRect(m_imageCanvas.rect());
+	} else
+		m_pixmapSceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
 }
