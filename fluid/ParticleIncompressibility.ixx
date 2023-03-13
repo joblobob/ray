@@ -50,6 +50,6 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 				}
 			}
 		};
-		for_each(std::execution::seq, gridCells.begin(), gridCells.end(), parseIncompressibility);
+		for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), parseIncompressibility);
 	}
 }

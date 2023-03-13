@@ -1,6 +1,7 @@
 #include "fluid.h"
 
 #include <QGraphicsView>
+#include <QOpenGLWidget>
 #include <QTimer>
 #include <execution>
 
@@ -19,8 +20,9 @@ fluid::fluid(QWidget* parent) :
 	m_imageCanvas.fill(Qt::black);
 	m_pixmapScene = new QGraphicsScene(this);
 
-	m_scene = new QGraphicsScene(this);
-
+	m_scene           = new QGraphicsScene(this);
+	QOpenGLWidget* gl = new QOpenGLWidget();
+	ui->m_graphView->setViewport(gl);
 	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
 	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontSavePainterState, true);
 	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
