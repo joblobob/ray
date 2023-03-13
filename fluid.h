@@ -58,12 +58,8 @@ private:
 	int fps = 0;
 
 	QElapsedTimer m_timer;
+	QElapsedTimer m_simtimer;
 	QTimer m_drawTimer;
-
-	QImage m_imageCanvas;
-	QGraphicsPixmapItem* m_pixmapSceneItem;
-	QGraphicsScene* m_pixmapScene;
-	void drawImageToScene();
 };
 
 #endif
