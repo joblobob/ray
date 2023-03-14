@@ -2,7 +2,9 @@
 
 #include <QGraphicsView>
 #include <QOpenGLWidget>
+#include <QPainter>
 #include <QTimer>
+
 #include <execution>
 
 #include "ui_fluid.h"
@@ -12,9 +14,16 @@ import Obstacle;
 import Constants;
 import format;
 
-fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
+fluid::fluid(QWidget* parent) :
+    ui(new Ui::fluid), m_paused(true), m_imageCanvas(constants::maxwidth, constants::maxheight, QImage::Format_RGB32), m_pixmapSceneItem(nullptr)
 {
 	ui->setupUi(this);
+
+	m_imageCanvas.fill(Qt::black);
+	m_pixmapScene = new QGraphicsScene(this);
+	m_painter     = new QPainter(&m_imageCanvas);
+	m_painter->setPen(Qt::NoPen);
+	m_painter->setBrush(QBrush(Qt::blue));
 
 	m_scene           = new QGraphicsScene(this);
 	QOpenGLWidget* gl = new QOpenGLWidget();
@@ -28,9 +37,10 @@ fluid::fluid(QWidget* parent) : ui(new Ui::fluid), m_paused(true)
 
 	m_scene->setItemIndexMethod(QGraphicsScene::NoIndex);
 
-	ui->m_graphView->setScene(m_scene);
+	ui->m_graphView->setScene(m_pixmapScene);
 	ui->m_graphView->scale(1.0f, -1.0f); // invert Y axis
 	ui->m_graphView->setSceneRect(0.0f, 0.0f, constants::maxwidth, constants::maxheight);
+
 
 	//m_drawTimer.setInterval(16);
 	//connect(&m_drawTimer, &QTimer::timeout, this, &fluid::update);
@@ -162,14 +172,28 @@ void fluid::draw()
 			auto particleColor = QColor::fromRgbF(m_f.particleMap[i].colorR, m_f.particleMap[i].colorG, m_f.particleMap[i].colorB);
 			item->setPos(m_f.particleMap[i].posX - constants::particleRadius, m_f.particleMap[i].posY - constants::particleRadius);
 			item->setBrush(QBrush(particleColor));
-			item->update();
 		};
 
 		std::for_each(std::execution::par_unseq, m_particleItems.begin(), m_particleItems.end(), setParticleColor);
 	}
 }
 
+//draw to pixmap
+void fluid::drawimage()
+{
+	if (constants::showParticles) {
+		m_imageCanvas.fill(Qt::black);
 
+		float pointSize       = 2.0f * constants::particleRadius;
+		auto setParticleColor = [&](Particle item) {
+			m_painter->setBrush({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
+			m_painter->drawEllipse(item.posX - constants::particleRadius, item.posY - constants::particleRadius, pointSize, pointSize);
+		};
+
+		std::for_each(std::execution::seq, m_f.particleMap.begin(), m_f.particleMap.end(), setParticleColor);
+	}
+	drawImageToScene();
+}
 
 void fluid::update()
 {
@@ -187,16 +211,31 @@ void fluid::update()
 	simulate();
 	float simElapsed { m_simtimer.nsecsElapsed() * 0.000001f };
 	m_simtimer.restart();
-	draw();
+	//draw();
+	drawimage();
 
 	float simDrawElapsed { m_simtimer.nsecsElapsed() * 0.000001f };
 	fps++;
 
-	std::string fpsLabel =
-	    std::format("Frame: {} Simulate: {:.2f} ms SimDraw: {:.2f} ms roundtrip: {:.2f} ms", fps, simElapsed, simDrawElapsed, totalElapsed);
+	std::string fpsLabel = std::format("Frame: {} Simulate: {:.2f} ms SimDraw: {:.2f} ms roundtrip: {:.2f} ms total {:.2f}",
+	    fps,
+	    simElapsed,
+	    simDrawElapsed,
+	    totalElapsed,
+	    simElapsed + simDrawElapsed + totalElapsed);
 	ui->label->setText(fpsLabel.data());
 
 	m_timer.restart();
 
 	QTimer::singleShot(0, this, &fluid::update);
+}
+
+
+void fluid::drawImageToScene()
+{
+	if (m_pixmapSceneItem == nullptr) {
+		m_pixmapSceneItem = m_pixmapScene->addPixmap(QPixmap::fromImage(m_imageCanvas));
+		m_pixmapScene->setSceneRect(m_imageCanvas.rect());
+	} else
+		m_pixmapSceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
 }

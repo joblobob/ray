@@ -6,10 +6,13 @@
 #include <QElapsedTimer>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QImage>
+#include <QPaintEvent>
 #include <QTimer>
 
 import FlipFluid;
+
 
 namespace Ui {
 class fluid;
@@ -59,7 +62,15 @@ private:
 
 	QElapsedTimer m_timer;
 	QElapsedTimer m_simtimer;
+	QElapsedTimer m_setuptimer;
 	QTimer m_drawTimer;
+
+	void drawimage();
+	QImage m_imageCanvas;
+	QGraphicsPixmapItem* m_pixmapSceneItem;
+	QGraphicsScene* m_pixmapScene;
+	QPainter* m_painter;
+	void drawImageToScene();
 };
 
 #endif
