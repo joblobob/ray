@@ -15,13 +15,13 @@ import Constants;
 import format;
 
 fluid::fluid(QWidget* parent) :
-    ui(new Ui::fluid), m_paused(true), m_imageCanvas(constants::maxwidth, constants::maxheight, QImage::Format_RGB32), m_pixmapSceneItem(nullptr)
+    ui(new Ui::fluid), m_paused(true), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
 {
 	ui->setupUi(this);
 
-	m_imageCanvas.fill(Qt::black);
+	m_pointsPixmap.fill(Qt::black);
 	m_pixmapScene = new QGraphicsScene(this);
-	m_painter     = new QPainter(&m_imageCanvas);
+	m_painter     = new QPainter(&m_pointsPixmap);
 	m_painter->setPen(Qt::NoPen);
 	m_painter->setBrush(QBrush(Qt::blue));
 
@@ -127,7 +127,8 @@ void fluid::setupScene()
 
 
 	setupObstacle(m_f.gridCells, 0.0f, 0.0f, m_f.obstacle, true);
-	m_obstacleItem = m_scene->addEllipse(0, 0, ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f, QPen(Qt::NoPen), QBrush(Qt::red));
+	m_obstacleItem =
+	    m_pixmapScene->addEllipse(0, 0, ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
 }
@@ -182,16 +183,24 @@ void fluid::draw()
 void fluid::drawimage()
 {
 	if (constants::showParticles) {
-		m_imageCanvas.fill(Qt::black);
+		m_pointsPixmap.fill(Qt::black);
 
-		float pointSize       = 2.0f * constants::particleRadius;
-		auto setParticleColor = [&](Particle item) {
-			m_painter->setBrush({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
-			m_painter->drawEllipse(item.posX - constants::particleRadius, item.posY - constants::particleRadius, pointSize, pointSize);
+		float pointSize       = constants::particleRadius;
+		auto setParticleColor = [&](auto&& item) {
+			m_painter->setPen({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
+			m_painter->drawPoint(QPointF { item.posX - constants::particleRadius, item.posY - constants::particleRadius });
 		};
 
-		std::for_each(std::execution::seq, m_f.particleMap.begin(), m_f.particleMap.end(), setParticleColor);
+		std::ranges::for_each(m_f.particleMap, setParticleColor);
 	}
+
+	//obstacle
+	m_painter->setPen(Qt::NoPen);
+	m_painter->setBrush(Qt::red);
+	m_painter->drawEllipse(((float)m_obstacleItem->x() + ObstacleConstants::radius),
+	    ((float)m_obstacleItem->y() + ObstacleConstants::radius),
+	    ObstacleConstants::radius * 2.0f,
+	    ObstacleConstants::radius * 2.0f);
 	drawImageToScene();
 }
 
@@ -234,8 +243,8 @@ void fluid::update()
 void fluid::drawImageToScene()
 {
 	if (m_pixmapSceneItem == nullptr) {
-		m_pixmapSceneItem = m_pixmapScene->addPixmap(QPixmap::fromImage(m_imageCanvas));
-		m_pixmapScene->setSceneRect(m_imageCanvas.rect());
+		m_pixmapSceneItem = m_pixmapScene->addPixmap(m_pointsPixmap);
+		//m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
 	} else
-		m_pixmapSceneItem->setPixmap(QPixmap::fromImage(m_imageCanvas));
+		m_pixmapSceneItem->setPixmap(m_pointsPixmap);
 }

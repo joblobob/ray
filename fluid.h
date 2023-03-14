@@ -66,7 +66,7 @@ private:
 	QTimer m_drawTimer;
 
 	void drawimage();
-	QImage m_imageCanvas;
+	QPixmap m_pointsPixmap;
 	QGraphicsPixmapItem* m_pixmapSceneItem;
 	QGraphicsScene* m_pixmapScene;
 	QPainter* m_painter;

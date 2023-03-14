@@ -6,7 +6,7 @@ export module Constants;
 
 export namespace constants {
 constexpr int maxwidth { 1200 };
-constexpr int maxheight { 800 };
+constexpr int maxheight { 750 };
 
 enum class CellType
 {
@@ -17,7 +17,7 @@ enum class CellType
 
 //setupScene
 
-constexpr float dt = 1.0f / 30.0f;
+constexpr float dt = 1.0f / 20.0f;
 
 
 constexpr bool paused        = false;
@@ -25,7 +25,7 @@ constexpr bool showObstacle  = true;
 constexpr bool showParticles = true;
 constexpr bool showGrid      = false;
 
-constexpr int res = 100;
+constexpr float res = 250.0;
 
 constexpr float cellHeight     = maxheight / res;
 constexpr float halfCellHeight = 0.5f * constants::cellHeight;
@@ -36,7 +36,7 @@ constexpr float density = 1000.0f;
 
 // compute number of particles
 
-constexpr float particleRadius = 0.3f * cellHeight; // particle radius w.r.t. cell size
+constexpr float particleRadius = 0.33333333f * cellHeight; // particle radius w.r.t. cell size
 constexpr float dx             = 2.0f * particleRadius;
 constexpr float sqrt_of_3 { 1.73205080f };
 constexpr float dy = sqrt_of_3 / 2.0f * dx;
