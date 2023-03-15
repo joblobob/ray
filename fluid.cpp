@@ -22,7 +22,8 @@ fluid::fluid(QWidget* parent) :
 	m_pointsPixmap.fill(Qt::black);
 	m_pixmapScene = new QGraphicsScene(this);
 	m_painter     = new QPainter(&m_pointsPixmap);
-	m_painter->setPen(Qt::NoPen);
+	QPen painterPen { QColor(0, 0, 0, 0) };
+	m_painter->setPen(painterPen);
 	m_painter->setBrush(QBrush(Qt::blue));
 
 	m_scene           = new QGraphicsScene(this);
@@ -59,8 +60,6 @@ void fluid::setupScene()
 	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
 	// create particles
-	float r2 = constants::particleRadius * 2.0f;
-
 	int count = 0;
 	for (int i = 0; i < constants::numX; i++) {
 		for (int j = 0; j < constants::numY; j++, count++) {
@@ -185,22 +184,23 @@ void fluid::drawimage()
 	if (constants::showParticles) {
 		m_pointsPixmap.fill(Qt::black);
 
-		float pointSize       = constants::particleRadius;
+		float pointSize       = 2.0f * constants::particleRadius;
 		auto setParticleColor = [&](auto&& item) {
-			m_painter->setPen({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
-			m_painter->drawPoint(QPointF { item.posX - constants::particleRadius, item.posY - constants::particleRadius });
+			//m_painter->setPen({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
+			//m_painter->drawPoint(QPointF { item.posX - constants::particleRadius, item.posY - constants::particleRadius });
+			m_painter->setBrush({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
+			m_painter->drawEllipse(item.posX - constants::particleRadius, item.posY - constants::particleRadius, pointSize, pointSize);
 		};
 
 		std::ranges::for_each(m_f.particleMap, setParticleColor);
 	}
 
 	//obstacle
-	m_painter->setPen(Qt::NoPen);
 	m_painter->setBrush(Qt::red);
-	m_painter->drawEllipse(((float)m_obstacleItem->x() + ObstacleConstants::radius),
-	    ((float)m_obstacleItem->y() + ObstacleConstants::radius),
-	    ObstacleConstants::radius * 2.0f,
-	    ObstacleConstants::radius * 2.0f);
+	m_painter->drawEllipse(
+	    ((float)m_obstacleItem->x()), ((float)m_obstacleItem->y()), ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f);
+
+
 	drawImageToScene();
 }
 
