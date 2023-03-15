@@ -17,7 +17,7 @@ enum class CellType
 
 //setupScene
 
-constexpr float dt = 1.0f / 60.0f;
+constexpr float dt = 1.0f / 30.0f;
 
 
 constexpr bool paused        = false;
@@ -25,7 +25,7 @@ constexpr bool showObstacle  = true;
 constexpr bool showParticles = true;
 constexpr bool showGrid      = false;
 
-constexpr float res = 120.0;
+constexpr float res = 120.0f;
 
 constexpr float cellHeight     = maxheight / res;
 constexpr float halfCellHeight = 0.5f * constants::cellHeight;

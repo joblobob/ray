@@ -44,11 +44,6 @@ private slots:
 
 private:
 	Ui::fluid* ui;
-	QGraphicsScene* m_scene;
-
-	QGraphicsPixmapItem* m_sceneItem;
-	std::vector<QGraphicsRectItem*> m_gridItems;
-	std::vector<QGraphicsEllipseItem*> m_particleItems;
 	QGraphicsEllipseItem* m_obstacleItem;
 
 	bool m_paused;
