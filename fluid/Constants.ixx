@@ -8,16 +8,11 @@ export namespace constants {
 constexpr int maxwidth { 1200 };
 constexpr int maxheight { 800 };
 
-enum class CellType
-{
-	Fluid,
-	Air,
-	Solid
-};
+export enum CellType { Fluid, Air, Solid, Soil, Rock };
 
 //setupScene
 
-constexpr float dt = 1.0f / 50.0f;
+constexpr float dt = 1.0f / 25.0f;
 
 
 constexpr bool paused        = false;

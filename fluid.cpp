@@ -99,6 +99,12 @@ void fluid::simulate()
 	}
 }
 
+
+QBrush soil { QColor { 161, 103, 23 } };
+QPen soilPen { QColor { 161, 103, 23 } };
+QBrush rockBrush { QColor { 90, 77, 65 } };
+QPen rockPen { QColor { 90, 77, 65 } };
+
 //draw to pixmap
 void fluid::drawimage()
 {
@@ -106,9 +112,15 @@ void fluid::drawimage()
 		m_pointsPixmap.fill(Qt::black);
 
 		float pointSize       = 2.0f * constants::particleRadius;
-		auto setParticleColor = [&](auto&& item) {
-			m_painter->setBrush({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
-			m_painter->setPen({ QColor::fromRgbF(item.colorR, item.colorG, item.colorB) });
+		auto setParticleColor = [&](const Particle& item) {
+			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
+			if (item.id < 10000) {
+				m_painter->setBrush(soil);
+				m_painter->setPen(soilPen);
+			} else {
+				m_painter->setBrush({ color });
+				m_painter->setPen({ color });
+			}
 			m_painter->drawEllipse(item.posX, item.posY, pointSize, pointSize);
 		};
 
