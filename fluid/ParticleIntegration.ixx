@@ -14,7 +14,7 @@ constexpr float integ   = constants::dt * gravity;
 export void integrateParticles(std::vector<Particle>& particleMap)
 {
 	auto integration = [](Particle& particle) {
-		particle.velY += particle.id < 10000 ? integ * 2.66f : integ; //dt * gravity * particle property magic :P
+		particle.velY += particle.id < 3000 ? integ * 3.50f : particle.id < 15000 ? integ * 2.66f : integ; //dt * gravity * particle property magic :P
 		particle.posX += particle.velX * constants::dt;
 		particle.posY += particle.velY * constants::dt;
 	};

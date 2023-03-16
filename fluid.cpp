@@ -100,10 +100,10 @@ void fluid::simulate()
 }
 
 
-QBrush soil { QColor { 161, 103, 23 } };
+QBrush soilBrush { QColor { 161, 103, 23 } };
 QPen soilPen { QColor { 161, 103, 23 } };
-QBrush rockBrush { QColor { 90, 77, 65 } };
-QPen rockPen { QColor { 90, 77, 65 } };
+QBrush rockBrush { Qt::darkGray };
+QPen rockPen { Qt::darkGray };
 
 //draw to pixmap
 void fluid::drawimage()
@@ -114,8 +114,11 @@ void fluid::drawimage()
 		float pointSize       = 2.0f * constants::particleRadius;
 		auto setParticleColor = [&](const Particle& item) {
 			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
-			if (item.id < 10000) {
-				m_painter->setBrush(soil);
+			if (item.id < 3000) {
+				m_painter->setBrush(rockBrush);
+				m_painter->setPen(rockPen);
+			} else if (item.id < 15000) {
+				m_painter->setBrush(soilBrush);
 				m_painter->setPen(soilPen);
 			} else {
 				m_painter->setBrush({ color });
