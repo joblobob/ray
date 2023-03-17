@@ -12,7 +12,7 @@ export enum CellType { Fluid, Air, Solid, Soil, Rock };
 
 //setupScene
 
-constexpr float dt = 1.0f / 20.0f;
+constexpr float dt = 1.0f / 5.0f;
 
 
 constexpr bool paused        = false;
