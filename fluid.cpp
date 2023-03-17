@@ -104,6 +104,8 @@ QBrush soilBrush { QColor { 161, 103, 23 } };
 QPen soilPen { QColor { 161, 103, 23 } };
 QBrush rockBrush { Qt::darkGray };
 QPen rockPen { Qt::darkGray };
+QBrush grassBrush { Qt::darkGreen };
+QPen grassPen { Qt::darkGreen };
 
 //draw to pixmap
 void fluid::drawimage()
@@ -120,6 +122,9 @@ void fluid::drawimage()
 			} else if (item.id < 15000) {
 				m_painter->setBrush(soilBrush);
 				m_painter->setPen(soilPen);
+			} else if (item.id < 17000) {
+				m_painter->setBrush(grassBrush);
+				m_painter->setPen(grassPen);
 			} else {
 				m_painter->setBrush({ color });
 				m_painter->setPen({ color });
