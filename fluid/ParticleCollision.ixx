@@ -10,13 +10,14 @@ import BaseStructures;
 import Constants;
 import Obstacle;
 
+// can be modified at any time, they are not exported!! haha!
 constexpr float minDist  = ObstacleConstants::radius + constants::particleRadius;
 constexpr float minDist2 = minDist * minDist;
 
 constexpr float LeftWall   = constants::cellHeight + constants::particleRadius;
 constexpr float RightWall  = (constants::fNumX - 1) * constants::cellHeight - constants::particleRadius;
-constexpr float topWall    = constants::cellHeight + constants::particleRadius;
-constexpr float bottomWall = (constants::fNumY - 1) * constants::cellHeight - constants::particleRadius;
+constexpr float bottomWall = constants::cellHeight + constants::particleRadius;
+constexpr float topWall    = (constants::fNumY - 1) * constants::cellHeight - constants::particleRadius;
 
 
 export void handleParticleCollisions(std::vector<Particle>& particleMap, const Obstacle obstacle)
@@ -37,24 +38,15 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 
 
 		// wall collisions
-		bool hitsLeft = [&]() {
-			return x < LeftWall;
-		}();
-		bool hitsRight = [&]() {
-			return x > RightWall;
-		}();
-		particle.posX = hitsLeft ? LeftWall : hitsRight ? RightWall : x;
-		particle.velX = hitsLeft ? 0.0f : hitsRight ? 0.0f : particle.velX;
+		bool hitsLeft  = x < LeftWall;
+		bool hitsRight = x > RightWall;
+		particle.posX  = std::ranges::clamp(x, LeftWall, RightWall);
+		particle.velX  = hitsLeft || hitsRight ? 0.0f : particle.velX;
 
-		// yeah.. upside down
-		bool hitsUp = [&]() {
-			return y < topWall;
-		}();
-		bool hitsDown = [&]() {
-			return y > bottomWall;
-		}();
-		particle.posY = hitsUp ? topWall : hitsDown ? bottomWall : y;
-		particle.velY = hitsUp ? 0.0f : hitsDown ? 0.0f : particle.velY;
+		bool hitsTop    = y > topWall;
+		bool hitsBottom = y < bottomWall;
+		particle.posY   = std::ranges::clamp(y, bottomWall, topWall);
+		particle.velY   = hitsTop || hitsBottom ? 0.0f : particle.velY;
 	};
 	std::for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), particleCollision);
 }
