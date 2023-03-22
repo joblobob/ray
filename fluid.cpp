@@ -7,12 +7,16 @@
 
 #include <execution>
 
+#include <mdspan.hpp>
+
 #include "ui_fluid.h"
 
 
 import Obstacle;
 import Constants;
 import format;
+//import mdspan;
+
 
 fluid::fluid(QWidget* parent) :
     ui(new Ui::fluid), m_paused(true), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
@@ -45,30 +49,29 @@ void fluid::setupScene()
 	// create fluid
 	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
 
+	std::experimental::mdspan particleView(m_f.particleMap.data(), constants::numX, constants::numY);
 	// create particles
 	int count = 0;
-	for (int i = 0; i < constants::numX; i++) {
-		for (int j = 0; j < constants::numY; j++, count++) {
-			const float posX       = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
-			const float posY       = constants::cellHeight + constants::particleRadius + constants::dy * j;
-			m_f.particleMap[count] = { count, posX, posY };
+	for (std::size_t i = 0; i < particleView.extent(0); i++) {
+		for (std::size_t j = 0; j < particleView.extent(1); j++, count++) {
+			const float posX   = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
+			const float posY   = constants::cellHeight + constants::particleRadius + constants::dy * j;
+			particleView(i, j) = { count, posX, posY };
 		}
 	}
 
 
 	// setup grid cells for tank
-
+	std::experimental::mdspan gridView(m_f.gridCells.data(), constants::fNumX, constants::fNumY);
 	float n = constants::fNumY;
-	count   = 0;
-	for (int i = 0; i < constants::fNumX; i++) {
-		for (int j = 0; j < constants::fNumY; j++) {
+	for (std::size_t i = 0; i < gridView.extent(0); i++) {
+		for (std::size_t j = 0; j < gridView.extent(1); j++) {
 			float s = 1.0f; // fluid
 			if (i == 0 || i == constants::fNumX - 1 || j == 0)
 				s = 0.0f; // solid
-			m_f.gridCells[i * n + j].s        = s;
-			m_f.gridCells[i * n + j].cellNumX = i;
-			m_f.gridCells[i * n + j].cellNumY = j;
-			count++;
+			gridView(i, j).s        = s;
+			gridView(i, j).cellNumX = i;
+			gridView(i, j).cellNumY = j;
 		}
 	}
 

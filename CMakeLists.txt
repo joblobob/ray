@@ -46,6 +46,7 @@ target_sources(ray1
         FILE_SET cxx_modules TYPE CXX_MODULES FILES
         FlipFluid.ixx 
         format.ixx
+        mdspan.ixx
         fluid/BaseStructures.ixx
         fluid/CellCalculations.ixx 
         fluid/CellColor.ixx
