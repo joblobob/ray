@@ -30,11 +30,9 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 		const float d2 = dx * dx + dy * dy;
 
 		// obstacle collision
-		bool hitsObstacle = [&]() {
-			return d2 < minDist2;
-		}();
-		particle.velX = hitsObstacle ? obstacle.velX : particle.velX;
-		particle.velY = hitsObstacle ? obstacle.velY : particle.velY;
+		bool hitsObstacle = d2 < minDist2;
+		particle.velX     = hitsObstacle ? obstacle.velX : particle.velX;
+		particle.velY     = hitsObstacle ? obstacle.velY : particle.velY;
 
 
 		// wall collisions
