@@ -105,6 +105,8 @@ void fluid::simulate()
 
 QBrush soilBrush { QColor { 161, 103, 23 } };
 QPen soilPen { QColor { 161, 103, 23 } };
+QBrush lightSoilBrush { QColor { 191, 133, 53 } };
+QPen lightSoilPen { QColor { 191, 133, 53 } };
 QBrush rockBrush { Qt::darkGray };
 QPen rockPen { Qt::darkGray };
 QBrush grassBrush { Qt::darkGreen };
@@ -122,9 +124,12 @@ void fluid::drawimage()
 			if (item.id < 3000) {
 				m_painter->setBrush(rockBrush);
 				m_painter->setPen(rockPen);
-			} else if (item.id < 15000) {
+			} else if (item.id < 10000) {
 				m_painter->setBrush(soilBrush);
 				m_painter->setPen(soilPen);
+			} else if (item.id < 15000) {
+				m_painter->setBrush(lightSoilBrush);
+				m_painter->setPen(lightSoilPen);
 			} else if (item.id < 17000) {
 				m_painter->setBrush(grassBrush);
 				m_painter->setPen(grassPen);

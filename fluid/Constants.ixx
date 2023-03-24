@@ -5,14 +5,14 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr int maxwidth { 1200 };
+constexpr int maxwidth { 1600 };
 constexpr int maxheight { 800 };
 
 export enum CellType { Fluid, Air, Solid, Soil, Rock };
 
 //setupScene
 
-constexpr float dt = 1.0f / 5.0f;
+constexpr float dt = 1.0f / 15.0f;
 
 
 constexpr bool paused        = false;
