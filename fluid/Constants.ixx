@@ -37,7 +37,7 @@ constexpr float sqrt_of_3 { 1.73205080f };
 constexpr float dy = sqrt_of_3 / 2.0f * dx;
 
 constexpr float relWaterHeight = 0.8f;
-constexpr float relWaterWidth  = 0.8f;
+constexpr float relWaterWidth  = 0.65f;
 constexpr int numX             = static_cast<int>((relWaterWidth * maxwidth - 2.0f * cellHeight - 2.0f * particleRadius) / dx);
 constexpr int numY             = static_cast<int>((relWaterHeight * maxheight - 2.0f * cellHeight - 2.0f * particleRadius) / dy);
 constexpr int maxParticles     = numX * numY;

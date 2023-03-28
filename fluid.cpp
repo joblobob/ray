@@ -118,7 +118,6 @@ void fluid::drawimage()
 	if (constants::showParticles) {
 		m_pointsPixmap.fill(Qt::black);
 
-		float pointSize       = 2.0f * constants::particleRadius;
 		auto setParticleColor = [&](const Particle& item) {
 			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
 			if (item.id < 3000) {
@@ -137,7 +136,7 @@ void fluid::drawimage()
 				m_painter->setBrush({ color });
 				m_painter->setPen({ color });
 			}
-			m_painter->drawEllipse(item.posX, item.posY, pointSize, pointSize);
+			m_painter->drawEllipse(item.posX, item.posY, constants::dx, constants::dx);
 		};
 
 		std::ranges::for_each(m_f.particleMap, setParticleColor);
