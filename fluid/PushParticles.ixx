@@ -10,15 +10,15 @@ import Constants;
 import CellCalculations;
 
 //constants
-constexpr float pInvSpacing = 1.0f / (2.2f * constants::particleRadius);
-constexpr int pNumX         = static_cast<int>((constants::maxwidth * pInvSpacing) + 1);
-constexpr int pNumY         = static_cast<int>((constants::maxheight * pInvSpacing) + 1);
-constexpr int pNumCells     = pNumX * pNumY;
+constexpr float default_pInvSpacing = 1.0f / (2.2f * constants::particleDefaultRadius);
+constexpr int pNumX                 = static_cast<int>((constants::maxwidth * default_pInvSpacing) + 1);
+constexpr int pNumY                 = static_cast<int>((constants::maxheight * default_pInvSpacing) + 1);
+constexpr int pNumCells             = pNumX * pNumY;
 
 constexpr int numParticleIters      = 2;
 constexpr float colorDiffusionCoeff = 0.001f;
-constexpr float minDist             = 2.0f * constants::particleRadius;
-constexpr float minDist2            = minDist * minDist;
+
+
 
 struct ParticleInCells {
 	int numCellParticles = 0, firstCellParticle = 0;
@@ -41,6 +41,7 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 
 	// count particles per cell
 	const auto countParticlesInCell = [&](const Particle& particle) {
+		const float pInvSpacing  = 1.0f / (2.2f * particle.radius);
 		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
 		cellNumbers[particle.id] = cellnum;
 		particleCells[cellnum].numCellParticles++;
@@ -74,8 +75,9 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 
 
 	auto pushParticles = [&](Particle& particle) {
-		const float px = particle.posX;
-		const float py = particle.posY;
+		const float pInvSpacing = 1.0f / (2.2f * particle.radius);
+		const float px          = particle.posX;
+		const float py          = particle.posY;
 
 		const int pxi = static_cast<int>(px * pInvSpacing);
 		const int pyi = static_cast<int>(py * pInvSpacing);
@@ -93,8 +95,10 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 					const int id = cellParticleIds[j];
 					if (id != particle.id) {
 						Particle& particleAtId { particleMap[id] };
-						const float qx = particleAtId.posX;
-						const float qy = particleAtId.posY;
+						const float qx       = particleAtId.posX;
+						const float qy       = particleAtId.posY;
+						const float minDist  = 2.0f * particle.radius;
+						const float minDist2 = minDist * minDist;
 
 						float dx       = qx - px;
 						float dy       = qy - py;

@@ -50,7 +50,6 @@ export void setupObstacle(std::vector<Cell>& gridCells, const float newX, const 
 	}
 
 
-	//scene.showObstacle = true;
 	obstacle.velX = vx;
 	obstacle.velY = vy;
 }

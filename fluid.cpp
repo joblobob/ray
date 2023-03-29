@@ -54,11 +54,15 @@ void fluid::setupScene()
 	int count = 0;
 	for (std::size_t i = 0; i < particleView.extent(0); i++) {
 		for (std::size_t j = 0; j < particleView.extent(1); j++, count++) {
-			const float posX   = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
-			const float posY   = constants::cellHeight + constants::particleRadius + constants::dy * j;
-			particleView(i, j) = { count, posX, posY };
+			float rad = constants::particleDefaultRadius;
+			if (count < 3000)
+				rad *= 4.0f;
+			const float posX   = constants::cellHeight + rad + constants::dx * i + (j % 2 == 0 ? 0.0f : rad);
+			const float posY   = constants::cellHeight + rad + constants::dy * j;
+			particleView(i, j) = { .id = count, .posX = posX, .posY = posY, .radius = rad };
 		}
 	}
+
 
 
 	// setup grid cells for tank
@@ -118,25 +122,25 @@ void fluid::drawimage()
 	if (constants::showParticles) {
 		m_pointsPixmap.fill(Qt::black);
 
-		auto setParticleColor = [&](const Particle& item) {
-			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
-			if (item.id < 3000) {
+		auto setParticleColor = [&](const Particle& particle) {
+			auto color = QColor::fromRgbF(particle.colorR, particle.colorG, particle.colorB);
+			if (particle.id < 3000) {
 				m_painter->setBrush(rockBrush);
 				m_painter->setPen(rockPen);
-			} else if (item.id < 10000) {
+			} else if (particle.id < 10000) {
 				m_painter->setBrush(soilBrush);
 				m_painter->setPen(soilPen);
-			} else if (item.id < 15000) {
+			} else if (particle.id < 15000) {
 				m_painter->setBrush(lightSoilBrush);
 				m_painter->setPen(lightSoilPen);
-			} else if (item.id < 17000) {
+			} else if (particle.id < 17000) {
 				m_painter->setBrush(grassBrush);
 				m_painter->setPen(grassPen);
 			} else {
 				m_painter->setBrush({ color });
 				m_painter->setPen({ color });
 			}
-			m_painter->drawEllipse(item.posX, item.posY, constants::dx, constants::dx);
+			m_painter->drawEllipse(particle.posX, particle.posY, particle.radius * 2.0f, particle.radius * 2.0f);
 		};
 
 		std::ranges::for_each(m_f.particleMap, setParticleColor);
