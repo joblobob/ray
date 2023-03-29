@@ -12,9 +12,6 @@ export struct Particle {
 	float colorR = 0.0f, colorG = 0.0f, colorB = 1.0f;
 };
 
-export struct ParticleInCells {
-	int numCellParticles = 0, firstCellParticle = 0;
-};
 
 export struct Cell {
 	int cellNumX, cellNumY;

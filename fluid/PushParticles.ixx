@@ -20,6 +20,10 @@ constexpr float colorDiffusionCoeff = 0.001f;
 constexpr float minDist             = 2.0f * constants::particleRadius;
 constexpr float minDist2            = minDist * minDist;
 
+struct ParticleInCells {
+	int numCellParticles = 0, firstCellParticle = 0;
+};
+
 inline void calcColor(float& p1Color, float& p2Color)
 {
 	const float color = (p1Color + p2Color) * 0.5f;
