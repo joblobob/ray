@@ -26,7 +26,7 @@ export struct FlipFluid {
 	Border fBorder;
 
 	FlipFluid() = default;
-	FlipFluid(float width, float height, float spacing, float particleRadius, int maxParticles);
+	FlipFluid(float width, float height, float spacing, int maxParticles);
 
 	std::vector<ExecutionLog> simulate(float dt, bool instrument);
 };

@@ -47,7 +47,7 @@ fluid::fluid(QWidget* parent) :
 void fluid::setupScene()
 {
 	// create fluid
-	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::particleRadius, constants::maxParticles);
+	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
 
 	std::experimental::mdspan particleView(m_f.particleMap.data(), constants::numX, constants::numY);
 	// create particles
