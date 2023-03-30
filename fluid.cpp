@@ -143,7 +143,7 @@ void fluid::drawimage()
 			m_painter->drawEllipse(particle.posX, particle.posY, particle.radius * 2.0f, particle.radius * 2.0f);
 		};
 
-		std::ranges::for_each(m_f.particleMap, setParticleColor);
+		std::ranges::for_each(std::ranges::reverse_view(m_f.particleMap), setParticleColor);
 	}
 
 	//obstacle
