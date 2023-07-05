@@ -9,7 +9,7 @@ export module CellColor;
 import BaseStructures;
 import CellCalculations;
 
-void fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
+Cell& fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
 {
 	constexpr float epsilon = 0.0001f;
 	val                     = std::min(std::max(val, minVal), maxVal - epsilon);
@@ -46,36 +46,33 @@ void fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
 	cell.colorR = r;
 	cell.colorG = g;
 	cell.colorB = b;
+	return cell;
 }
 
-void solidCellColor(Cell& cell)
+Cell& solidCellColor(Cell& cell)
 {
 	cell.colorR = 0.5f;
 	cell.colorG = 0.5f;
 	cell.colorB = 0.5f;
+	return cell;
 }
 
-void airCellColor(Cell& cell)
+Cell& airCellColor(Cell& cell)
 {
 	cell.colorR = 0.0f;
 	cell.colorG = 0.0f;
 	cell.colorB = 0.0f;
+	return cell;
 }
 
 export void updateCellColors(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
 	// Solid
-	//gridCells | std::views::filter(isSolid) | std::views::transform(solidCellColor) | std::ranges::to<std::vector>(); //slower, meh
-	for (Cell& cell : gridCells | std::views::filter(isSolid)) {
-		solidCellColor(cell);
-	}
-	// Air
-	for (Cell& cell : gridCells | std::views::filter(isAir)) {
-		airCellColor(cell);
-	}
+	gridCells | std::views::filter(isSolid) | std::views::transform(solidCellColor) | std::ranges::to<std::vector>();
 
-	// Fluid
-	for (Cell& cell : gridCells | std::views::filter(isFluid)) {
-		fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0f, 2.0f);
-	}
+	gridCells | std::views::filter(isAir) | std::views::transform(airCellColor) | std::ranges::to<std::vector>();
+
+	gridCells | std::views::filter(isFluid) |
+	    std::views::transform([&](Cell& cell) { return fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0f, 2.0f); }) |
+	    std::ranges::to<std::vector>();
 }

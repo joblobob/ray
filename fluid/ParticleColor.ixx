@@ -7,6 +7,7 @@ export module ParticleColor;
 
 import BaseStructures;
 import CellCalculations;
+import Constants;
 
 export void updateParticleColors(std::vector<Particle>& particleMap,
     std::vector<Cell>& gridCells,

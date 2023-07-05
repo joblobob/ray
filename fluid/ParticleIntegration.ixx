@@ -1,7 +1,8 @@
 module;
 
 #include <algorithm>
-#include <execution>
+#include <ranges>
+#include <vector>
 
 export module ParticleIntegration;
 
@@ -21,6 +22,7 @@ export void integrateParticles(std::vector<Particle>& particleMap)
 		                                       integ; //dt * gravity * particle property magic :P
 		particle.posX += particle.velX * constants::dt;
 		particle.posY += particle.velY * constants::dt;
+		return particle;
 	};
-	std::for_each(std::execution::seq, particleMap.begin(), particleMap.end(), integration);
+	particleMap | std::views::transform(integration) | std::ranges::to<std::vector>();
 }

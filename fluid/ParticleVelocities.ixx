@@ -6,6 +6,7 @@ module;
 export module ParticleVelocities;
 
 import BaseStructures;
+import Constants;
 
 //constants
 constexpr float flipRatio = 0.9f;

@@ -5,7 +5,9 @@
 #include <QPainter>
 #include <QTimer>
 
+#include <algorithm>
 #include <execution>
+#include <ranges>
 
 #include <mdspan.hpp>
 
@@ -68,7 +70,7 @@ void fluid::setupScene()
 		for (std::size_t j = 0; j < gridView.extent(1); j++) {
 			float s = 1.0f; // fluid
 			if (i == 0 || i == constants::fNumX - 1 || j == 0)
-				s = 0.0f; // solid
+				s = 0.0f;      // solid
 			gridView(i, j).s        = s;
 			gridView(i, j).cellNumX = i;
 			gridView(i, j).cellNumY = j;
@@ -115,9 +117,18 @@ QPen grassPen { Qt::darkGreen };
 //draw to pixmap
 void fluid::drawimage()
 {
-	if (constants::showParticles) {
-		m_pointsPixmap.fill(Qt::black);
+	m_pointsPixmap.fill(Qt::black);
+	auto setCellColor = [&](const Cell& item) {
+		auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
+		m_painter->setBrush({ color });
+		m_painter->setPen({ color });
+		m_painter->drawRect(item.cellNumX * constants::cellHeight, item.cellNumY * constants::cellHeight, constants::cellHeight, constants::cellHeight);
+		return item;
+	};
 
+	m_f.gridCells | std::views::transform(setCellColor) | std::ranges::to<std::vector>();
+
+	if (constants::showParticles) {
 		auto setParticleColor = [&](const Particle& item) {
 			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
 			if (item.id < 3000) {
@@ -137,10 +148,12 @@ void fluid::drawimage()
 				m_painter->setPen({ color });
 			}
 			m_painter->drawEllipse(item.posX, item.posY, constants::dx, constants::dx);
+			return item;
 		};
 
-		std::ranges::for_each(m_f.particleMap, setParticleColor);
+		m_f.particleMap | std::views::transform(setParticleColor) | std::ranges::to<std::vector>();
 	}
+
 
 	//obstacle
 	m_painter->setBrush(Qt::red);
