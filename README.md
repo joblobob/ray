@@ -1,2 +1,0 @@
-# ray
-Ray tracing fun!
