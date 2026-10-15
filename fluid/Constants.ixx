@@ -5,14 +5,14 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr int maxwidth { 1600 };
-constexpr int maxheight { 800 };
+constexpr int maxwidth { 800 };
+constexpr int maxheight { 400 };
 
-export enum CellType { Fluid, Air, Solid, Soil, Rock };
+enum CellType { Fluid, Air, Solid, Soil, Rock };
 
 //setupScene
 
-constexpr float dt = 1.0f / 15.0f;
+constexpr float dt = 1.0f / 60.0f;
 
 
 constexpr bool paused        = false;
@@ -20,7 +20,7 @@ constexpr bool showObstacle  = true;
 constexpr bool showParticles = true;
 constexpr bool showGrid      = false;
 
-constexpr float res = 120.0f;
+constexpr float res = 100.0f;
 
 constexpr float cellHeight     = maxheight / res;
 constexpr float halfCellHeight = 0.5f * constants::cellHeight;
@@ -36,8 +36,9 @@ constexpr float dx             = 2.0f * particleRadius;
 constexpr float sqrt_of_3 { 1.73205080f };
 constexpr float dy = sqrt_of_3 / 2.0f * dx;
 
-constexpr float relWaterHeight = 0.8f;
-constexpr float relWaterWidth  = 0.65f;
+// Seed a larger volume without changing particle spacing or radius.
+constexpr float relWaterHeight = 0.50f;
+constexpr float relWaterWidth  = 0.50f;
 constexpr int numX             = static_cast<int>((relWaterWidth * maxwidth - 2.0f * cellHeight - 2.0f * particleRadius) / dx);
 constexpr int numY             = static_cast<int>((relWaterHeight * maxheight - 2.0f * cellHeight - 2.0f * particleRadius) / dy);
 constexpr int maxParticles     = numX * numY;

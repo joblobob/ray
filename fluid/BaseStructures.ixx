@@ -1,3 +1,5 @@
+module;
+
 export module BaseStructures;
 
 import Constants;

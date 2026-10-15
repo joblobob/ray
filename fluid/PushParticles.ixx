@@ -2,6 +2,8 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
+#include <cmath>
 
 export module PushParticles;
 
@@ -20,8 +22,14 @@ constexpr float colorDiffusionCoeff = 0.001f;
 constexpr float minDist             = 2.0f * constants::particleRadius;
 constexpr float minDist2            = minDist * minDist;
 
-struct ParticleInCells {
+export struct ParticleInCells {
 	int numCellParticles = 0, firstCellParticle = 0;
+};
+
+export struct PushParticlesBuffers {
+	std::vector<ParticleInCells> particleCells;
+	std::vector<int> cellNumbers;
+	std::vector<int> cellParticleIds;
 };
 
 inline void calcColor(float& p1Color, float& p2Color)
@@ -33,19 +41,19 @@ inline void calcColor(float& p1Color, float& p2Color)
 
 static const Border pBorder { .maxX = pNumX, .maxY = pNumY };
 
-export void pushParticlesApart(std::vector<Particle>& particleMap)
+export void pushParticlesApart(std::vector<Particle>& particleMap, PushParticlesBuffers& buffers)
 {
-	std::vector<ParticleInCells> particleCells(pNumCells + 1, { 0, 0 }); // particlesincellinfo
-
-	std::vector<int> cellNumbers(constants::maxParticles, 0);
+	buffers.particleCells.assign(pNumCells + 1, { 0, 0 });
+	buffers.cellNumbers.resize(constants::maxParticles);
+	buffers.cellParticleIds.resize(constants::maxParticles);
 
 	// count particles per cell
 	const auto countParticlesInCell = [&](const Particle& particle) {
 		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
-		cellNumbers[particle.id] = cellnum;
-		particleCells[cellnum].numCellParticles++;
+		buffers.cellNumbers[particle.id] = cellnum;
+		buffers.particleCells[cellnum].numCellParticles++;
 	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), countParticlesInCell);
+	std::for_each(particleMap.begin(), particleMap.end(), countParticlesInCell);
 
 	// partial sums
 	int first = 0;
@@ -55,19 +63,17 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 		first += pIncell.numCellParticles;
 		pIncell.firstCellParticle = first;
 	};
-	for_each(std::execution::seq, particleCells.begin(), particleCells.end(), countFirstCell);
+	std::for_each(buffers.particleCells.begin(), buffers.particleCells.end(), countFirstCell);
 
 
-	particleCells[pNumCells].firstCellParticle = first; // guard
-
-	std::vector<int> cellParticleIds(constants::maxParticles, 0);
+	buffers.particleCells[pNumCells].firstCellParticle = first; // guard
 
 	// fill particles into cells
 	auto fillParticleIntoCell = [&](const Particle& p) {
-		particleCells[cellNumbers[p.id]].firstCellParticle--;
-		cellParticleIds[particleCells[cellNumbers[p.id]].firstCellParticle] = p.id;
+		buffers.particleCells[buffers.cellNumbers[p.id]].firstCellParticle--;
+		buffers.cellParticleIds[buffers.particleCells[buffers.cellNumbers[p.id]].firstCellParticle] = p.id;
 	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), fillParticleIntoCell);
+	std::for_each(particleMap.begin(), particleMap.end(), fillParticleIntoCell);
 
 
 	// push particles apart
@@ -87,10 +93,10 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 		for (int xi = x0; xi <= x1; xi++) {
 			for (int yi = y0; yi <= y1; yi++) {
 				const int cellNr = xi * pNumY + yi;
-				const int first  = particleCells[cellNr].firstCellParticle;
-				const int last   = particleCells[cellNr + 1].firstCellParticle;
+				const int first  = buffers.particleCells[cellNr].firstCellParticle;
+				const int last   = buffers.particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {
-					const int id = cellParticleIds[j];
+					const int id = buffers.cellParticleIds[j];
 					if (id != particle.id) {
 						Particle& particleAtId { particleMap[id] };
 						const float qx = particleAtId.posX;
@@ -122,6 +128,6 @@ export void pushParticlesApart(std::vector<Particle>& particleMap)
 	};
 
 	for (int iter = 0; iter < numParticleIters; iter++) {
-		for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), pushParticles);
+		std::for_each(particleMap.begin(), particleMap.end(), pushParticles);
 	}
 }

@@ -15,15 +15,15 @@ export constexpr int cellNumber(const float x, const float y, const Border& bord
 }
 
 
-export bool isSolid(const Cell& cell)
+export constexpr bool isSolid(const Cell& cell)
 {
 	return cell.cellType == constants::CellType::Solid;
 }
-export bool isFluid(const Cell& cell)
+export constexpr bool isFluid(const Cell& cell)
 {
 	return cell.cellType == constants::CellType::Fluid;
 }
-export bool isAir(const Cell& cell)
+export constexpr bool isAir(const Cell& cell)
 {
 	return cell.cellType == constants::CellType::Air;
 }

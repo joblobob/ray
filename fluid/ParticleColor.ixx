@@ -2,11 +2,13 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module ParticleColor;
 
 import BaseStructures;
 import CellCalculations;
+import Constants;
 
 export void updateParticleColors(std::vector<Particle>& particleMap,
     std::vector<Cell>& gridCells,
@@ -32,5 +34,5 @@ export void updateParticleColors(std::vector<Particle>& particleMap,
 			}
 		}
 	};
-	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), parseParticleColors);
+	std::for_each(particleMap.begin(), particleMap.end(), parseParticleColors);
 }

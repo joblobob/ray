@@ -10,6 +10,7 @@ import BaseStructures;
 import Constants;
 import CellCalculations;
 import Obstacle;
+import PushParticles;
 
 export struct ExecutionLog {
 	std::string message;
@@ -22,6 +23,7 @@ export struct FlipFluid {
 	Obstacle obstacle;
 	std::vector<Particle> particleMap;
 	std::vector<Cell> gridCells;
+	PushParticlesBuffers pushParticleBuffers;
 
 	Border fBorder;
 

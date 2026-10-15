@@ -2,16 +2,18 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module ParticleDensity;
 
 import BaseStructures;
+import Constants;
 
 
 export void updateParticleDensity(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
 {
 	// reset density
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [](Cell& c) { c.particleDensity = 0.0f; });
+	std::for_each(gridCells.begin(), gridCells.end(), [](Cell& c) { c.particleDensity = 0.0f; });
 
 	auto solveParticleDensity = [&](const Particle& p) {
 		const float x = std::clamp(p.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
@@ -37,7 +39,7 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 		if (x0 < constants::fNumX && y1 < constants::fNumY)
 			gridCells[x0 * constants::fNumY + y1].particleDensity += sx * ty;
 	};
-	for_each(std::execution::seq, particleMap.begin(), particleMap.end(), solveParticleDensity);
+	std::for_each(particleMap.begin(), particleMap.end(), solveParticleDensity);
 }
 
 export void calculateParticleRestDensity(std::vector<Cell>& gridCells, float& particleRestDensity)
@@ -51,7 +53,7 @@ export void calculateParticleRestDensity(std::vector<Cell>& gridCells, float& pa
 			numFluidCells++;
 		}
 	};
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), calculateSum);
+	std::for_each(gridCells.begin(), gridCells.end(), calculateSum);
 
 	if (numFluidCells > 0)
 		particleRestDensity = sum / numFluidCells;

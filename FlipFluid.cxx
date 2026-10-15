@@ -48,7 +48,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 		log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
 		timer.restart();
 	}
-	pushParticlesApart(particleMap);
+	pushParticlesApart(particleMap, pushParticleBuffers);
 	if (instrument) {
 		log.push_back(ExecutionLog { "pushParticlesApart", timer.nsecsElapsed() });
 		timer.restart();

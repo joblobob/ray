@@ -2,10 +2,12 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module ParticleVelocities;
 
 import BaseStructures;
+import Constants;
 
 //constants
 constexpr float flipRatio = 0.9f;
@@ -46,10 +48,16 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		Cell& cell3 = gridCells[nr3];
 
 		// specific
-		const Cell cellOffset0 = gridCells[nr0 - constants::fNumY];
-		const Cell cellOffset1 = gridCells[nr1 - constants::fNumY];
-		const Cell cellOffset2 = gridCells[nr2 - constants::fNumY];
-		const Cell cellOffset3 = gridCells[nr3 - constants::fNumY];
+		// A particle touching the left wall can sample x0 == 0. In that
+		// case there is no cell one column to the left; use the boundary cell
+		// itself, which is solid, instead of indexing before the grid.
+		const auto leftCell = [&](const int cellNumber) -> const Cell& {
+			return cellNumber >= constants::fNumY ? gridCells[cellNumber - constants::fNumY] : gridCells[cellNumber];
+		};
+		const Cell& cellOffset0 = leftCell(nr0);
+		const Cell& cellOffset1 = leftCell(nr1);
+		const Cell& cellOffset2 = leftCell(nr2);
+		const Cell& cellOffset3 = leftCell(nr3);
 
 		float valid0 = cell0.cellType != constants::CellType::Air || cellOffset0.cellType != constants::CellType::Air ? 1.0 : 0.0;
 		float valid1 = cell1.cellType != constants::CellType::Air || cellOffset1.cellType != constants::CellType::Air ? 1.0 : 0.0;
@@ -101,10 +109,15 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		Cell& cell3v = gridCells[nr3];
 
 		// specific
-		const Cell cellOffset0v = gridCells[nr0 - 1];
-		const Cell cellOffset1v = gridCells[nr1 - 1];
-		const Cell cellOffset2v = gridCells[nr2 - 1];
-		const Cell cellOffset3v = gridCells[nr3 - 1];
+		// Likewise, y0 == 0 is valid at the bottom wall but has no row below
+		// it. Treat the boundary cell as its own solid neighbour.
+		const auto bottomCell = [&](const int cellNumber) -> const Cell& {
+			return cellNumber % constants::fNumY > 0 ? gridCells[cellNumber - 1] : gridCells[cellNumber];
+		};
+		const Cell& cellOffset0v = bottomCell(nr0);
+		const Cell& cellOffset1v = bottomCell(nr1);
+		const Cell& cellOffset2v = bottomCell(nr2);
+		const Cell& cellOffset3v = bottomCell(nr3);
 
 		valid0 = cell0.cellType != constants::CellType::Air || cellOffset0v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
 		valid1 = cell1.cellType != constants::CellType::Air || cellOffset1v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
@@ -125,5 +138,5 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 			particle.velY    = newVelValue;
 		}
 	};
-	for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), parseVelocitiesParticles);
+	std::for_each(particleMap.begin(), particleMap.end(), parseVelocitiesParticles);
 }

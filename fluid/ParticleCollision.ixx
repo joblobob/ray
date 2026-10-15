@@ -46,5 +46,5 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 		particle.posY   = std::ranges::clamp(y, bottomWall, topWall);
 		particle.velY   = hitsTop || hitsBottom ? 0.0f : particle.velY;
 	};
-	std::for_each(std::execution::par_unseq, particleMap.begin(), particleMap.end(), particleCollision);
+	std::for_each(particleMap.begin(), particleMap.end(), particleCollision);
 }

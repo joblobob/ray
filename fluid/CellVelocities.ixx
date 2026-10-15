@@ -2,11 +2,13 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module CellVelocities;
 
 import BaseStructures;
 import CellCalculations;
+import Constants;
 
 
 void restoreSolidCells(Cell& cell, const std::vector<Cell>& gridCells)
@@ -111,13 +113,13 @@ void setCellType(const Particle& p, std::vector<Cell>& gridCells, const Border& 
 
 export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), prepareCellType);
+	std::for_each(gridCells.begin(), gridCells.end(), prepareCellType);
 
-	for_each(std::execution::par_unseq, particleMap.cbegin(), particleMap.cend(), [&](const Particle& particle) {
+	std::for_each(particleMap.cbegin(), particleMap.cend(), [&](const Particle& particle) {
 		setCellType(particle, gridCells, fBorder);
 		parseVelocitiesU(gridCells, particle);
 		parseVelocitiesV(gridCells, particle);
 	});
 
-	for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
+	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
 }

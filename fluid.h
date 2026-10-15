@@ -9,9 +9,9 @@
 #include <QGraphicsView>
 #include <QImage>
 #include <QPaintEvent>
+#include <QResizeEvent>
 #include <QTimer>
-
-import FlipFluid;
+#include <memory>
 
 
 namespace Ui {
@@ -25,7 +25,7 @@ class fluid : public QDialog
 public:
 	explicit fluid(QWidget* parent = nullptr);
 
-	~fluid() { delete ui; }
+	~fluid();
 
 
 	void setupScene();
@@ -33,6 +33,8 @@ public:
 
 
 protected:
+	void resizeEvent(QResizeEvent* event) override;
+
 private slots:
 	void on_pauseBtn_clicked()
 	{
@@ -48,7 +50,8 @@ private:
 
 	bool m_paused;
 
-	FlipFluid m_f;
+	struct Impl;
+	std::unique_ptr<Impl> m_impl;
 
 	void simulate();
 	void draw();

@@ -2,11 +2,13 @@ module;
 
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module ParticleIncompressibility;
 
 import BaseStructures;
 import CellCalculations;
+import Constants;
 
 // constants
 constexpr float overRelaxation { 1.9f };
@@ -16,7 +18,7 @@ constexpr float k { 1.0f };
 // code
 export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
-	for_each(std::execution::seq, gridCells.begin(), gridCells.end(), [&](Cell& cell) {
+	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;
 		cell.prevV = cell.v;
 	});
@@ -50,6 +52,6 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 				}
 			}
 		};
-		for_each(std::execution::par_unseq, gridCells.begin(), gridCells.end(), parseIncompressibility);
+		std::for_each(gridCells.begin(), gridCells.end(), parseIncompressibility);
 	}
 }

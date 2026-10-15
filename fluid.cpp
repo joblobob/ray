@@ -1,25 +1,33 @@
 #include "fluid.h"
 
 #include <QGraphicsView>
+#ifndef __EMSCRIPTEN__
 #include <QOpenGLWidget>
+#endif
 #include <QPainter>
 #include <QTimer>
 
 #include <execution>
+#include <format>
 
-#include <mdspan.hpp>
+#include <mdspan>
+#include <vector>
 
 #include "ui_fluid.h"
 
 
 import Obstacle;
 import Constants;
-import format;
+import FlipFluid;
+import BaseStructures;
 //import mdspan;
 
+struct fluid::Impl {
+	FlipFluid f;
+};
 
 fluid::fluid(QWidget* parent) :
-    ui(new Ui::fluid), m_paused(true), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
+    ui(new Ui::fluid), m_paused(true), m_impl(std::make_unique<Impl>()), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
 {
 	ui->setupUi(this);
 
@@ -27,8 +35,10 @@ fluid::fluid(QWidget* parent) :
 	m_pixmapScene = new QGraphicsScene(this);
 	m_painter     = new QPainter(&m_pointsPixmap);
 
+#ifndef __EMSCRIPTEN__
 	QOpenGLWidget* gl = new QOpenGLWidget();
 	ui->m_graphView->setViewport(gl);
+#endif
 	ui->m_graphView->setRenderHint(QPainter::Antialiasing, false);
 	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontSavePainterState, true);
 	ui->m_graphView->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing, true);
@@ -44,60 +54,74 @@ fluid::fluid(QWidget* parent) :
 	QTimer::singleShot(0, this, &fluid::update);
 }
 
+fluid::~fluid()
+{
+	delete ui;
+}
+
 void fluid::setupScene()
 {
 	// create fluid
-	m_f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
+	m_impl->f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
 
-	std::experimental::mdspan particleView(m_f.particleMap.data(), constants::numX, constants::numY);
+	std::mdspan particleView(m_impl->f.particleMap.data(), constants::numX, constants::numY);
 	// create particles
 	int count = 0;
 	for (std::size_t i = 0; i < particleView.extent(0); i++) {
 		for (std::size_t j = 0; j < particleView.extent(1); j++, count++) {
 			const float posX   = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
 			const float posY   = constants::cellHeight + constants::particleRadius + constants::dy * j;
-			particleView(i, j) = { count, posX, posY };
+			particleView[i, j] = { count, posX, posY };
 		}
 	}
 
 
 	// setup grid cells for tank
-	std::experimental::mdspan gridView(m_f.gridCells.data(), constants::fNumX, constants::fNumY);
+	std::mdspan gridView(m_impl->f.gridCells.data(), constants::fNumX, constants::fNumY);
 	float n = constants::fNumY;
 	for (std::size_t i = 0; i < gridView.extent(0); i++) {
 		for (std::size_t j = 0; j < gridView.extent(1); j++) {
 			float s = 1.0f; // fluid
 			if (i == 0 || i == constants::fNumX - 1 || j == 0)
 				s = 0.0f; // solid
-			gridView(i, j).s        = s;
-			gridView(i, j).cellNumX = i;
-			gridView(i, j).cellNumY = j;
+			gridView[i, j].s        = s;
+			gridView[i, j].cellNumX = i;
+			gridView[i, j].cellNumY = j;
 		}
 	}
 
 
-	setupObstacle(m_f.gridCells, 0.0f, 0.0f, m_f.obstacle, true);
+	setupObstacle(m_impl->f.gridCells, 0.0f, 0.0f, m_impl->f.obstacle, false);
 	m_obstacleItem =
 	    m_pixmapScene->addEllipse(0, 0, ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
+	m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
+	ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void fluid::resizeEvent(QResizeEvent* event)
+{
+	QDialog::resizeEvent(event);
+	if (m_pixmapScene != nullptr)
+		ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
 }
 
 void fluid::simulate()
 {
 	if (!m_paused) {
-		auto result = m_f.simulate(constants::dt, true);
+		auto result = m_impl->f.simulate(constants::dt, false);
 		if (result.size() > 0) {
-			constexpr std::string msgFormat { "{}: {:.2f} us" };
-			ui->label_2->setText(std::format(msgFormat, result[0].message, result[0].nsElapsed * 0.001f).data());
-			ui->label_3->setText(std::format(msgFormat, result[1].message, result[1].nsElapsed * 0.001f).data());
-			ui->label_4->setText(std::format(msgFormat, result[2].message, result[2].nsElapsed * 0.001f).data());
-			ui->label_5->setText(std::format(msgFormat, result[3].message, result[3].nsElapsed * 0.001f).data());
-			ui->label_6->setText(std::format(msgFormat, result[4].message, result[4].nsElapsed * 0.001f).data());
-			ui->label_7->setText(std::format(msgFormat, result[5].message, result[5].nsElapsed * 0.001f).data());
-			ui->label_8->setText(std::format(msgFormat, result[6].message, result[6].nsElapsed * 0.001f).data());
-			ui->label_9->setText(std::format(msgFormat, result[7].message, result[7].nsElapsed * 0.001f).data());
-			ui->label_10->setText(std::format(msgFormat, result[8].message, result[8].nsElapsed * 0.001f).data());
+			//constexpr static std::string msgFormat { "{}: {:.2f} us" };
+			ui->label_2->setText(std::format("{}: {:.2f} us", result[0].message, result[0].nsElapsed * 0.001f).data());
+			ui->label_3->setText(std::format("{}: {:.2f} us", result[1].message, result[1].nsElapsed * 0.001f).data());
+			ui->label_4->setText(std::format("{}: {:.2f} us", result[2].message, result[2].nsElapsed * 0.001f).data());
+			ui->label_5->setText(std::format("{}: {:.2f} us", result[3].message, result[3].nsElapsed * 0.001f).data());
+			ui->label_6->setText(std::format("{}: {:.2f} us", result[4].message, result[4].nsElapsed * 0.001f).data());
+			ui->label_7->setText(std::format("{}: {:.2f} us", result[5].message, result[5].nsElapsed * 0.001f).data());
+			ui->label_8->setText(std::format("{}: {:.2f} us", result[6].message, result[6].nsElapsed * 0.001f).data());
+			ui->label_9->setText(std::format("{}: {:.2f} us", result[7].message, result[7].nsElapsed * 0.001f).data());
+			ui->label_10->setText(std::format("{}: {:.2f} us", result[8].message, result[8].nsElapsed * 0.001f).data());
 		}
 	}
 }
@@ -120,16 +144,16 @@ void fluid::drawimage()
 
 		auto setParticleColor = [&](const Particle& item) {
 			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
-			if (item.id < 3000) {
+			if (item.id < 1500) {
 				m_painter->setBrush(rockBrush);
 				m_painter->setPen(rockPen);
-			} else if (item.id < 10000) {
+			} else if (item.id < 5000) {
 				m_painter->setBrush(soilBrush);
 				m_painter->setPen(soilPen);
-			} else if (item.id < 15000) {
+			} else if (item.id < 7500) {
 				m_painter->setBrush(lightSoilBrush);
 				m_painter->setPen(lightSoilPen);
-			} else if (item.id < 17000) {
+			} else if (item.id < 8000) {
 				m_painter->setBrush(grassBrush);
 				m_painter->setPen(grassPen);
 			} else {
@@ -139,7 +163,7 @@ void fluid::drawimage()
 			m_painter->drawEllipse(item.posX, item.posY, constants::dx, constants::dx);
 		};
 
-		std::ranges::for_each(m_f.particleMap, setParticleColor);
+		std::ranges::for_each(std::ranges::reverse_view(m_impl->f.particleMap), setParticleColor);
 	}
 
 	//obstacle
@@ -159,10 +183,10 @@ void fluid::update()
 
 	m_simtimer.restart();
 
-	setupObstacle(m_f.gridCells,
+	setupObstacle(m_impl->f.gridCells,
 	    ((float)m_obstacleItem->x() + ObstacleConstants::radius),
 	    ((float)m_obstacleItem->y() + ObstacleConstants::radius),
-	    m_f.obstacle,
+	    m_impl->f.obstacle,
 	    false);
 
 	simulate();
@@ -193,6 +217,7 @@ void fluid::drawImageToScene()
 	if (m_pixmapSceneItem == nullptr) {
 		m_pixmapSceneItem = m_pixmapScene->addPixmap(m_pointsPixmap);
 		m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
+		ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
 	} else
 		m_pixmapSceneItem->setPixmap(m_pointsPixmap);
 }

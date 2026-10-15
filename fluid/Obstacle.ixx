@@ -1,8 +1,9 @@
 module;
 
-#include "../mdspan.hpp"
+#include <mdspan>
 #include <algorithm>
 #include <execution>
+#include <vector>
 
 export module Obstacle;
 
@@ -32,19 +33,19 @@ export void setupObstacle(std::vector<Cell>& gridCells, const float newX, const 
 	const float r = ObstacleConstants::radius;
 	const int n   = constants::fNumY;
 
-	std::experimental::mdspan gridView(gridCells.data(), constants::fNumX, constants::fNumY);
+	std::mdspan gridView(gridCells.data(), constants::fNumX, constants::fNumY);
 
 	for (std::size_t i = 1; i < gridView.extent(0) - 2; i++) {
 		for (std::size_t j = 1; j < gridView.extent(1) - 2; j++) {
-			gridView(i, j).s = 1.0f;
+			gridView[i, j].s = 1.0f;
 			const float dx   = (i + 0.5f) * constants::cellHeight - newX;
 			const float dy   = (j + 0.5f) * constants::cellHeight - newY;
 			if (dx * dx + dy * dy < r * r) {
-				gridView(i, j).s       = 0.0f;
-				gridView(i, j).u       = vx;
-				gridView((i + 1), j).u = vx;
-				gridView(i, j).v       = vy;
-				gridView(i, j + 1).v   = vy;
+				gridView[i, j].s       = 0.0f;
+				gridView[i, j].u       = vx;
+				gridView[(i + 1), j].u = vx;
+				gridView[i, j].v       = vy;
+				gridView[i, j + 1].v   = vy;
 			}
 		}
 	}
