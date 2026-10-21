@@ -1,7 +1,6 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
 
 export module ParticleIncompressibility;
@@ -16,42 +15,45 @@ constexpr int numPressureIters { 50 };
 constexpr float k { 1.0f };
 
 // code
-export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity)
+export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity, std::vector<int>& fluidCellIndices)
 {
 	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;
 		cell.prevV = cell.v;
 	});
+	fluidCellIndices.clear();
+	for (int i = 0; i < static_cast<int>(gridCells.size()); ++i) {
+		if (gridCells[i].cellType == constants::CellType::Fluid)
+			fluidCellIndices.push_back(i);
+	}
 
 	for (int iter = 0; iter < numPressureIters; iter++) {
-		auto parseIncompressibility = [&](Cell& cell) {
-			if (cell.cellType == constants::CellType::Fluid) {
-				const int i = cell.cellNumX;
-				const int j = cell.cellNumY;
+		for (const int cellIndex : fluidCellIndices) {
+			Cell& cell = gridCells[cellIndex];
+			const int i = cell.cellNumX;
+			const int j = cell.cellNumY;
 
-				Cell& cellLeft   = gridCells[(i - 1) * constants::fNumY + j]; //left
-				Cell& cellRight  = gridCells[(i + 1) * constants::fNumY + j]; //right
-				Cell& cellBottom = gridCells[i * constants::fNumY + j - 1];   //bottom
-				Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
+			Cell& cellLeft   = gridCells[(i - 1) * constants::fNumY + j]; //left
+			Cell& cellRight  = gridCells[(i + 1) * constants::fNumY + j]; //right
+			Cell& cellBottom = gridCells[i * constants::fNumY + j - 1];   //bottom
+			Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
 
 
-				const float s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
-				if (s > 0.1f) {
-					float div = cellRight.u - cell.u + cellTop.v - cell.v;
+			const float s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
+			if (s > 0.1f) {
+				float div = cellRight.u - cell.u + cellTop.v - cell.v;
 
-					const float compression = cell.particleDensity - particleRestDensity;
-					if (compression > 0.0f)
-						div = div - k * compression;
+				const float compression = cell.particleDensity - particleRestDensity;
+				if (compression > 0.0f)
+					div = div - k * compression;
 
-					const float pValue = (-div / s) * overRelaxation;
+				const float pValue = (-div / s) * overRelaxation;
 
-					cell.u -= cellLeft.s * pValue;
-					cellRight.u += cellRight.s * pValue;
-					cell.v -= cellBottom.s * pValue;
-					cellTop.v += cellTop.s * pValue;
-				}
+				cell.u -= cellLeft.s * pValue;
+				cellRight.u += cellRight.s * pValue;
+				cell.v -= cellBottom.s * pValue;
+				cellTop.v += cellTop.s * pValue;
 			}
-		};
-		std::for_each(gridCells.begin(), gridCells.end(), parseIncompressibility);
+		}
 	}
 }

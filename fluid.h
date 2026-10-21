@@ -61,6 +61,7 @@ private:
 
 	QElapsedTimer m_timer;
 	QElapsedTimer m_simtimer;
+	QElapsedTimer m_frameTimer;
 	QElapsedTimer m_setuptimer;
 	QTimer m_drawTimer;
 

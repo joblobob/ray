@@ -23,6 +23,7 @@ export struct FlipFluid {
 	Obstacle obstacle;
 	std::vector<Particle> particleMap;
 	std::vector<Cell> gridCells;
+	std::vector<int> fluidCellIndices;
 	PushParticlesBuffers pushParticleBuffers;
 
 	Border fBorder;

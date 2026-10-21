@@ -1,8 +1,8 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
+#include "ParallelForEach.h"
 
 export module ParticleColor;
 
@@ -34,5 +34,5 @@ export void updateParticleColors(std::vector<Particle>& particleMap,
 			}
 		}
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), parseParticleColors);
+	fluidParallelForEach(particleMap.begin(), particleMap.end(), parseParticleColors);
 }

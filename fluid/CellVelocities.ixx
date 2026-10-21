@@ -1,8 +1,8 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
+#include "ParallelForEach.h"
 
 export module CellVelocities;
 
@@ -113,7 +113,7 @@ void setCellType(const Particle& p, std::vector<Cell>& gridCells, const Border& 
 
 export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
-	std::for_each(gridCells.begin(), gridCells.end(), prepareCellType);
+	fluidParallelForEach(gridCells.begin(), gridCells.end(), prepareCellType);
 
 	std::for_each(particleMap.cbegin(), particleMap.cend(), [&](const Particle& particle) {
 		setCellType(particle, gridCells, fBorder);
@@ -121,5 +121,5 @@ export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::ve
 		parseVelocitiesV(gridCells, particle);
 	});
 
-	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
+	fluidParallelForEach(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
 }

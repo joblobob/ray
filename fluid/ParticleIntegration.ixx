@@ -1,17 +1,17 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
+#include "ParallelForEach.h"
 
 export module ParticleIntegration;
 
 import BaseStructures;
 import Constants;
 
-// Positions are stored in pixels, so express gravity in pixels/s^2 by
-// converting the usual cell-space acceleration to the grid's pixel scale.
-constexpr float gravity = -9.81f * constants::cellHeight;
+// Positions are stored in pixels. Assume the scene height represents 4 m,
+// then convert physical gravity (m/s^2) to pixel acceleration (px/s^2).
+constexpr float gravity = -9.81f * constants::maxheight / constants::worldHeightMeters;
 
 export void integrateParticles(std::vector<Particle>& particleMap, const float dt)
 {
@@ -20,5 +20,5 @@ export void integrateParticles(std::vector<Particle>& particleMap, const float d
 		particle.posX += particle.velX * dt;
 		particle.posY += particle.velY * dt;
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), integration);
+	fluidParallelForEach(particleMap.begin(), particleMap.end(), integration);
 }

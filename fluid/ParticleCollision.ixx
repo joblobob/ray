@@ -1,8 +1,8 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <ranges>
+#include "ParallelForEach.h"
 
 export module ParticleCollision;
 
@@ -46,5 +46,5 @@ export void handleParticleCollisions(std::vector<Particle>& particleMap, const O
 		particle.posY   = std::ranges::clamp(y, bottomWall, topWall);
 		particle.velY   = hitsTop || hitsBottom ? 0.0f : particle.velY;
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), particleCollision);
+	fluidParallelForEach(particleMap.begin(), particleMap.end(), particleCollision);
 }

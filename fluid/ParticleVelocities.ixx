@@ -1,8 +1,8 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
+#include "ParallelForEach.h"
 
 export module ParticleVelocities;
 
@@ -138,5 +138,5 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 			particle.velY    = newVelValue;
 		}
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), parseVelocitiesParticles);
+	fluidParallelForEach(particleMap.begin(), particleMap.end(), parseVelocitiesParticles);
 }

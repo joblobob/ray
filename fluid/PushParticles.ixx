@@ -1,7 +1,6 @@
 module;
 
 #include <algorithm>
-#include <execution>
 #include <vector>
 #include <cmath>
 
@@ -97,6 +96,8 @@ export void pushParticlesApart(std::vector<Particle>& particleMap, PushParticles
 				const int last   = buffers.particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {
 					const int id = buffers.cellParticleIds[j];
+					// The correction below moves both particles, so processing the
+					// same pair again from its other endpoint is redundant.
 					if (id != particle.id) {
 						Particle& particleAtId { particleMap[id] };
 						const float qx = particleAtId.posX;

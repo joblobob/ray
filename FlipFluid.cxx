@@ -2,7 +2,6 @@ module;
 
 #include <QDebug>
 #include <algorithm>
-#include <execution>
 #include <vector>
 
 #include <QElapsedTimer.h>
@@ -40,8 +39,10 @@ std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 
 	QElapsedTimer timer;
 
-	if (instrument)
+	if (instrument) {
+		log.reserve(9);
 		timer.start();
+	}
 
 	integrateParticles(particleMap, dt);
 	if (instrument) {
@@ -71,7 +72,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 	if (particleRestDensity < 0.1) {
 		calculateParticleRestDensity(gridCells, particleRestDensity);
 	}
-	solveIncompressibility(gridCells, particleRestDensity);
+	solveIncompressibility(gridCells, particleRestDensity, fluidCellIndices);
 	if (instrument) {
 		log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
 		timer.restart();

@@ -2,7 +2,6 @@
 
 #include <QtConcurrent>
 #include <algorithm>
-#include <execution>
 
 #include <hitPosition.h>
 

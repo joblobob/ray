@@ -7,6 +7,7 @@ export module Constants;
 export namespace constants {
 constexpr int maxwidth { 600 };
 constexpr int maxheight { 400 };
+constexpr float worldHeightMeters { 4.0f };
 
 enum CellType { Fluid, Air, Solid, Soil, Rock };
 
@@ -20,7 +21,7 @@ constexpr bool showObstacle  = true;
 constexpr bool showParticles = true;
 constexpr bool showGrid      = false;
 
-constexpr float res = 100.0f;
+constexpr float res = 50.0f;
 
 constexpr float cellHeight     = maxheight / res;
 constexpr float halfCellHeight = 0.5f * constants::cellHeight;
@@ -31,14 +32,16 @@ constexpr float density = 1000.0f;
 
 // compute number of particles
 
-constexpr float particleRadius = 0.3f * cellHeight; // particle radius w.r.t. cell size
+// Keep the visible particle size and spacing independent of the simulation-grid resolution.
+constexpr float particleSizeReferenceRes = 100.0f;
+constexpr float particleRadius = 0.3f * (maxheight / particleSizeReferenceRes);
 constexpr float dx             = 2.0f * particleRadius;
 constexpr float sqrt_of_3 { 1.73205080f };
 constexpr float dy = sqrt_of_3 / 2.0f * dx;
 
 // Seed a larger volume without changing particle spacing or radius.
-constexpr float relWaterHeight = 0.50f;
-constexpr float relWaterWidth  = 0.50f;
+constexpr float relWaterHeight = 1.f;
+constexpr float relWaterWidth  = 1.0f;
 constexpr int numX             = static_cast<int>((relWaterWidth * maxwidth - 2.0f * cellHeight - 2.0f * particleRadius) / dx);
 constexpr int numY             = static_cast<int>((relWaterHeight * maxheight - 2.0f * cellHeight - 2.0f * particleRadius) / dy);
 constexpr int maxParticles     = numX * numY;

@@ -13,7 +13,9 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /wd5244")
 endif()
 
-set(CMAKE_PREFIX_PATH C:/Qt/6.12.0/msvc2022_64)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set(CMAKE_PREFIX_PATH "C:/Qt/6.12.0/msvc2022_64" CACHE PATH "Qt prefix for native builds")
+endif()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON) 
