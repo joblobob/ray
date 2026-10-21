@@ -26,6 +26,58 @@ struct fluid::Impl {
 	FlipFluid f;
 };
 
+class ParticleOverlayItem final : public QGraphicsItem
+{
+public:
+	explicit ParticleOverlayItem(const std::vector<Particle>* particles) : m_particles(particles)
+	{
+		setZValue(1.0);
+	}
+
+	QRectF boundingRect() const override
+	{
+		return { 0.0, 0.0, constants::maxwidth, constants::maxheight };
+	}
+
+	void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) override
+	{
+		if (!constants::showParticles || m_particles == nullptr)
+			return;
+
+		// Paint in viewport pixels after using the scene transform solely to
+		// map each simulated position. This keeps particle diameter independent
+		// of fitInView's zoom level.
+		const QTransform sceneToViewport = painter->worldTransform();
+		painter->save();
+		painter->resetTransform();
+		painter->setPen(Qt::NoPen);
+
+		constexpr qreal diameter = constants::dx;
+		constexpr qreal radius   = diameter * 0.5;
+		for (const Particle& item : *m_particles) {
+			QColor color;
+			if (item.id < 1500)
+				color = Qt::darkGray;
+			else if (item.id < 5000)
+				color = { 161, 103, 23 };
+			else if (item.id < 7500)
+				color = { 191, 133, 53 };
+			else if (item.id < 8000)
+				color = Qt::darkGreen;
+			else
+				color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
+
+			const QPointF position = sceneToViewport.map(QPointF(item.posX, item.posY));
+			painter->setBrush(color);
+			painter->drawEllipse(position.x() - radius, position.y() - radius, diameter, diameter);
+		}
+		painter->restore();
+	}
+
+private:
+	const std::vector<Particle>* m_particles;
+};
+
 fluid::fluid(QWidget* parent) :
     ui(new Ui::fluid), m_paused(true), m_impl(std::make_unique<Impl>()), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
 {
@@ -33,7 +85,6 @@ fluid::fluid(QWidget* parent) :
 
 	m_pointsPixmap.fill(Qt::black);
 	m_pixmapScene = new QGraphicsScene(this);
-	m_painter     = new QPainter(&m_pointsPixmap);
 
 #ifndef __EMSCRIPTEN__
 	QOpenGLWidget* gl = new QOpenGLWidget();
@@ -51,7 +102,9 @@ fluid::fluid(QWidget* parent) :
 	ui->m_graphView->setSceneRect(0.0f, 0.0f, constants::maxwidth, constants::maxheight);
 
 
-	QTimer::singleShot(0, this, &fluid::update);
+	// The simulation advances by a fixed 1/60 s per update. Pace updates to
+	// that rate so simulation speed does not depend on how fast this loop runs.
+	QTimer::singleShot(16, this, &fluid::update);
 }
 
 fluid::~fluid()
@@ -92,12 +145,30 @@ void fluid::setupScene()
 
 
 	setupObstacle(m_impl->f.gridCells, 0.0f, 0.0f, m_impl->f.obstacle, false);
+	drawImageToScene();
+	m_pixmapSceneItem->setZValue(-1.0);
+
+	if (m_obstacleItem != nullptr)
+		delete m_obstacleItem;
 	m_obstacleItem =
 	    m_pixmapScene->addEllipse(0, 0, ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f, QPen(Qt::NoPen), QBrush(Qt::red));
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIsMovable);
 	m_obstacleItem->setFlag(QGraphicsItem::ItemIgnoresParentOpacity, true);
+	m_obstacleItem->setZValue(2.0);
+
+	if (m_particleOverlayItem == nullptr) {
+		m_particleOverlayItem = new ParticleOverlayItem(&m_impl->f.particleMap);
+		m_pixmapScene->addItem(m_particleOverlayItem);
+	}
 	m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
 	ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
+	// setupScene runs before the dialog is shown, when the viewport can still
+	// have its designer-time size. Refit after Qt has completed its layout.
+	QTimer::singleShot(0, this, [this] {
+		ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
+		if (m_particleOverlayItem != nullptr)
+			m_particleOverlayItem->update();
+	});
 }
 
 void fluid::resizeEvent(QResizeEvent* event)
@@ -127,53 +198,10 @@ void fluid::simulate()
 }
 
 
-QBrush soilBrush { QColor { 161, 103, 23 } };
-QPen soilPen { QColor { 161, 103, 23 } };
-QBrush lightSoilBrush { QColor { 191, 133, 53 } };
-QPen lightSoilPen { QColor { 191, 133, 53 } };
-QBrush rockBrush { Qt::darkGray };
-QPen rockPen { Qt::darkGray };
-QBrush grassBrush { Qt::darkGreen };
-QPen grassPen { Qt::darkGreen };
-
-//draw to pixmap
 void fluid::drawimage()
 {
-	if (constants::showParticles) {
-		m_pointsPixmap.fill(Qt::black);
-
-		auto setParticleColor = [&](const Particle& item) {
-			auto color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB);
-			if (item.id < 1500) {
-				m_painter->setBrush(rockBrush);
-				m_painter->setPen(rockPen);
-			} else if (item.id < 5000) {
-				m_painter->setBrush(soilBrush);
-				m_painter->setPen(soilPen);
-			} else if (item.id < 7500) {
-				m_painter->setBrush(lightSoilBrush);
-				m_painter->setPen(lightSoilPen);
-			} else if (item.id < 8000) {
-				m_painter->setBrush(grassBrush);
-				m_painter->setPen(grassPen);
-			} else {
-				m_painter->setBrush({ color });
-				m_painter->setPen({ color });
-			}
-			m_painter->drawEllipse(item.posX, item.posY, constants::dx, constants::dx);
-		};
-
-		std::ranges::for_each(std::ranges::reverse_view(m_impl->f.particleMap), setParticleColor);
-	}
-
-	//obstacle
-	m_painter->setBrush(Qt::red);
-	m_painter->setPen(Qt::red);
-	m_painter->drawEllipse(
-	    ((float)m_obstacleItem->x()), ((float)m_obstacleItem->y()), ObstacleConstants::radius * 2.0f, ObstacleConstants::radius * 2.0f);
-
-
-	drawImageToScene();
+	if (m_particleOverlayItem != nullptr)
+		m_particleOverlayItem->update();
 }
 
 void fluid::update()
@@ -208,7 +236,7 @@ void fluid::update()
 
 	m_timer.restart();
 
-	QTimer::singleShot(0, this, &fluid::update);
+	QTimer::singleShot(16, this, &fluid::update);
 }
 
 
@@ -216,8 +244,7 @@ void fluid::drawImageToScene()
 {
 	if (m_pixmapSceneItem == nullptr) {
 		m_pixmapSceneItem = m_pixmapScene->addPixmap(m_pointsPixmap);
+		m_pixmapSceneItem->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
 		m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
-		ui->m_graphView->fitInView(m_pixmapScene->sceneRect(), Qt::KeepAspectRatio);
-	} else
-		m_pixmapSceneItem->setPixmap(m_pointsPixmap);
+	}
 }

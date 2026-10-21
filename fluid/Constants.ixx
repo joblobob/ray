@@ -5,7 +5,7 @@ module;
 export module Constants;
 
 export namespace constants {
-constexpr int maxwidth { 800 };
+constexpr int maxwidth { 600 };
 constexpr int maxheight { 400 };
 
 enum CellType { Fluid, Air, Solid, Soil, Rock };

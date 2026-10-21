@@ -43,7 +43,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 	if (instrument)
 		timer.start();
 
-	integrateParticles(particleMap);
+	integrateParticles(particleMap, dt);
 	if (instrument) {
 		log.push_back(ExecutionLog { "integrateParticles", timer.nsecsElapsed() });
 		timer.restart();

@@ -9,19 +9,16 @@ export module ParticleIntegration;
 import BaseStructures;
 import Constants;
 
-constexpr float gravity = -9.81f * 1.0f;
-constexpr float integ   = constants::dt * gravity;
+// Positions are stored in pixels, so express gravity in pixels/s^2 by
+// converting the usual cell-space acceleration to the grid's pixel scale.
+constexpr float gravity = -9.81f * constants::cellHeight;
 
-export void integrateParticles(std::vector<Particle>& particleMap)
+export void integrateParticles(std::vector<Particle>& particleMap, const float dt)
 {
-	auto integration = [](Particle& particle) {
-		particle.velY += particle.id < 3000  ? integ * 3.50f :
-		                 particle.id < 10000 ? integ * 2.66f :
-		                 particle.id < 15000 ? integ * 2.00f :
-		                 particle.id < 17000 ? integ * 0.90f :
-		                                       integ; //dt * gravity * particle property magic :P
-		particle.posX += particle.velX * constants::dt;
-		particle.posY += particle.velY * constants::dt;
+	auto integration = [dt](Particle& particle) {
+		particle.velY += gravity * dt;
+		particle.posX += particle.velX * dt;
+		particle.posY += particle.velY * dt;
 	};
 	std::for_each(particleMap.begin(), particleMap.end(), integration);
 }

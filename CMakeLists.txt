@@ -51,6 +51,20 @@ qt_add_executable(ray1 WIN32
     FlipFluid.cxx
 )
 
+# --- Configuration pour l'analyse de performance sous MSVC (Visual Studio) ---
+if(MSVC)
+    # 1. Force la génération des symboles (.pdb) en configuration Release
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Release>:ProgramDatabase>")
+    
+    # 2. Configure l'Éditeur de liens (Linker) pour générer les symboles et optimiser le binaire
+    target_link_options(ray1 PRIVATE 
+        "$<$<CONFIG:Release>:/DEBUG>"          # Génère le fichier PDB
+        "$<$<CONFIG:Release>:/OPT:REF>"        # Élimine les fonctions jamais appelées
+        "$<$<CONFIG:Release>:/OPT:ICF>"        # Fusionne les fonctions identiques (COMDAT)
+        "$<$<CONFIG:Release>:/INCREMENTAL:NO>" # Désactive le lien incrémental (qui fausse les mesures)
+    )
+endif()
+
 target_sources(ray1 
     PRIVATE
         FILE_SET cxx_modules TYPE CXX_MODULES FILES

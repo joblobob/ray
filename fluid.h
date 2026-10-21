@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QDialog>
 #include <QElapsedTimer>
+#include <QGraphicsItem>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
@@ -46,7 +47,7 @@ private slots:
 
 private:
 	Ui::fluid* ui;
-	QGraphicsEllipseItem* m_obstacleItem;
+	QGraphicsEllipseItem* m_obstacleItem = nullptr;
 
 	bool m_paused;
 
@@ -66,8 +67,8 @@ private:
 	void drawimage();
 	QPixmap m_pointsPixmap;
 	QGraphicsPixmapItem* m_pixmapSceneItem;
+	QGraphicsItem* m_particleOverlayItem = nullptr;
 	QGraphicsScene* m_pixmapScene;
-	QPainter* m_painter;
 	void drawImageToScene();
 };
 
