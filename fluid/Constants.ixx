@@ -21,7 +21,7 @@ constexpr bool showObstacle  = true;
 constexpr bool showParticles = true;
 constexpr bool showGrid      = false;
 
-constexpr float res = 50.0f;
+constexpr float res = 100.0f;
 
 constexpr float cellHeight     = maxheight / res;
 constexpr float halfCellHeight = 0.5f * constants::cellHeight;
@@ -30,20 +30,22 @@ constexpr float density = 1000.0f;
 
 
 
-// compute number of particles
+// Particle layout is in scene pixels; changing grid resolution does not change particle size.
+constexpr float particleRadius       = 1.2f;
+constexpr float particleDiameter     = 2.0f * particleRadius;
+constexpr float particleSpacingX    = particleDiameter;
+constexpr float particleRowSpacing  = 1.7320508f * particleRadius;
+constexpr float particleStaggerX    = particleRadius;
 
-// Keep the visible particle size and spacing independent of the simulation-grid resolution.
-constexpr float particleSizeReferenceRes = 100.0f;
-constexpr float particleRadius = 0.3f * (maxheight / particleSizeReferenceRes);
-constexpr float dx             = 2.0f * particleRadius;
-constexpr float sqrt_of_3 { 1.73205080f };
-constexpr float dy = sqrt_of_3 / 2.0f * dx;
+constexpr float relWaterHeight = 0.8f;
+constexpr float relWaterWidth  = 0.8f;
 
-// Seed a larger volume without changing particle spacing or radius.
-constexpr float relWaterHeight = 1.f;
-constexpr float relWaterWidth  = 1.0f;
-constexpr int numX             = static_cast<int>((relWaterWidth * maxwidth - 2.0f * cellHeight - 2.0f * particleRadius) / dx);
-constexpr int numY             = static_cast<int>((relWaterHeight * maxheight - 2.0f * cellHeight - 2.0f * particleRadius) / dy);
+constexpr float particleStartX = cellHeight + particleRadius;
+constexpr float particleStartY = cellHeight + particleRadius;
+constexpr float availableParticleWidth = relWaterWidth * maxwidth - 2.0f * particleStartX;
+constexpr float availableParticleHeight = relWaterHeight * maxheight - 2.0f * particleStartY;
+constexpr int numX = static_cast<int>(availableParticleWidth / particleSpacingX);
+constexpr int numY = static_cast<int>(availableParticleHeight / particleRowSpacing);
 constexpr int maxParticles     = numX * numY;
 
 constexpr int fNumX         = static_cast<int>(maxwidth / cellHeight);

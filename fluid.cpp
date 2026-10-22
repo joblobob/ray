@@ -14,6 +14,7 @@
 #include <QTimer>
 
 #include <array>
+#include <cmath>
 #include <format>
 #include <utility>
 
@@ -31,6 +32,25 @@ import BaseStructures;
 
 namespace {
 constexpr bool performanceLoggingEnabled = false;
+
+struct FixedParticleType {
+	int count;
+	QColor color;
+};
+
+constexpr std::size_t fixedParticleTypeCount = 4;
+using FixedParticleTypes = std::array<FixedParticleType, fixedParticleTypeCount>;
+
+const FixedParticleTypes& fixedParticleTypes()
+{
+	static const FixedParticleTypes types {
+	    FixedParticleType { 1500, QColor(Qt::darkGray) },
+	    FixedParticleType { 3500, QColor(161, 103, 23) },
+	    FixedParticleType { 2500, QColor(191, 133, 53) },
+	    FixedParticleType { 500, QColor(Qt::darkGreen) },
+	};
+	return types;
+}
 
 #ifndef __EMSCRIPTEN__
 class PerformanceLog final
@@ -153,19 +173,24 @@ public:
 			m_colorGeneration = 1;
 		}
 
-		constexpr qreal diameter = constants::dx;
-		constexpr qreal radius   = diameter * 0.5;
-		const std::array<QColor, 4> fixedColors {
-		    QColor(Qt::darkGray), QColor(161, 103, 23), QColor(191, 133, 53), QColor(Qt::darkGreen)
-		};
+		const QPointF sceneOrigin = sceneToViewport.map(QPointF(0.0, 0.0));
+		const QPointF screenSpacing = sceneToViewport.map(QPointF(constants::particleDiameter, 0.0)) - sceneOrigin;
+		const qreal diameter = std::hypot(screenSpacing.x(), screenSpacing.y());
+		const qreal radius = diameter * 0.5;
+		const auto& particleTypes = fixedParticleTypes();
 
 		// Build all batches in one particle pass. The fixed-color IDs precede
 		// dynamic-color IDs, so they are still painted first below.
 		for (const Particle& item : *m_particles) {
 			const QPointF position = sceneToViewport.map(QPointF(item.posX, item.posY));
 			const QRectF particleRect(position.x() - radius, position.y() - radius, diameter, diameter);
-			if (item.id < 8000) {
-				const int colorGroup = item.id < 1500 ? 0 : item.id < 5000 ? 1 : item.id < 7500 ? 2 : 3;
+			int remainingTypeId = item.id;
+			std::size_t colorGroup = 0;
+			while (colorGroup < particleTypes.size() && remainingTypeId >= particleTypes[colorGroup].count) {
+				remainingTypeId -= particleTypes[colorGroup].count;
+				++colorGroup;
+			}
+			if (colorGroup < particleTypes.size()) {
 				m_fixedColorPaths[colorGroup].addEllipse(particleRect);
 				continue;
 			}
@@ -189,7 +214,7 @@ public:
 		}
 
 		for (std::size_t group = 0; group < m_fixedColorPaths.size(); ++group) {
-			painter->setBrush(fixedColors[group]);
+			painter->setBrush(particleTypes[group].color);
 			painter->drawPath(m_fixedColorPaths[group]);
 		}
 
@@ -221,7 +246,7 @@ private:
 	};
 
 	const std::vector<Particle>* m_particles;
-	std::array<QPainterPath, 4> m_fixedColorPaths;
+	std::array<QPainterPath, fixedParticleTypeCount> m_fixedColorPaths;
 	QHash<QRgb, ColorPathIndex> m_dynamicColorIndices;
 	std::vector<std::pair<QRgb, QPainterPath>> m_dynamicColorPaths;
 	std::size_t m_activeDynamicColorPaths = 0;
@@ -276,8 +301,8 @@ void fluid::setupScene()
 	int count = 0;
 	for (std::size_t i = 0; i < particleView.extent(0); i++) {
 		for (std::size_t j = 0; j < particleView.extent(1); j++, count++) {
-			const float posX   = constants::cellHeight + constants::particleRadius + constants::dx * i + (j % 2 == 0 ? 0.0f : constants::particleRadius);
-			const float posY   = constants::cellHeight + constants::particleRadius + constants::dy * j;
+			const float posX = constants::particleStartX + constants::particleSpacingX * i + (j % 2 == 0 ? 0.0f : constants::particleStaggerX);
+			const float posY = constants::particleStartY + constants::particleRowSpacing * j;
 			particleView[i, j] = { count, posX, posY };
 		}
 	}
