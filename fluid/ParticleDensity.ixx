@@ -12,9 +12,13 @@ import Constants;
 export void updateParticleDensity(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
 {
 	// reset density
-	std::for_each(gridCells.begin(), gridCells.end(), [](Cell& c) { c.particleDensity = 0.0f; });
+	std::for_each(gridCells.begin(), gridCells.end(), [](Cell& c) {
+		c.particleDensity = 0.0f;
+		c.particleMassDensity = 0.0f;
+	});
 
 	auto solveParticleDensity = [&](const Particle& p) {
+		const float mass = constants::particleDensityRatioForId(p.id);
 		const float x = std::clamp(p.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 		const float y = std::clamp(p.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
@@ -30,13 +34,33 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 		const float sy = 1.0 - ty;
 
 		if (x0 < constants::fNumX && y0 < constants::fNumY)
-			gridCells[x0 * constants::fNumY + y0].particleDensity += sx * sy;
+		{
+			Cell& cell = gridCells[x0 * constants::fNumY + y0];
+			const float weight = sx * sy;
+			cell.particleDensity += weight;
+			cell.particleMassDensity += weight * mass;
+		}
 		if (x1 < constants::fNumX && y0 < constants::fNumY)
-			gridCells[x1 * constants::fNumY + y0].particleDensity += tx * sy;
+		{
+			Cell& cell = gridCells[x1 * constants::fNumY + y0];
+			const float weight = tx * sy;
+			cell.particleDensity += weight;
+			cell.particleMassDensity += weight * mass;
+		}
 		if (x1 < constants::fNumX && y1 < constants::fNumY)
-			gridCells[x1 * constants::fNumY + y1].particleDensity += tx * ty;
+		{
+			Cell& cell = gridCells[x1 * constants::fNumY + y1];
+			const float weight = tx * ty;
+			cell.particleDensity += weight;
+			cell.particleMassDensity += weight * mass;
+		}
 		if (x0 < constants::fNumX && y1 < constants::fNumY)
-			gridCells[x0 * constants::fNumY + y1].particleDensity += sx * ty;
+		{
+			Cell& cell = gridCells[x0 * constants::fNumY + y1];
+			const float weight = sx * ty;
+			cell.particleDensity += weight;
+			cell.particleMassDensity += weight * mass;
+		}
 	};
 	std::for_each(particleMap.begin(), particleMap.end(), solveParticleDensity);
 }

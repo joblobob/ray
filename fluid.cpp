@@ -44,10 +44,10 @@ using FixedParticleTypes = std::array<FixedParticleType, fixedParticleTypeCount>
 const FixedParticleTypes& fixedParticleTypes()
 {
 	static const FixedParticleTypes types {
-	    FixedParticleType { 1500, QColor(Qt::darkGray) },
-	    FixedParticleType { 3500, QColor(161, 103, 23) },
-	    FixedParticleType { 2500, QColor(191, 133, 53) },
-	    FixedParticleType { 500, QColor(Qt::darkGreen) },
+	    FixedParticleType { constants::rockParticleCount, QColor(Qt::darkGray) },
+	    FixedParticleType { constants::coarseSandParticleCount, QColor(161, 103, 23) },
+	    FixedParticleType { constants::fineSandParticleCount, QColor(191, 133, 53) },
+	    FixedParticleType { constants::grassParticleCount, QColor(Qt::darkGreen) },
 	};
 	return types;
 }

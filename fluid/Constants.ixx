@@ -11,6 +11,45 @@ constexpr float worldHeightMeters { 4.0f };
 
 enum CellType { Fluid, Air, Solid, Soil, Rock };
 
+constexpr int rockParticleCount = 1500;
+constexpr int coarseSandParticleCount = 3500;
+constexpr int fineSandParticleCount = 2500;
+constexpr int grassParticleCount = 500;
+
+enum class ParticleMaterial { Rock, CoarseSand, FineSand, Grass, Water };
+
+constexpr ParticleMaterial particleMaterialForId(const int id)
+{
+	if (id < rockParticleCount)
+		return ParticleMaterial::Rock;
+	if (id < rockParticleCount + coarseSandParticleCount)
+		return ParticleMaterial::CoarseSand;
+	if (id < rockParticleCount + coarseSandParticleCount + fineSandParticleCount)
+		return ParticleMaterial::FineSand;
+	if (id < rockParticleCount + coarseSandParticleCount + fineSandParticleCount + grassParticleCount)
+		return ParticleMaterial::Grass;
+	return ParticleMaterial::Water;
+}
+
+// Relative to water (1.0). Particle volume is unchanged, so these ratios
+// also serve as relative particle masses in the grid transfer.
+constexpr float particleDensityRatio(const ParticleMaterial material)
+{
+	switch (material) {
+	case ParticleMaterial::Rock: return 3.50f;
+	case ParticleMaterial::CoarseSand: return 2.66f;
+	case ParticleMaterial::FineSand: return 2.00f;
+	case ParticleMaterial::Grass: return 0.90f;
+	case ParticleMaterial::Water: return 1.00f;
+	}
+	return 1.00f;
+}
+
+constexpr float particleDensityRatioForId(const int id)
+{
+	return particleDensityRatio(particleMaterialForId(id));
+}
+
 //setupScene
 
 constexpr float dt = 1.0f / 60.0f;
@@ -37,8 +76,8 @@ constexpr float particleSpacingX    = particleDiameter;
 constexpr float particleRowSpacing  = 1.7320508f * particleRadius;
 constexpr float particleStaggerX    = particleRadius;
 
-constexpr float relWaterHeight = 0.8f;
-constexpr float relWaterWidth  = 0.8f;
+constexpr float relWaterHeight = 0.7f;
+constexpr float relWaterWidth  = 0.7f;
 
 constexpr float particleStartX = cellHeight + particleRadius;
 constexpr float particleStartY = cellHeight + particleRadius;

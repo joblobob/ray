@@ -14,6 +14,24 @@ constexpr float overRelaxation { 1.9f };
 constexpr int numPressureIters { 50 };
 constexpr float k { 1.0f };
 
+constexpr float cellMaterialDensity(const Cell& cell)
+{
+	return cell.particleDensity > 1.0e-6f ? cell.particleMassDensity / cell.particleDensity : 1.0f;
+}
+
+constexpr float inverseFaceDensity(const Cell& first, const Cell& second)
+{
+	const bool firstHasParticles = first.particleDensity > 1.0e-6f;
+	const bool secondHasParticles = second.particleDensity > 1.0e-6f;
+	if (firstHasParticles && secondHasParticles)
+		return 2.0f / (cellMaterialDensity(first) + cellMaterialDensity(second));
+	if (firstHasParticles)
+		return 1.0f / cellMaterialDensity(first);
+	if (secondHasParticles)
+		return 1.0f / cellMaterialDensity(second);
+	return 1.0f;
+}
+
 // code
 export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity, std::vector<int>& fluidCellIndices)
 {
@@ -39,20 +57,24 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 			Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
 
 
-			const float s = cellLeft.s + cellRight.s + cellBottom.s + cellTop.s;
-			if (s > 0.1f) {
+			const float leftWeight = cellLeft.s * inverseFaceDensity(cellLeft, cell);
+			const float rightWeight = cellRight.s * inverseFaceDensity(cell, cellRight);
+			const float bottomWeight = cellBottom.s * inverseFaceDensity(cellBottom, cell);
+			const float topWeight = cellTop.s * inverseFaceDensity(cell, cellTop);
+			const float weightSum = leftWeight + rightWeight + bottomWeight + topWeight;
+			if (weightSum > 0.1f) {
 				float div = cellRight.u - cell.u + cellTop.v - cell.v;
 
 				const float compression = cell.particleDensity - particleRestDensity;
 				if (compression > 0.0f)
 					div = div - k * compression;
 
-				const float pValue = (-div / s) * overRelaxation;
+				const float pValue = (-div / weightSum) * overRelaxation;
 
-				cell.u -= cellLeft.s * pValue;
-				cellRight.u += cellRight.s * pValue;
-				cell.v -= cellBottom.s * pValue;
-				cellTop.v += cellTop.s * pValue;
+				cell.u -= leftWeight * pValue;
+				cellRight.u += rightWeight * pValue;
+				cell.v -= bottomWeight * pValue;
+				cellTop.v += topWeight * pValue;
 			}
 		}
 	}

@@ -10,7 +10,7 @@ import BaseStructures;
 import Constants;
 
 //constants
-constexpr float flipRatio = 0.9f;
+constexpr float flipRatio = 0.90f;
 
 export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
 {

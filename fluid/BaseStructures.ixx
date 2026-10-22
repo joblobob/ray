@@ -17,7 +17,7 @@ export struct Particle {
 
 export struct Cell {
 	int cellNumX, cellNumY;
-	float u, v, du, dv, prevU, prevV, s, particleDensity = 0.0f;
+	float u, v, du, dv, prevU, prevV, s, particleDensity = 0.0f, particleMassDensity = 0.0f;
 	float colorR = 0.0f, colorG = 0.0f, colorB = 0.0f;
 	constants::CellType cellType = constants::CellType::Solid;
 };

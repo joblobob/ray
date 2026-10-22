@@ -31,14 +31,16 @@ void restoreCells(Cell& cell, const std::vector<Cell>& gridCells)
 		restoreSolidCells(cell, gridCells);
 }
 
-void setVelComponent(float& f, float& d, const float pv, const float delta)
+void setVelComponent(float& f, float& d, const float pv, const float delta, const float particleMass)
 {
-	f += pv * delta;
-	d += delta;
+	const float massWeight = delta * particleMass;
+	f += pv * massWeight;
+	d += massWeight;
 }
 
 void parseVelocitiesU(std::vector<Cell>& gridCells, const Particle& particle)
 {
+	const float particleMass = constants::particleDensityRatioForId(particle.id);
 	const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
@@ -59,14 +61,15 @@ void parseVelocitiesU(std::vector<Cell>& gridCells, const Particle& particle)
 	Cell& cell3 = gridCells[x0 * constants::fNumY + y1];
 
 	//specific
-	setVelComponent(cell0.u, cell0.du, particle.velX, sx * sy);
-	setVelComponent(cell1.u, cell1.du, particle.velX, tx * sy);
-	setVelComponent(cell2.u, cell2.du, particle.velX, tx * ty);
-	setVelComponent(cell3.u, cell3.du, particle.velX, sx * ty);
+	setVelComponent(cell0.u, cell0.du, particle.velX, sx * sy, particleMass);
+	setVelComponent(cell1.u, cell1.du, particle.velX, tx * sy, particleMass);
+	setVelComponent(cell2.u, cell2.du, particle.velX, tx * ty, particleMass);
+	setVelComponent(cell3.u, cell3.du, particle.velX, sx * ty, particleMass);
 }
 
 void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
 {
+	const float particleMass = constants::particleDensityRatioForId(particle.id);
 	const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
@@ -86,10 +89,10 @@ void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
 	Cell& cell2v = gridCells[x1 * constants::fNumY + y1];
 	Cell& cell3v = gridCells[x0 * constants::fNumY + y1];
 
-	setVelComponent(cell0v.v, cell0v.dv, particle.velY, sx * sy);
-	setVelComponent(cell1v.v, cell1v.dv, particle.velY, tx * sy);
-	setVelComponent(cell2v.v, cell2v.dv, particle.velY, tx * ty);
-	setVelComponent(cell3v.v, cell3v.dv, particle.velY, sx * ty);
+	setVelComponent(cell0v.v, cell0v.dv, particle.velY, sx * sy, particleMass);
+	setVelComponent(cell1v.v, cell1v.dv, particle.velY, tx * sy, particleMass);
+	setVelComponent(cell2v.v, cell2v.dv, particle.velY, tx * ty, particleMass);
+	setVelComponent(cell3v.v, cell3v.dv, particle.velY, sx * ty, particleMass);
 }
 
 void prepareCellType(Cell& cell)
