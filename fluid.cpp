@@ -7,12 +7,11 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFile>
-#include <QHash>
 #include <QPainter>
-#include <QPainterPath>
 #include <QTextStream>
 #include <QTimer>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <format>
@@ -126,18 +125,15 @@ void logPerformanceEvent(const QString& event, const QString& details)
 
 struct fluid::Impl {
 	FlipFluid f;
+	float lastParticlePaintMs = 0.0f;
 };
 
 class ParticleOverlayItem final : public QGraphicsItem
 {
 public:
-	explicit ParticleOverlayItem(const std::vector<Particle>* particles) : m_particles(particles)
+	explicit ParticleOverlayItem(const std::vector<Particle>* particles, float* lastPaintMs) : m_particles(particles), m_lastPaintMs(lastPaintMs)
 	{
 		setZValue(1.0);
-		for (QPainterPath& path : m_fixedColorPaths)
-			path.setFillRule(Qt::WindingFill);
-		m_dynamicColorIndices.reserve(256);
-		m_dynamicColorPaths.reserve(256);
 	}
 
 	QRectF boundingRect() const override
@@ -145,112 +141,90 @@ public:
 		return { 0.0, 0.0, constants::maxwidth, constants::maxheight };
 	}
 
-	void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) override
+	void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget* widget) override
 	{
 		if (!constants::showParticles || m_particles == nullptr)
 			return;
 		QElapsedTimer paintTimer;
-		if constexpr (performanceLoggingEnabled)
+		const bool measurePaint = performanceLoggingEnabled || (++m_paintMeasureCounter % 4 == 0);
+		if (measurePaint)
 			paintTimer.start();
 
-		// Paint in viewport pixels after using the scene transform solely to
-		// map each simulated position. This keeps particle diameter independent
-		// of fitInView's zoom level.
+		// Rasterize into a reusable transparent image. Building a large path of
+		// ellipses every frame is particularly expensive in the Wasm raster backend.
 		const QTransform sceneToViewport = painter->worldTransform();
-		painter->save();
-		painter->resetTransform();
-		painter->setPen(Qt::NoPen);
-		for (QPainterPath& path : m_fixedColorPaths)
-			path.clear();
-		for (auto& [color, path] : m_dynamicColorPaths) {
-			Q_UNUSED(color);
-			path.clear();
-		}
-		m_activeDynamicColorPaths = 0;
-		if (++m_colorGeneration == 0 || m_dynamicColorIndices.size() > 4096) {
-			m_dynamicColorIndices.clear();
-			m_dynamicColorIndices.reserve(256);
-			m_colorGeneration = 1;
-		}
-
 		const QPointF sceneOrigin = sceneToViewport.map(QPointF(0.0, 0.0));
 		const QPointF screenSpacing = sceneToViewport.map(QPointF(constants::particleDiameter, 0.0)) - sceneOrigin;
-		const qreal diameter = std::hypot(screenSpacing.x(), screenSpacing.y());
-		const qreal radius = diameter * 0.5;
+		const qreal radius = std::hypot(screenSpacing.x(), screenSpacing.y()) * 0.5;
+		const qreal devicePixelRatio = widget != nullptr ? widget->devicePixelRatioF() : 1.0;
+		const QSize logicalSize = widget != nullptr ? widget->size() : QSize(painter->device()->width(), painter->device()->height());
+		const QSize pixelSize(std::max(1, static_cast<int>(std::ceil(logicalSize.width() * devicePixelRatio))),
+		    std::max(1, static_cast<int>(std::ceil(logicalSize.height() * devicePixelRatio))));
+		if (m_particleImage.size() != pixelSize)
+			m_particleImage = QImage(pixelSize, QImage::Format_ARGB32_Premultiplied);
+		m_particleImage.setDevicePixelRatio(devicePixelRatio);
+		m_particleImage.fill(Qt::transparent);
+		const qreal pixelRadius = radius * devicePixelRatio;
+		const qreal radiusSquared = pixelRadius * pixelRadius;
 		const auto& particleTypes = fixedParticleTypes();
 
-		// Build all batches in one particle pass. The fixed-color IDs precede
-		// dynamic-color IDs, so they are still painted first below.
 		for (const Particle& item : *m_particles) {
-			const QPointF position = sceneToViewport.map(QPointF(item.posX, item.posY));
-			const QRectF particleRect(position.x() - radius, position.y() - radius, diameter, diameter);
+			const QPointF position = sceneToViewport.map(QPointF(item.posX, item.posY)) * devicePixelRatio;
 			int remainingTypeId = item.id;
 			std::size_t colorGroup = 0;
 			while (colorGroup < particleTypes.size() && remainingTypeId >= particleTypes[colorGroup].count) {
 				remainingTypeId -= particleTypes[colorGroup].count;
 				++colorGroup;
 			}
-			if (colorGroup < particleTypes.size()) {
-				m_fixedColorPaths[colorGroup].addEllipse(particleRect);
-				continue;
-			}
+			const QRgb color = colorGroup < particleTypes.size()
+			    ? particleTypes[colorGroup].color.rgba()
+			    : qRgba(qRound(std::clamp(item.colorR, 0.0f, 1.0f) * 255.0f),
+				  qRound(std::clamp(item.colorG, 0.0f, 1.0f) * 255.0f),
+				  qRound(std::clamp(item.colorB, 0.0f, 1.0f) * 255.0f),
+				  255);
 
-			const QRgb color = QColor::fromRgbF(item.colorR, item.colorG, item.colorB).rgba();
-			auto colorIndex = m_dynamicColorIndices.find(color);
-			qsizetype index;
-			if (colorIndex == m_dynamicColorIndices.end() || colorIndex.value().generation != m_colorGeneration) {
-				index = static_cast<qsizetype>(m_activeDynamicColorPaths++);
-				if (static_cast<std::size_t>(index) == m_dynamicColorPaths.size()) {
-					m_dynamicColorPaths.emplace_back(color, QPainterPath{});
-					m_dynamicColorPaths.back().second.setFillRule(Qt::WindingFill);
-				} else {
-					m_dynamicColorPaths[static_cast<std::size_t>(index)].first = color;
+			const int top = std::max(0, static_cast<int>(std::ceil(position.y() - pixelRadius - 0.5)));
+			const int bottom = std::min(pixelSize.height() - 1, static_cast<int>(std::floor(position.y() + pixelRadius - 0.5)));
+			for (int y = top; y <= bottom; ++y) {
+				const qreal dy = y + 0.5 - position.y();
+				const qreal remainingRadiusSquared = radiusSquared - dy * dy;
+				if (remainingRadiusSquared < 0.0)
+					continue;
+				const qreal halfWidth = std::sqrt(remainingRadiusSquared);
+				const int left = std::max(0, static_cast<int>(std::ceil(position.x() - halfWidth - 0.5)));
+				const int right = std::min(pixelSize.width() - 1, static_cast<int>(std::floor(position.x() + halfWidth - 0.5)));
+				if (left <= right) {
+					auto* row = reinterpret_cast<QRgb*>(m_particleImage.scanLine(y));
+					std::fill(row + left, row + right + 1, color);
 				}
-				m_dynamicColorIndices.insert(color, ColorPathIndex { index, m_colorGeneration });
-			} else {
-				index = colorIndex.value().index;
 			}
-			m_dynamicColorPaths[static_cast<std::size_t>(index)].second.addEllipse(particleRect);
 		}
-
-		for (std::size_t group = 0; group < m_fixedColorPaths.size(); ++group) {
-			painter->setBrush(particleTypes[group].color);
-			painter->drawPath(m_fixedColorPaths[group]);
-		}
-
-		// The dynamic-color batches are kept in first-seen order and drawn after
-		// the contiguous fixed-color ID ranges, as in the previous renderer.
-		for (std::size_t index = 0; index < m_activeDynamicColorPaths; ++index) {
-			const auto& [color, path] = m_dynamicColorPaths[index];
-			painter->setBrush(QColor::fromRgba(color));
-			painter->drawPath(path);
-		}
+		painter->save();
+		painter->resetTransform();
+		painter->drawImage(QPointF(0.0, 0.0), m_particleImage);
 		painter->restore();
+		qint64 paintNs = 0;
+		if (measurePaint) {
+			paintNs = paintTimer.nsecsElapsed();
+		}
+		if (measurePaint && m_lastPaintMs != nullptr)
+			*m_lastPaintMs = paintNs * 0.000001f;
 
 		if constexpr (performanceLoggingEnabled) {
-			const qint64 paintNs = paintTimer.nsecsElapsed();
 			if (paintNs >= 16000000) {
 				logPerformanceEvent(QStringLiteral("slow_paint"),
-				    QStringLiteral("paint_ms=%1 particles=%2 dynamic_color_batches=%3")
+				    QStringLiteral("paint_ms=%1 particles=%2")
 				        .arg(paintNs / 1000000.0, 0, 'f', 2)
-				        .arg(m_particles->size())
-				        .arg(m_activeDynamicColorPaths));
+				        .arg(m_particles->size()));
 			}
 		}
 	}
 
 private:
-	struct ColorPathIndex {
-		qsizetype index;
-		quint32 generation;
-	};
-
 	const std::vector<Particle>* m_particles;
-	std::array<QPainterPath, fixedParticleTypeCount> m_fixedColorPaths;
-	QHash<QRgb, ColorPathIndex> m_dynamicColorIndices;
-	std::vector<std::pair<QRgb, QPainterPath>> m_dynamicColorPaths;
-	std::size_t m_activeDynamicColorPaths = 0;
-	quint32 m_colorGeneration = 0;
+	float* m_lastPaintMs;
+	QImage m_particleImage;
+	quint32 m_paintMeasureCounter = 0;
 };
 
 fluid::fluid(QWidget* parent) :
@@ -336,7 +310,7 @@ void fluid::setupScene()
 	m_obstacleItem->setZValue(2.0);
 
 	if (m_particleOverlayItem == nullptr) {
-		m_particleOverlayItem = new ParticleOverlayItem(&m_impl->f.particleMap);
+		m_particleOverlayItem = new ParticleOverlayItem(&m_impl->f.particleMap, &m_impl->lastParticlePaintMs);
 		m_pixmapScene->addItem(m_particleOverlayItem);
 	}
 	m_pixmapScene->setSceneRect(m_pointsPixmap.rect());
@@ -385,7 +359,12 @@ void fluid::drawimage()
 
 void fluid::update()
 {
-	float totalElapsed { m_timer.nsecsElapsed() * 0.000001f };
+#ifdef __EMSCRIPTEN__
+	const bool refreshStatus = (fps % 8) == 0;
+	#else
+	const bool refreshStatus = true;
+	#endif
+	float totalElapsed = refreshStatus ? m_timer.nsecsElapsed() * 0.000001f : 0.0f;
 	float frameIntervalMs = 0.0f;
 	QElapsedTimer frameWorkTimer;
 	if constexpr (performanceLoggingEnabled) {
@@ -395,7 +374,8 @@ void fluid::update()
 	}
 
 
-	m_simtimer.restart();
+	if (refreshStatus)
+		m_simtimer.restart();
 
 	setupObstacle(m_impl->f.gridCells,
 	    ((float)m_obstacleItem->x() + ObstacleConstants::radius),
@@ -404,21 +384,32 @@ void fluid::update()
 	    false);
 
 	simulate();
-	float simElapsed { m_simtimer.nsecsElapsed() * 0.000001f };
-	m_simtimer.restart();
+	float simElapsed = refreshStatus ? m_simtimer.nsecsElapsed() * 0.000001f : 0.0f;
+	if (refreshStatus)
+		m_simtimer.restart();
 	//draw();
+#ifdef __EMSCRIPTEN__
+	// The Wasm build uses Qt's raster viewport. Keep advancing the simulation
+	// every timer tick, but avoid rebuilding and painting every particle at 60 Hz.
+	if ((fps & 1) == 0)
+		drawimage();
+#else
 	drawimage();
+#endif
 
-	float simDrawElapsed { m_simtimer.nsecsElapsed() * 0.000001f };
+	float simDrawElapsed = refreshStatus ? m_simtimer.nsecsElapsed() * 0.000001f : 0.0f;
 	fps++;
 
-	std::string fpsLabel = std::format("Frame: {} Simulate: {:.2f} ms SimDraw: {:.2f} ms roundtrip: {:.2f} ms total {:.2f}",
-	    fps,
-	    simElapsed,
-	    simDrawElapsed,
-	    totalElapsed,
-	    simElapsed + simDrawElapsed + totalElapsed);
-	ui->label->setText(fpsLabel.data());
+	if (refreshStatus) {
+		std::string fpsLabel = std::format("Frame: {} Simulate: {:.2f} ms SimDraw: {:.2f} ms Paint: {:.2f} ms roundtrip: {:.2f} ms total {:.2f}",
+		    fps,
+		    simElapsed,
+		    simDrawElapsed,
+		    m_impl->lastParticlePaintMs,
+		    totalElapsed,
+		    simElapsed + simDrawElapsed + totalElapsed);
+		ui->label->setText(fpsLabel.data());
+	}
 	if constexpr (performanceLoggingEnabled) {
 		const float frameWorkMs = frameWorkTimer.nsecsElapsed() * 0.000001f;
 		if (frameIntervalMs >= 40.0f || frameWorkMs >= 40.0f) {
