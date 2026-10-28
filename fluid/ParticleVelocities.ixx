@@ -12,14 +12,14 @@ import Constants;
 //constants
 constexpr float flipRatio = 0.90f;
 
-export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
+export void transferVelocitiesToParticles(ParticleStore& particleMap, std::vector<Cell>& gridCells)
 {
-	const auto parseVelocitiesParticles = [&](Particle& particle) {
+	const auto parseVelocitiesParticles = [&](const std::size_t id) {
 		float dx = 0.0f;
 		float dy = constants::halfCellHeight;
 
-		const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-		const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+		const float x = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+		const float y = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
 		int x0   = std::min(static_cast<int>((x - dx) * constants::fInvSpacing), constants::fNumX - 2);
 		float tx = ((x - dx) - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -64,7 +64,7 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		float valid2 = cell2.cellType != constants::CellType::Air || cellOffset2.cellType != constants::CellType::Air ? 1.0 : 0.0;
 		float valid3 = cell3.cellType != constants::CellType::Air || cellOffset3.cellType != constants::CellType::Air ? 1.0 : 0.0;
 
-		float v = particle.velX;
+		float v = particleMap.velX[id];
 		float d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0) {
@@ -75,7 +75,7 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 			auto flipV = v + corr;
 
 			auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
-			particle.velX    = newVelValue;
+			particleMap.velX[id] = newVelValue;
 		}
 
 		// 2eme passe
@@ -124,7 +124,7 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 		valid2 = cell2.cellType != constants::CellType::Air || cellOffset2v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
 		valid3 = cell3.cellType != constants::CellType::Air || cellOffset3v.cellType != constants::CellType::Air ? 1.0f : 0.0f;
 
-		v = particle.velY;
+		v = particleMap.velY[id];
 		d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0f) {
@@ -135,8 +135,8 @@ export void transferVelocitiesToParticles(std::vector<Particle>& particleMap, st
 			auto flipV = v + corr;
 
 			auto newVelValue = (1.0f - flipRatio) * picV + flipRatio * flipV;
-			particle.velY    = newVelValue;
+			particleMap.velY[id] = newVelValue;
 		}
 	};
-	fluidParallelForEach(particleMap.begin(), particleMap.end(), parseVelocitiesParticles);
+	fluidParallelForEachIndex(particleMap.size(), parseVelocitiesParticles);
 }

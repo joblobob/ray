@@ -12,9 +12,9 @@ constexpr float worldHeightMeters { 4.0f };
 enum CellType { Fluid, Air, Solid, Soil, Rock };
 
 constexpr int rockParticleCount = 1500;
-constexpr int coarseSandParticleCount = 3500;
-constexpr int fineSandParticleCount = 2500;
-constexpr int grassParticleCount = 500;
+constexpr int coarseSandParticleCount = 1500;
+constexpr int fineSandParticleCount = 1500;
+constexpr int grassParticleCount = 1500;
 
 enum class ParticleMaterial { Rock, CoarseSand, FineSand, Grass, Water };
 
@@ -76,8 +76,8 @@ constexpr float particleSpacingX    = particleDiameter;
 constexpr float particleRowSpacing  = 1.7320508f * particleRadius;
 constexpr float particleStaggerX    = particleRadius;
 
-constexpr float relWaterHeight = 0.7f;
-constexpr float relWaterWidth  = 0.7f;
+constexpr float relWaterHeight = 0.8f;
+constexpr float relWaterWidth  = 0.6f;
 
 constexpr float particleStartX = cellHeight + particleRadius;
 constexpr float particleStartY = cellHeight + particleRadius;

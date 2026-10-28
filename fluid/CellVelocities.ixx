@@ -38,11 +38,11 @@ void setVelComponent(float& f, float& d, const float pv, const float delta, cons
 	d += massWeight;
 }
 
-void parseVelocitiesU(std::vector<Cell>& gridCells, const Particle& particle)
+void parseVelocitiesU(std::vector<Cell>& gridCells, const ParticleStore& particleMap, const int id)
 {
-	const float particleMass = constants::particleDensityRatioForId(particle.id);
-	const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-	const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+	const float particleMass = constants::particleDensityRatioForId(id);
+	const float x = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+	const float y = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
 	const int x0   = std::min(static_cast<int>(x * constants::fInvSpacing), constants::fNumX - 2);
 	const float tx = (x - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -61,17 +61,17 @@ void parseVelocitiesU(std::vector<Cell>& gridCells, const Particle& particle)
 	Cell& cell3 = gridCells[x0 * constants::fNumY + y1];
 
 	//specific
-	setVelComponent(cell0.u, cell0.du, particle.velX, sx * sy, particleMass);
-	setVelComponent(cell1.u, cell1.du, particle.velX, tx * sy, particleMass);
-	setVelComponent(cell2.u, cell2.du, particle.velX, tx * ty, particleMass);
-	setVelComponent(cell3.u, cell3.du, particle.velX, sx * ty, particleMass);
+	setVelComponent(cell0.u, cell0.du, particleMap.velX[id], sx * sy, particleMass);
+	setVelComponent(cell1.u, cell1.du, particleMap.velX[id], tx * sy, particleMass);
+	setVelComponent(cell2.u, cell2.du, particleMap.velX[id], tx * ty, particleMass);
+	setVelComponent(cell3.u, cell3.du, particleMap.velX[id], sx * ty, particleMass);
 }
 
-void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
+void parseVelocitiesV(std::vector<Cell>& gridCells, const ParticleStore& particleMap, const int id)
 {
-	const float particleMass = constants::particleDensityRatioForId(particle.id);
-	const float x = std::clamp(particle.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-	const float y = std::clamp(particle.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+	const float particleMass = constants::particleDensityRatioForId(id);
+	const float x = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+	const float y = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
 	const int x0   = std::min(static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing), constants::fNumX - 2);
 	const float tx = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -89,10 +89,10 @@ void parseVelocitiesV(std::vector<Cell>& gridCells, const Particle& particle)
 	Cell& cell2v = gridCells[x1 * constants::fNumY + y1];
 	Cell& cell3v = gridCells[x0 * constants::fNumY + y1];
 
-	setVelComponent(cell0v.v, cell0v.dv, particle.velY, sx * sy, particleMass);
-	setVelComponent(cell1v.v, cell1v.dv, particle.velY, tx * sy, particleMass);
-	setVelComponent(cell2v.v, cell2v.dv, particle.velY, tx * ty, particleMass);
-	setVelComponent(cell3v.v, cell3v.dv, particle.velY, sx * ty, particleMass);
+	setVelComponent(cell0v.v, cell0v.dv, particleMap.velY[id], sx * sy, particleMass);
+	setVelComponent(cell1v.v, cell1v.dv, particleMap.velY[id], tx * sy, particleMass);
+	setVelComponent(cell2v.v, cell2v.dv, particleMap.velY[id], tx * ty, particleMass);
+	setVelComponent(cell3v.v, cell3v.dv, particleMap.velY[id], sx * ty, particleMass);
 }
 
 void prepareCellType(Cell& cell)
@@ -106,23 +106,23 @@ void prepareCellType(Cell& cell)
 	cell.cellType = cell.s < 0.1f ? constants::CellType::Solid : constants::CellType::Air;
 }
 
-void setCellType(const Particle& p, std::vector<Cell>& gridCells, const Border& fBorder)
+void setCellType(const ParticleStore& particleMap, const int id, std::vector<Cell>& gridCells, const Border& fBorder)
 {
-	int cellNr                    = cellNumber(p.posX, p.posY, fBorder, constants::fInvSpacing);
+	int cellNr                    = cellNumber(particleMap.posX[id], particleMap.posY[id], fBorder, constants::fInvSpacing);
 	constants::CellType& cellType = gridCells[cellNr].cellType;
 	if (cellType == constants::CellType::Air)
 		cellType = constants::CellType::Fluid;
 }
 
-export void transferVelocitiesToGrid(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
+export void transferVelocitiesToGrid(const ParticleStore& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
 	fluidParallelForEach(gridCells.begin(), gridCells.end(), prepareCellType);
 
-	std::for_each(particleMap.cbegin(), particleMap.cend(), [&](const Particle& particle) {
-		setCellType(particle, gridCells, fBorder);
-		parseVelocitiesU(gridCells, particle);
-		parseVelocitiesV(gridCells, particle);
-	});
+	for (int id = 0; id < static_cast<int>(particleMap.size()); ++id) {
+		setCellType(particleMap, id, gridCells, fBorder);
+		parseVelocitiesU(gridCells, particleMap, id);
+		parseVelocitiesV(gridCells, particleMap, id);
+	}
 
 	fluidParallelForEach(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
 }

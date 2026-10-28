@@ -9,7 +9,7 @@ import BaseStructures;
 import Constants;
 
 
-export void updateParticleDensity(std::vector<Particle>& particleMap, std::vector<Cell>& gridCells)
+export void updateParticleDensity(const ParticleStore& particleMap, std::vector<Cell>& gridCells)
 {
 	// reset density
 	std::for_each(gridCells.begin(), gridCells.end(), [](Cell& c) {
@@ -17,10 +17,10 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 		c.particleMassDensity = 0.0f;
 	});
 
-	auto solveParticleDensity = [&](const Particle& p) {
-		const float mass = constants::particleDensityRatioForId(p.id);
-		const float x = std::clamp(p.posX, constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-		const float y = std::clamp(p.posY, constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+	auto solveParticleDensity = [&](const int id) {
+		const float mass = constants::particleDensityRatioForId(id);
+		const float x = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+		const float y = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
 		const int x0   = static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing);
 		const float tx = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -62,7 +62,8 @@ export void updateParticleDensity(std::vector<Particle>& particleMap, std::vecto
 			cell.particleMassDensity += weight * mass;
 		}
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), solveParticleDensity);
+	for (int id = 0; id < static_cast<int>(particleMap.size()); ++id)
+		solveParticleDensity(id);
 }
 
 export void calculateParticleRestDensity(std::vector<Cell>& gridCells, float& particleRestDensity)

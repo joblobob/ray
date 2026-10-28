@@ -47,6 +47,7 @@ qt_add_executable(ray1 WIN32
     camera.h
     hitPosition.cpp hitPosition.h
     main.cpp
+    FluidBenchmark.cpp FluidBenchmark.h
     rayview.cpp rayview.h rayview.ui
     fluid.cpp fluid.h fluid.ui
     shapes.h 

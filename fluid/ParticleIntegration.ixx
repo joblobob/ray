@@ -11,14 +11,15 @@ import Constants;
 
 // Positions are stored in pixels. Assume the scene height represents 4 m,
 // then convert physical gravity (m/s^2) to pixel acceleration (px/s^2).
+// This is semi-implicit (symplectic) Euler: update velocity, then position.
 constexpr float gravity = -9.81f * constants::maxheight / constants::worldHeightMeters;
 
-export void integrateParticles(std::vector<Particle>& particleMap, const float dt)
+export void integrateParticles(ParticleStore& particleMap, const float dt)
 {
-	auto integration = [dt](Particle& particle) {
-		particle.velY += gravity * dt;
-		particle.posX += particle.velX * dt;
-		particle.posY += particle.velY * dt;
+	auto integration = [&](const std::size_t id) {
+		particleMap.velY[id] += gravity * dt;
+		particleMap.posX[id] += particleMap.velX[id] * dt;
+		particleMap.posY[id] += particleMap.velY[id] * dt;
 	};
-	fluidParallelForEach(particleMap.begin(), particleMap.end(), integration);
+	fluidParallelForEachIndex(particleMap.size(), integration);
 }

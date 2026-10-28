@@ -1,8 +1,10 @@
 module;
 
 #include <algorithm>
+#include <array>
 #include <vector>
 #include <cmath>
+#include "ParallelForEach.h"
 
 export module PushParticles;
 
@@ -20,6 +22,7 @@ constexpr int numParticleIters      = 2;
 constexpr float colorDiffusionCoeff = 0.001f;
 constexpr float minDist             = 2.0f * constants::particleRadius;
 constexpr float minDist2            = minDist * minDist;
+constexpr float halfColorDiffusion = 0.5f * colorDiffusionCoeff;
 
 export struct ParticleInCells {
 	int numCellParticles = 0, firstCellParticle = 0;
@@ -29,30 +32,25 @@ export struct PushParticlesBuffers {
 	std::vector<ParticleInCells> particleCells;
 	std::vector<int> cellNumbers;
 	std::vector<int> cellParticleIds;
+	std::vector<std::array<float, 5>> particleCorrections;
 };
-
-inline void calcColor(float& p1Color, float& p2Color)
-{
-	const float color = (p1Color + p2Color) * 0.5f;
-	p1Color           = p1Color + (color - p1Color) * colorDiffusionCoeff;
-	p2Color           = p2Color + (color - p2Color) * colorDiffusionCoeff;
-}
 
 static const Border pBorder { .maxX = pNumX, .maxY = pNumY };
 
-export void pushParticlesApart(std::vector<Particle>& particleMap, PushParticlesBuffers& buffers)
+export void pushParticlesApart(ParticleStore& particleMap, PushParticlesBuffers& buffers)
 {
 	buffers.particleCells.assign(pNumCells + 1, { 0, 0 });
 	buffers.cellNumbers.resize(constants::maxParticles);
 	buffers.cellParticleIds.resize(constants::maxParticles);
 
 	// count particles per cell
-	const auto countParticlesInCell = [&](const Particle& particle) {
-		const int cellnum        = cellNumber(particle.posX, particle.posY, pBorder, pInvSpacing);
-		buffers.cellNumbers[particle.id] = cellnum;
+	const auto countParticlesInCell = [&](const int id) {
+		const int cellnum = cellNumber(particleMap.posX[id], particleMap.posY[id], pBorder, pInvSpacing);
+		buffers.cellNumbers[id] = cellnum;
 		buffers.particleCells[cellnum].numCellParticles++;
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), countParticlesInCell);
+	for (int id = 0; id < static_cast<int>(particleMap.size()); ++id)
+		countParticlesInCell(id);
 
 	// partial sums
 	int first = 0;
@@ -68,19 +66,25 @@ export void pushParticlesApart(std::vector<Particle>& particleMap, PushParticles
 	buffers.particleCells[pNumCells].firstCellParticle = first; // guard
 
 	// fill particles into cells
-	auto fillParticleIntoCell = [&](const Particle& p) {
-		buffers.particleCells[buffers.cellNumbers[p.id]].firstCellParticle--;
-		buffers.cellParticleIds[buffers.particleCells[buffers.cellNumbers[p.id]].firstCellParticle] = p.id;
+	auto fillParticleIntoCell = [&](const int id) {
+		buffers.particleCells[buffers.cellNumbers[id]].firstCellParticle--;
+		buffers.cellParticleIds[buffers.particleCells[buffers.cellNumbers[id]].firstCellParticle] = id;
 	};
-	std::for_each(particleMap.begin(), particleMap.end(), fillParticleIntoCell);
+	for (int id = 0; id < static_cast<int>(particleMap.size()); ++id)
+		fillParticleIntoCell(id);
 
-
-	// push particles apart
-
-
-	auto pushParticles = [&](Particle& particle) {
-		const float px = particle.posX;
-		const float py = particle.posY;
+	// Gather pair corrections from a stable snapshot, then apply them. Each
+	// particle writes only its own correction, so this neighbor-heavy phase is
+	// safe to parallelize without locks or atomics.
+	buffers.particleCorrections.resize(particleMap.size());
+	const auto gatherParticleCorrection = [&](const std::size_t particleIndex) {
+		const float px = particleMap.posX[particleIndex];
+		const float py = particleMap.posY[particleIndex];
+		float correctionX = 0.0f;
+		float correctionY = 0.0f;
+		float correctionR = 0.0f;
+		float correctionG = 0.0f;
+		float correctionB = 0.0f;
 
 		const int pxi = static_cast<int>(px * pInvSpacing);
 		const int pyi = static_cast<int>(py * pInvSpacing);
@@ -95,40 +99,39 @@ export void pushParticlesApart(std::vector<Particle>& particleMap, PushParticles
 				const int first  = buffers.particleCells[cellNr].firstCellParticle;
 				const int last   = buffers.particleCells[cellNr + 1].firstCellParticle;
 				for (int j = first; j < last; j++) {
-					const int id = buffers.cellParticleIds[j];
-					// The correction below moves both particles, so processing the
-					// same pair again from its other endpoint is redundant.
-					if (id != particle.id) {
-						Particle& particleAtId { particleMap[id] };
-						const float qx = particleAtId.posX;
-						const float qy = particleAtId.posY;
+					const int neighborId = buffers.cellParticleIds[j];
+					if (neighborId == particleIndex)
+						continue;
 
-						float dx       = qx - px;
-						float dy       = qy - py;
-						const float d2 = dx * dx + dy * dy;
-						if (!(d2 > minDist2 || d2 < 0.1)) {
-							const float d = sqrt(d2);
-							const float s = 0.5f * (minDist - d) / d;
-							dx *= s;
-							dy *= s;
-							particle.posX -= dx;
-							particle.posY -= dy;
-							particleAtId.posX += dx;
-							particleAtId.posY += dy;
+					const float dx = particleMap.posX[neighborId] - px;
+					const float dy = particleMap.posY[neighborId] - py;
+					const float distanceSquared = dx * dx + dy * dy;
+					if (distanceSquared > minDist2 || distanceSquared < 0.1f)
+						continue;
 
-							// diffuse colors
-
-							calcColor(particle.colorR, particleAtId.colorR);
-							calcColor(particle.colorG, particleAtId.colorG);
-							calcColor(particle.colorB, particleAtId.colorB);
-						}
-					}
+					const float distance = std::sqrt(distanceSquared);
+					const float scale = 0.5f * (minDist - distance) / distance;
+					correctionX -= dx * scale;
+					correctionY -= dy * scale;
+					correctionR += (particleMap.colorR[neighborId] - particleMap.colorR[particleIndex]) * halfColorDiffusion;
+					correctionG += (particleMap.colorG[neighborId] - particleMap.colorG[particleIndex]) * halfColorDiffusion;
+					correctionB += (particleMap.colorB[neighborId] - particleMap.colorB[particleIndex]) * halfColorDiffusion;
 				}
 			}
 		}
+		buffers.particleCorrections[particleIndex] = { correctionX, correctionY, correctionR, correctionG, correctionB };
+	};
+	const auto applyParticleCorrection = [&](const std::size_t id) {
+		const auto& correction = buffers.particleCorrections[id];
+		particleMap.posX[id] += correction[0];
+		particleMap.posY[id] += correction[1];
+		particleMap.colorR[id] += correction[2];
+		particleMap.colorG[id] += correction[3];
+		particleMap.colorB[id] += correction[4];
 	};
 
 	for (int iter = 0; iter < numParticleIters; iter++) {
-		std::for_each(particleMap.begin(), particleMap.end(), pushParticles);
+		fluidParallelForEachIndex(particleMap.size(), gatherParticleCorrection);
+		fluidParallelForEachIndex(particleMap.size(), applyParticleCorrection);
 	}
 }

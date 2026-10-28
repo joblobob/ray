@@ -21,7 +21,7 @@ export struct FlipFluid {
 	float particleRestDensity;
 
 	Obstacle obstacle;
-	std::vector<Particle> particleMap;
+	ParticleStore particleMap;
 	std::vector<Cell> gridCells;
 	std::vector<int> fluidCellIndices;
 	PushParticlesBuffers pushParticleBuffers;

@@ -131,7 +131,7 @@ struct fluid::Impl {
 class ParticleOverlayItem final : public QGraphicsItem
 {
 public:
-	explicit ParticleOverlayItem(const std::vector<Particle>* particles, float* lastPaintMs) : m_particles(particles), m_lastPaintMs(lastPaintMs)
+	explicit ParticleOverlayItem(const ParticleStore* particles, float* lastPaintMs) : m_particles(particles), m_lastPaintMs(lastPaintMs)
 	{
 		setZValue(1.0);
 	}
@@ -168,9 +168,10 @@ public:
 		const qreal radiusSquared = pixelRadius * pixelRadius;
 		const auto& particleTypes = fixedParticleTypes();
 
-		for (const Particle& item : *m_particles) {
-			const QPointF position = sceneToViewport.map(QPointF(item.posX, item.posY)) * devicePixelRatio;
-			int remainingTypeId = item.id;
+		for (std::size_t particleIndex = 0; particleIndex < m_particles->size(); ++particleIndex) {
+			const int particleId = static_cast<int>(particleIndex);
+			const QPointF position = sceneToViewport.map(QPointF(m_particles->posX[particleIndex], m_particles->posY[particleIndex])) * devicePixelRatio;
+			int remainingTypeId = particleId;
 			std::size_t colorGroup = 0;
 			while (colorGroup < particleTypes.size() && remainingTypeId >= particleTypes[colorGroup].count) {
 				remainingTypeId -= particleTypes[colorGroup].count;
@@ -178,9 +179,9 @@ public:
 			}
 			const QRgb color = colorGroup < particleTypes.size()
 			    ? particleTypes[colorGroup].color.rgba()
-			    : qRgba(qRound(std::clamp(item.colorR, 0.0f, 1.0f) * 255.0f),
-				  qRound(std::clamp(item.colorG, 0.0f, 1.0f) * 255.0f),
-				  qRound(std::clamp(item.colorB, 0.0f, 1.0f) * 255.0f),
+			    : qRgba(qRound(std::clamp(m_particles->colorR[particleIndex], 0.0f, 1.0f) * 255.0f),
+				  qRound(std::clamp(m_particles->colorG[particleIndex], 0.0f, 1.0f) * 255.0f),
+				  qRound(std::clamp(m_particles->colorB[particleIndex], 0.0f, 1.0f) * 255.0f),
 				  255);
 
 			const int top = std::max(0, static_cast<int>(std::ceil(position.y() - pixelRadius - 0.5)));
@@ -221,7 +222,7 @@ public:
 	}
 
 private:
-	const std::vector<Particle>* m_particles;
+	const ParticleStore* m_particles;
 	float* m_lastPaintMs;
 	QImage m_particleImage;
 	quint32 m_paintMeasureCounter = 0;
@@ -270,14 +271,20 @@ void fluid::setupScene()
 	// create fluid
 	m_impl->f = FlipFluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
 
-	std::mdspan particleView(m_impl->f.particleMap.data(), constants::numX, constants::numY);
 	// create particles
-	int count = 0;
-	for (std::size_t i = 0; i < particleView.extent(0); i++) {
-		for (std::size_t j = 0; j < particleView.extent(1); j++, count++) {
+	ParticleStore& particles = m_impl->f.particleMap;
+	for (std::size_t i = 0; i < constants::numX; i++) {
+		for (std::size_t j = 0; j < constants::numY; j++) {
 			const float posX = constants::particleStartX + constants::particleSpacingX * i + (j % 2 == 0 ? 0.0f : constants::particleStaggerX);
 			const float posY = constants::particleStartY + constants::particleRowSpacing * j;
-			particleView[i, j] = { count, posX, posY };
+			const std::size_t particleIndex = i * constants::numY + j;
+			particles.posX[particleIndex] = posX;
+			particles.posY[particleIndex] = posY;
+			particles.velX[particleIndex] = 0.0f;
+			particles.velY[particleIndex] = 0.0f;
+			particles.colorR[particleIndex] = 0.0f;
+			particles.colorG[particleIndex] = 0.0f;
+			particles.colorB[particleIndex] = 1.0f;
 		}
 	}
 

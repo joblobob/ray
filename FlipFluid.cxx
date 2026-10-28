@@ -25,7 +25,7 @@ FlipFluid::FlipFluid(float width, float height, float spacing, int maxParticles)
     // particles
     particleRestDensity(0.0f),
     fBorder { .maxX = constants::fNumX, .maxY = constants::fNumY },
-    particleMap(maxParticles),
+    particleMap(static_cast<std::size_t>(maxParticles)),
     gridCells(constants::fNumCells),
     obstacle()
 {}

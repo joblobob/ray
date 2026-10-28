@@ -1,7 +1,9 @@
 module;
 
 #include <algorithm>
+#include <array>
 #include <vector>
+#include "ParallelForEach.h"
 
 export module ParticleIncompressibility;
 
@@ -13,6 +15,17 @@ import Constants;
 constexpr float overRelaxation { 1.9f };
 constexpr int numPressureIters { 50 };
 constexpr float k { 1.0f };
+
+struct PressureCell {
+	int index;
+	int right;
+	int top;
+	float leftWeight;
+	float rightWeight;
+	float bottomWeight;
+	float topWeight;
+	float weightSum;
+};
 
 constexpr float cellMaterialDensity(const Cell& cell)
 {
@@ -40,42 +53,62 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 		cell.prevV = cell.v;
 	});
 	fluidCellIndices.clear();
+	std::array<std::vector<PressureCell>, 2> checkerboardCells;
+	checkerboardCells[0].reserve(gridCells.size() / 2);
+	checkerboardCells[1].reserve(gridCells.size() / 2);
 	for (int i = 0; i < static_cast<int>(gridCells.size()); ++i) {
-		if (gridCells[i].cellType == constants::CellType::Fluid)
+		if (gridCells[i].cellType == constants::CellType::Fluid) {
 			fluidCellIndices.push_back(i);
-	}
-
-	for (int iter = 0; iter < numPressureIters; iter++) {
-		for (const int cellIndex : fluidCellIndices) {
-			Cell& cell = gridCells[cellIndex];
-			const int i = cell.cellNumX;
-			const int j = cell.cellNumY;
-
-			Cell& cellLeft   = gridCells[(i - 1) * constants::fNumY + j]; //left
-			Cell& cellRight  = gridCells[(i + 1) * constants::fNumY + j]; //right
-			Cell& cellBottom = gridCells[i * constants::fNumY + j - 1];   //bottom
-			Cell& cellTop    = gridCells[i * constants::fNumY + j + 1];   //top
-
-
+			const Cell& cell = gridCells[i];
+			const int x = cell.cellNumX;
+			const int y = cell.cellNumY;
+			const int left = (x - 1) * constants::fNumY + y;
+			const int right = (x + 1) * constants::fNumY + y;
+			const int bottom = x * constants::fNumY + y - 1;
+			const int top = x * constants::fNumY + y + 1;
+			const Cell& cellLeft = gridCells[left];
+			const Cell& cellRight = gridCells[right];
+			const Cell& cellBottom = gridCells[bottom];
+			const Cell& cellTop = gridCells[top];
 			const float leftWeight = cellLeft.s * inverseFaceDensity(cellLeft, cell);
 			const float rightWeight = cellRight.s * inverseFaceDensity(cell, cellRight);
 			const float bottomWeight = cellBottom.s * inverseFaceDensity(cellBottom, cell);
 			const float topWeight = cellTop.s * inverseFaceDensity(cell, cellTop);
-			const float weightSum = leftWeight + rightWeight + bottomWeight + topWeight;
-			if (weightSum > 0.1f) {
-				float div = cellRight.u - cell.u + cellTop.v - cell.v;
+			checkerboardCells[(x + y) & 1].push_back({ i,
+			    right,
+			    top,
+			    leftWeight,
+			    rightWeight,
+			    bottomWeight,
+			    topWeight,
+			    leftWeight + rightWeight + bottomWeight + topWeight });
+		}
+	}
 
-				const float compression = cell.particleDensity - particleRestDensity;
-				if (compression > 0.0f)
-					div = div - k * compression;
+	for (int iter = 0; iter < numPressureIters; iter++) {
+		// Red/black Gauss-Seidel: cells of one color do not share face
+		// velocities, so parallelize each color. The barrier between colors
+		// preserves the pressure update dependency.
+		for (const auto& colorCells : checkerboardCells) {
+			fluidParallelForEach(colorCells.cbegin(), colorCells.cend(), [&](const PressureCell& pressureCell) {
+				Cell& cell = gridCells[pressureCell.index];
+				Cell& cellRight = gridCells[pressureCell.right];
+				Cell& cellTop = gridCells[pressureCell.top];
+				if (pressureCell.weightSum > 0.1f) {
+					float div = cellRight.u - cell.u + cellTop.v - cell.v;
 
-				const float pValue = (-div / weightSum) * overRelaxation;
+					const float compression = cell.particleDensity - particleRestDensity;
+					if (compression > 0.0f)
+						div = div - k * compression;
 
-				cell.u -= leftWeight * pValue;
-				cellRight.u += rightWeight * pValue;
-				cell.v -= bottomWeight * pValue;
-				cellTop.v += topWeight * pValue;
-			}
+					const float pValue = (-div / pressureCell.weightSum) * overRelaxation;
+
+					cell.u -= pressureCell.leftWeight * pValue;
+					cellRight.u += pressureCell.rightWeight * pValue;
+					cell.v -= pressureCell.bottomWeight * pValue;
+					cellTop.v += pressureCell.topWeight * pValue;
+				}
+			});
 		}
 	}
 }

@@ -10,29 +10,29 @@ import BaseStructures;
 import CellCalculations;
 import Constants;
 
-export void updateParticleColors(std::vector<Particle>& particleMap,
+export void updateParticleColors(ParticleStore& particleMap,
     std::vector<Cell>& gridCells,
     const Border& fBorder,
     const float particleRestDensity)
 {
-	auto parseParticleColors = [&](Particle& particle) {
+	auto parseParticleColors = [&](const std::size_t id) {
 		const float s = 0.01f;
 
-		particle.colorR = std::clamp(particle.colorR - s, 0.0f, 1.0f);
-		particle.colorG = std::clamp(particle.colorG - s, 0.0f, 1.0f);
-		particle.colorB = std::clamp(particle.colorB + s, 0.0f, 1.0f);
+		particleMap.colorR[id] = std::clamp(particleMap.colorR[id] - s, 0.0f, 1.0f);
+		particleMap.colorG[id] = std::clamp(particleMap.colorG[id] - s, 0.0f, 1.0f);
+		particleMap.colorB[id] = std::clamp(particleMap.colorB[id] + s, 0.0f, 1.0f);
 
-		const int cellNr = cellNumber(particle.posX, particle.posY, fBorder, constants::fInvSpacing);
+		const int cellNr = cellNumber(particleMap.posX[id], particleMap.posY[id], fBorder, constants::fInvSpacing);
 
 		if (particleRestDensity > 0.0f) {
 			const float relDensity = gridCells[cellNr].particleDensity / particleRestDensity;
 			if (relDensity < 0.7f) {
 				const float s   = 0.8f;
-				particle.colorR = s;
-				particle.colorG = s;
-				particle.colorB = 1.0f;
+				particleMap.colorR[id] = s;
+				particleMap.colorG[id] = s;
+				particleMap.colorB[id] = 1.0f;
 			}
 		}
 	};
-	fluidParallelForEach(particleMap.begin(), particleMap.end(), parseParticleColors);
+	fluidParallelForEachIndex(particleMap.size(), parseParticleColors);
 }
