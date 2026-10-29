@@ -13,6 +13,7 @@
 #include <map>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <mdspan>
@@ -74,15 +75,36 @@ bool readPositiveInt(const QStringList& args, const QString& option, int& value)
 	return true;
 }
 
+bool readPressureIterationSweep(const QStringList& args, std::vector<int>& iterations)
+{
+	iterations = { 20, 30, 40, constants::numPressureIters };
+	const qsizetype index = args.indexOf(QStringLiteral("--pressure-iters"));
+	if (index < 0)
+		return true;
+	if (index + 1 >= args.size())
+		return false;
+	iterations.clear();
+	for (const QString& value : args[index + 1].split(',')) {
+		bool ok = false;
+		const int parsed = value.toInt(&ok);
+		if (!ok || parsed < 1)
+			return false;
+		iterations.push_back(parsed);
+	}
+	return !iterations.empty();
+}
+
 } // namespace
 
 int runFluidBenchmark(const QStringList& arguments)
 {
 	int warmupFrames = 30;
 	int measuredFrames = 180;
+	std::vector<int> pressureIterations;
 	if (!readPositiveInt(arguments, QStringLiteral("--warmup"), warmupFrames)
-	    || !readPositiveInt(arguments, QStringLiteral("--frames"), measuredFrames)) {
-		qCritical().noquote() << "Usage: ray1 --benchmark [--warmup N] [--frames N] [--output FILE]";
+	    || !readPositiveInt(arguments, QStringLiteral("--frames"), measuredFrames)
+	    || !readPressureIterationSweep(arguments, pressureIterations)) {
+		qCritical().noquote() << "Usage: ray1 --benchmark [--warmup N] [--frames N] [--pressure-iters 20,30,40,50] [--output FILE]";
 		return 2;
 	}
 
@@ -97,20 +119,21 @@ int runFluidBenchmark(const QStringList& arguments)
 		outputPath = requested.isAbsolute() ? requested.absoluteFilePath() : QDir::current().absoluteFilePath(requested.filePath());
 	}
 
-	FlipFluid fluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
-	initializeBenchmarkScene(fluid);
+	std::map<std::pair<int, std::string>, Samples> samples;
+	for (const int pressureCount : pressureIterations) {
+		FlipFluid fluid(constants::maxwidth, constants::maxheight, constants::cellHeight, constants::maxParticles);
+		initializeBenchmarkScene(fluid);
+		for (int i = 0; i < warmupFrames; ++i)
+			fluid.simulate(constants::dt, false, pressureCount);
 
-	for (int i = 0; i < warmupFrames; ++i)
-		fluid.simulate(constants::dt, false);
-
-	std::map<std::string, Samples> samples;
-	for (int frame = 0; frame < measuredFrames; ++frame) {
-		QElapsedTimer frameTimer;
-		frameTimer.start();
-		const std::vector<ExecutionLog> stages = fluid.simulate(constants::dt, true);
-		samples["simulate_total"].add(static_cast<double>(frameTimer.nsecsElapsed()));
-		for (const ExecutionLog& stage : stages)
-			samples[stage.message].add(static_cast<double>(stage.nsElapsed));
+		for (int frame = 0; frame < measuredFrames; ++frame) {
+			QElapsedTimer frameTimer;
+			frameTimer.start();
+			const std::vector<ExecutionLog> stages = fluid.simulate(constants::dt, true, pressureCount);
+			samples[{ pressureCount, "simulate_total" }].add(static_cast<double>(frameTimer.nsecsElapsed()));
+			for (const ExecutionLog& stage : stages)
+				samples[{ pressureCount, stage.message }].add(static_cast<double>(stage.nsElapsed));
+		}
 	}
 
 	QFile csvFile(outputPath);
@@ -120,21 +143,21 @@ int runFluidBenchmark(const QStringList& arguments)
 	}
 	QTextStream csv(&csvFile);
 	csv.setRealNumberPrecision(9);
-	csv << "metric,samples,mean_us,median_us,p95_us,min_us,max_us,particles,grid_x,grid_y,dt_seconds,warmup_frames\n";
-	for (auto& [name, series] : samples) {
+	csv << "metric,samples,mean_us,median_us,p95_us,min_us,max_us,particles,grid_x,grid_y,dt_seconds,warmup_frames,pressure_iterations\n";
+	for (auto& [key, series] : samples) {
 		auto& values = series.microseconds;
 		std::sort(values.begin(), values.end());
 		const double mean = std::accumulate(values.begin(), values.end(), 0.0) / static_cast<double>(values.size());
 		const double median = values[values.size() / 2];
 		const std::size_t p95Index = static_cast<std::size_t>(std::ceil(values.size() * 0.95)) - 1;
-		csv << QString::fromStdString(name) << ',' << values.size() << ',' << mean << ',' << median << ',' << values[p95Index] << ',' << values.front() << ',' << values.back() << ','
-		    << constants::maxParticles << ',' << constants::fNumX << ',' << constants::fNumY << ',' << constants::dt << ',' << warmupFrames << '\n';
+		csv << QString::fromStdString(key.second) << ',' << values.size() << ',' << mean << ',' << median << ',' << values[p95Index] << ',' << values.front() << ',' << values.back() << ','
+		    << constants::maxParticles << ',' << constants::fNumX << ',' << constants::fNumY << ',' << constants::dt << ',' << warmupFrames << ',' << key.first << '\n';
 	}
 	csv.flush();
 	csvFile.close();
 
 	qInfo().noquote() << "Benchmark complete:" << outputPath;
 	qInfo().noquote() << "particles=" << constants::maxParticles << " grid=" << constants::fNumX << 'x' << constants::fNumY
-	                  << " warmup_frames=" << warmupFrames << " measured_frames=" << measuredFrames;
+	                  << " warmup_frames=" << warmupFrames << " measured_frames=" << measuredFrames << " pressure_iterations=" << pressureIterations;
 	return 0;
 }

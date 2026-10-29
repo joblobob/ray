@@ -31,7 +31,7 @@ FlipFluid::FlipFluid(float width, float height, float spacing, int maxParticles)
 {}
 
 
-std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
+std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument, const int pressureIterations)
 {
 	std::vector<ExecutionLog> log;
 
@@ -72,7 +72,7 @@ std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument)
 	if (particleRestDensity < 0.1) {
 		calculateParticleRestDensity(gridCells, particleRestDensity);
 	}
-	solveIncompressibility(gridCells, particleRestDensity, fluidCellIndices);
+	solveIncompressibility(gridCells, particleRestDensity, fluidCellIndices, pressureIterations);
 	if (instrument) {
 		log.push_back(ExecutionLog { "solveIncompressibility", timer.nsecsElapsed() });
 		timer.restart();

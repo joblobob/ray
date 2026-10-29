@@ -53,6 +53,7 @@ constexpr float particleDensityRatioForId(const int id)
 //setupScene
 
 constexpr float dt = 1.0f / 60.0f;
+constexpr int numPressureIters = 50;
 
 
 constexpr bool paused        = false;

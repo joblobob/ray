@@ -13,7 +13,6 @@ import Constants;
 
 // constants
 constexpr float overRelaxation { 1.9f };
-constexpr int numPressureIters { 50 };
 constexpr float k { 1.0f };
 
 struct PressureCell {
@@ -46,7 +45,7 @@ constexpr float inverseFaceDensity(const Cell& first, const Cell& second)
 }
 
 // code
-export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity, std::vector<int>& fluidCellIndices)
+export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity, std::vector<int>& fluidCellIndices, const int numPressureIters)
 {
 	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;

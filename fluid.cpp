@@ -366,11 +366,8 @@ void fluid::drawimage()
 
 void fluid::update()
 {
-#ifdef __EMSCRIPTEN__
-	const bool refreshStatus = (fps % 8) == 0;
-	#else
+
 	const bool refreshStatus = true;
-	#endif
 	float totalElapsed = refreshStatus ? m_timer.nsecsElapsed() * 0.000001f : 0.0f;
 	float frameIntervalMs = 0.0f;
 	QElapsedTimer frameWorkTimer;
@@ -395,14 +392,8 @@ void fluid::update()
 	if (refreshStatus)
 		m_simtimer.restart();
 	//draw();
-#ifdef __EMSCRIPTEN__
-	// The Wasm build uses Qt's raster viewport. Keep advancing the simulation
-	// every timer tick, but avoid rebuilding and painting every particle at 60 Hz.
-	if ((fps & 1) == 0)
-		drawimage();
-#else
+
 	drawimage();
-#endif
 
 	float simDrawElapsed = refreshStatus ? m_simtimer.nsecsElapsed() * 0.000001f : 0.0f;
 	fps++;

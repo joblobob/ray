@@ -31,5 +31,5 @@ export struct FlipFluid {
 	FlipFluid() = default;
 	FlipFluid(float width, float height, float spacing, int maxParticles);
 
-	std::vector<ExecutionLog> simulate(float dt, bool instrument);
+	std::vector<ExecutionLog> simulate(float dt, bool instrument, int pressureIterations = constants::numPressureIters);
 };
