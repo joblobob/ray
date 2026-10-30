@@ -7,7 +7,7 @@ export module Constants;
 export namespace constants {
 constexpr int maxwidth { 600 };
 constexpr int maxheight { 400 };
-constexpr float worldHeightMeters { 4.0f };
+constexpr float worldHeightMeters { 2.0f };
 
 enum CellType { Fluid, Air, Solid, Soil, Rock };
 
@@ -53,7 +53,7 @@ constexpr float particleDensityRatioForId(const int id)
 //setupScene
 
 constexpr float dt = 1.0f / 60.0f;
-constexpr int numPressureIters = 50;
+constexpr int numPressureIters = 100;
 
 
 constexpr bool paused        = false;

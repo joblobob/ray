@@ -13,14 +13,14 @@ export void updateParticleDensity(const ParticleStore& particleMap, std::vector<
 {
 	// reset density
 	std::for_each(gridCells.begin(), gridCells.end(), [](Cell& c) {
-		c.particleDensity = 0.0f;
+		c.particleDensity     = 0.0f;
 		c.particleMassDensity = 0.0f;
 	});
 
 	auto solveParticleDensity = [&](const int id) {
 		const float mass = constants::particleDensityRatioForId(id);
-		const float x = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
-		const float y = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
+		const float x    = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
+		const float y    = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
 		const int x0   = static_cast<int>((x - constants::halfCellHeight) * constants::fInvSpacing);
 		const float tx = ((x - constants::halfCellHeight) - x0 * constants::cellHeight) * constants::fInvSpacing;
@@ -33,30 +33,26 @@ export void updateParticleDensity(const ParticleStore& particleMap, std::vector<
 		const float sx = 1.0 - tx;
 		const float sy = 1.0 - ty;
 
-		if (x0 < constants::fNumX && y0 < constants::fNumY)
-		{
-			Cell& cell = gridCells[x0 * constants::fNumY + y0];
+		if (x0 < constants::fNumX && y0 < constants::fNumY) {
+			Cell& cell         = gridCells[x0 * constants::fNumY + y0];
 			const float weight = sx * sy;
 			cell.particleDensity += weight;
 			cell.particleMassDensity += weight * mass;
 		}
-		if (x1 < constants::fNumX && y0 < constants::fNumY)
-		{
-			Cell& cell = gridCells[x1 * constants::fNumY + y0];
+		if (x1 < constants::fNumX && y0 < constants::fNumY) {
+			Cell& cell         = gridCells[x1 * constants::fNumY + y0];
 			const float weight = tx * sy;
 			cell.particleDensity += weight;
 			cell.particleMassDensity += weight * mass;
 		}
-		if (x1 < constants::fNumX && y1 < constants::fNumY)
-		{
-			Cell& cell = gridCells[x1 * constants::fNumY + y1];
+		if (x1 < constants::fNumX && y1 < constants::fNumY) {
+			Cell& cell         = gridCells[x1 * constants::fNumY + y1];
 			const float weight = tx * ty;
 			cell.particleDensity += weight;
 			cell.particleMassDensity += weight * mass;
 		}
-		if (x0 < constants::fNumX && y1 < constants::fNumY)
-		{
-			Cell& cell = gridCells[x0 * constants::fNumY + y1];
+		if (x0 < constants::fNumX && y1 < constants::fNumY) {
+			Cell& cell         = gridCells[x0 * constants::fNumY + y1];
 			const float weight = sx * ty;
 			cell.particleDensity += weight;
 			cell.particleMassDensity += weight * mass;
