@@ -1,9 +1,9 @@
 module;
 
+#include "ParallelForEach.h"
 #include <algorithm>
 #include <array>
 #include <vector>
-#include "ParallelForEach.h"
 
 export module ParticleIncompressibility;
 
@@ -27,13 +27,11 @@ struct PressureCell {
 };
 
 constexpr float cellMaterialDensity(const Cell& cell)
-{
-	return cell.particleDensity > 1.0e-6f ? cell.particleMassDensity / cell.particleDensity : 1.0f;
-}
+{ return cell.particleDensity > 1.0e-6f ? cell.particleMassDensity / cell.particleDensity : 1.0f; }
 
 constexpr float inverseFaceDensity(const Cell& first, const Cell& second)
 {
-	const bool firstHasParticles = first.particleDensity > 1.0e-6f;
+	const bool firstHasParticles  = first.particleDensity > 1.0e-6f;
 	const bool secondHasParticles = second.particleDensity > 1.0e-6f;
 	if (firstHasParticles && secondHasParticles)
 		return 2.0f / (cellMaterialDensity(first) + cellMaterialDensity(second));
@@ -45,7 +43,10 @@ constexpr float inverseFaceDensity(const Cell& first, const Cell& second)
 }
 
 // code
-export void solveIncompressibility(std::vector<Cell>& gridCells, const float particleRestDensity, std::vector<int>& fluidCellIndices, const int numPressureIters)
+export void solveIncompressibility(std::vector<Cell>& gridCells,
+    const float particleRestDensity,
+    std::vector<int>& fluidCellIndices,
+    const int numPressureIters)
 {
 	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		cell.prevU = cell.u;
@@ -58,29 +59,23 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 	for (int i = 0; i < static_cast<int>(gridCells.size()); ++i) {
 		if (gridCells[i].cellType == constants::CellType::Fluid) {
 			fluidCellIndices.push_back(i);
-			const Cell& cell = gridCells[i];
-			const int x = cell.cellNumX;
-			const int y = cell.cellNumY;
-			const int left = (x - 1) * constants::fNumY + y;
-			const int right = (x + 1) * constants::fNumY + y;
-			const int bottom = x * constants::fNumY + y - 1;
-			const int top = x * constants::fNumY + y + 1;
-			const Cell& cellLeft = gridCells[left];
-			const Cell& cellRight = gridCells[right];
-			const Cell& cellBottom = gridCells[bottom];
-			const Cell& cellTop = gridCells[top];
-			const float leftWeight = cellLeft.s * inverseFaceDensity(cellLeft, cell);
-			const float rightWeight = cellRight.s * inverseFaceDensity(cell, cellRight);
+			const Cell& cell         = gridCells[i];
+			const int x              = cell.cellNumX;
+			const int y              = cell.cellNumY;
+			const int left           = (x - 1) * constants::fNumY + y;
+			const int right          = (x + 1) * constants::fNumY + y;
+			const int bottom         = x * constants::fNumY + y - 1;
+			const int top            = x * constants::fNumY + y + 1;
+			const Cell& cellLeft     = gridCells[left];
+			const Cell& cellRight    = gridCells[right];
+			const Cell& cellBottom   = gridCells[bottom];
+			const Cell& cellTop      = gridCells[top];
+			const float leftWeight   = cellLeft.s * inverseFaceDensity(cellLeft, cell);
+			const float rightWeight  = cellRight.s * inverseFaceDensity(cell, cellRight);
 			const float bottomWeight = cellBottom.s * inverseFaceDensity(cellBottom, cell);
-			const float topWeight = cellTop.s * inverseFaceDensity(cell, cellTop);
-			checkerboardCells[(x + y) & 1].push_back({ i,
-			    right,
-			    top,
-			    leftWeight,
-			    rightWeight,
-			    bottomWeight,
-			    topWeight,
-			    leftWeight + rightWeight + bottomWeight + topWeight });
+			const float topWeight    = cellTop.s * inverseFaceDensity(cell, cellTop);
+			checkerboardCells[(x + y) & 1].push_back(
+			    { i, right, top, leftWeight, rightWeight, bottomWeight, topWeight, leftWeight + rightWeight + bottomWeight + topWeight });
 		}
 	}
 
@@ -90,9 +85,9 @@ export void solveIncompressibility(std::vector<Cell>& gridCells, const float par
 		// preserves the pressure update dependency.
 		for (const auto& colorCells : checkerboardCells) {
 			fluidParallelForEach(colorCells.cbegin(), colorCells.cend(), [&](const PressureCell& pressureCell) {
-				Cell& cell = gridCells[pressureCell.index];
+				Cell& cell      = gridCells[pressureCell.index];
 				Cell& cellRight = gridCells[pressureCell.right];
-				Cell& cellTop = gridCells[pressureCell.top];
+				Cell& cellTop   = gridCells[pressureCell.top];
 				if (pressureCell.weightSum > 0.1f) {
 					float div = cellRight.u - cell.u + cellTop.v - cell.v;
 

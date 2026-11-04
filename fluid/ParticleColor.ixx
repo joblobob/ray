@@ -2,7 +2,9 @@ module;
 
 #include <algorithm>
 #include <vector>
+
 #include "ParallelForEach.h"
+
 
 export module ParticleColor;
 
@@ -10,10 +12,7 @@ import BaseStructures;
 import CellCalculations;
 import Constants;
 
-export void updateParticleColors(ParticleStore& particleMap,
-    std::vector<Cell>& gridCells,
-    const Border& fBorder,
-    const float particleRestDensity)
+export void updateParticleColors(ParticleStore& particleMap, std::vector<Cell>& gridCells, const Border& fBorder, const float particleRestDensity)
 {
 	auto parseParticleColors = [&](const std::size_t id) {
 		const float s = 0.01f;
@@ -27,7 +26,7 @@ export void updateParticleColors(ParticleStore& particleMap,
 		if (particleRestDensity > 0.0f) {
 			const float relDensity = gridCells[cellNr].particleDensity / particleRestDensity;
 			if (relDensity < 0.7f) {
-				const float s   = 0.8f;
+				const float s          = 0.8f;
 				particleMap.colorR[id] = s;
 				particleMap.colorG[id] = s;
 				particleMap.colorB[id] = 1.0f;

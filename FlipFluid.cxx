@@ -1,6 +1,6 @@
 module;
 
-#include <QDebug>
+#include <QtDebug>
 #include <algorithm>
 #include <vector>
 
@@ -20,15 +20,13 @@ import ParticleVelocities;
 
 
 FlipFluid::FlipFluid(float width, float height, float spacing, int maxParticles) :
-
-
     // particles
     particleRestDensity(0.0f),
     fBorder { .maxX = constants::fNumX, .maxY = constants::fNumY },
     particleMap(static_cast<std::size_t>(maxParticles)),
     gridCells(constants::fNumCells),
     obstacle()
-{}
+{ particleMap.initializeMassRatios(); }
 
 
 std::vector<ExecutionLog> FlipFluid::simulate(float dt, bool instrument, const int pressureIterations)

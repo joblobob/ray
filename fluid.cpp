@@ -38,15 +38,15 @@ struct FixedParticleType {
 };
 
 constexpr std::size_t fixedParticleTypeCount = 4;
-using FixedParticleTypes = std::array<FixedParticleType, fixedParticleTypeCount>;
+using FixedParticleTypes                     = std::array<FixedParticleType, fixedParticleTypeCount>;
 
 const FixedParticleTypes& fixedParticleTypes()
 {
 	static const FixedParticleTypes types {
-	    FixedParticleType { constants::rockParticleCount, QColor(Qt::darkGray) },
-	    FixedParticleType { constants::coarseSandParticleCount, QColor(161, 103, 23) },
-	    FixedParticleType { constants::fineSandParticleCount, QColor(191, 133, 53) },
-	    FixedParticleType { constants::grassParticleCount, QColor(Qt::darkGreen) },
+		FixedParticleType { constants::rockParticleCount, QColor(Qt::darkGray) },
+		FixedParticleType { constants::coarseSandParticleCount, QColor(161, 103, 23) },
+		FixedParticleType { constants::fineSandParticleCount, QColor(191, 133, 53) },
+		FixedParticleType { constants::grassParticleCount, QColor(Qt::darkGreen) },
 	};
 	return types;
 }
@@ -132,14 +132,9 @@ class ParticleOverlayItem final : public QGraphicsItem
 {
 public:
 	explicit ParticleOverlayItem(const ParticleStore* particles, float* lastPaintMs) : m_particles(particles), m_lastPaintMs(lastPaintMs)
-	{
-		setZValue(1.0);
-	}
+	{ setZValue(1.0); }
 
-	QRectF boundingRect() const override
-	{
-		return { 0.0, 0.0, constants::maxwidth, constants::maxheight };
-	}
+	QRectF boundingRect() const override { return { 0.0, 0.0, constants::maxwidth, constants::maxheight }; }
 
 	void paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget* widget) override
 	{
@@ -153,47 +148,46 @@ public:
 		// Rasterize into a reusable transparent image. Building a large path of
 		// ellipses every frame is particularly expensive in the Wasm raster backend.
 		const QTransform sceneToViewport = painter->worldTransform();
-		const QPointF sceneOrigin = sceneToViewport.map(QPointF(0.0, 0.0));
-		const QPointF screenSpacing = sceneToViewport.map(QPointF(constants::particleDiameter, 0.0)) - sceneOrigin;
-		const qreal radius = std::hypot(screenSpacing.x(), screenSpacing.y()) * 0.5;
-		const qreal devicePixelRatio = widget != nullptr ? widget->devicePixelRatioF() : 1.0;
-		const QSize logicalSize = widget != nullptr ? widget->size() : QSize(painter->device()->width(), painter->device()->height());
+		const QPointF sceneOrigin        = sceneToViewport.map(QPointF(0.0, 0.0));
+		const QPointF screenSpacing      = sceneToViewport.map(QPointF(constants::particleDiameter, 0.0)) - sceneOrigin;
+		const qreal radius               = std::hypot(screenSpacing.x(), screenSpacing.y()) * 0.5;
+		const qreal devicePixelRatio     = widget != nullptr ? widget->devicePixelRatioF() : 1.0;
+		const QSize logicalSize          = widget != nullptr ? widget->size() : QSize(painter->device()->width(), painter->device()->height());
 		const QSize pixelSize(std::max(1, static_cast<int>(std::ceil(logicalSize.width() * devicePixelRatio))),
 		    std::max(1, static_cast<int>(std::ceil(logicalSize.height() * devicePixelRatio))));
 		if (m_particleImage.size() != pixelSize)
 			m_particleImage = QImage(pixelSize, QImage::Format_ARGB32_Premultiplied);
 		m_particleImage.setDevicePixelRatio(devicePixelRatio);
 		m_particleImage.fill(Qt::transparent);
-		const qreal pixelRadius = radius * devicePixelRatio;
+		const qreal pixelRadius   = radius * devicePixelRatio;
 		const qreal radiusSquared = pixelRadius * pixelRadius;
 		const auto& particleTypes = fixedParticleTypes();
 
 		for (std::size_t particleIndex = 0; particleIndex < m_particles->size(); ++particleIndex) {
-			const int particleId = static_cast<int>(particleIndex);
+			const int particleId   = static_cast<int>(particleIndex);
 			const QPointF position = sceneToViewport.map(QPointF(m_particles->posX[particleIndex], m_particles->posY[particleIndex])) * devicePixelRatio;
-			int remainingTypeId = particleId;
+			int remainingTypeId    = particleId;
 			std::size_t colorGroup = 0;
 			while (colorGroup < particleTypes.size() && remainingTypeId >= particleTypes[colorGroup].count) {
 				remainingTypeId -= particleTypes[colorGroup].count;
 				++colorGroup;
 			}
-			const QRgb color = colorGroup < particleTypes.size()
-			    ? particleTypes[colorGroup].color.rgba()
-			    : qRgba(qRound(std::clamp(m_particles->colorR[particleIndex], 0.0f, 1.0f) * 255.0f),
-				  qRound(std::clamp(m_particles->colorG[particleIndex], 0.0f, 1.0f) * 255.0f),
-				  qRound(std::clamp(m_particles->colorB[particleIndex], 0.0f, 1.0f) * 255.0f),
-				  255);
+			const QRgb color = colorGroup < particleTypes.size() ? particleTypes[colorGroup].color.rgba() :
+			                                                       qRgba(qRound(std::clamp(m_particles->colorR[particleIndex], 0.0f, 1.0f) * 255.0f),
+			                                                           qRound(std::clamp(m_particles->colorG[particleIndex], 0.0f, 1.0f) * 255.0f),
+			                                                           qRound(std::clamp(m_particles->colorB[particleIndex], 0.0f, 1.0f) * 255.0f),
+			                                                           255);
 
-			const int top = std::max(0, static_cast<int>(std::ceil(position.y() - pixelRadius - 0.5)));
+			const int top    = std::max(0, static_cast<int>(std::ceil(position.y() - pixelRadius - 0.5)));
 			const int bottom = std::min(pixelSize.height() - 1, static_cast<int>(std::floor(position.y() + pixelRadius - 0.5)));
 			for (int y = top; y <= bottom; ++y) {
-				const qreal dy = y + 0.5 - position.y();
+				const qreal dy                     = y + 0.5 - position.y();
 				const qreal remainingRadiusSquared = radiusSquared - dy * dy;
 				if (remainingRadiusSquared < 0.0)
 					continue;
 				const qreal halfWidth = std::sqrt(remainingRadiusSquared);
-				const int left = std::max(0, static_cast<int>(std::ceil(position.x() - halfWidth - 0.5)));
-				const int right = std::min(pixelSize.width() - 1, static_cast<int>(std::floor(position.x() + halfWidth - 0.5)));
+				const int left        = std::max(0, static_cast<int>(std::ceil(position.x() - halfWidth - 0.5)));
+				const int right       = std::min(pixelSize.width() - 1, static_cast<int>(std::floor(position.x() + halfWidth - 0.5)));
 				if (left <= right) {
 					auto* row = reinterpret_cast<QRgb*>(m_particleImage.scanLine(y));
 					std::fill(row + left, row + right + 1, color);
@@ -213,10 +207,8 @@ public:
 
 		if constexpr (performanceLoggingEnabled) {
 			if (paintNs >= 16000000) {
-				logPerformanceEvent(QStringLiteral("slow_paint"),
-				    QStringLiteral("paint_ms=%1 particles=%2")
-				        .arg(paintNs / 1000000.0, 0, 'f', 2)
-				        .arg(m_particles->size()));
+				logPerformanceEvent(
+				    QStringLiteral("slow_paint"), QStringLiteral("paint_ms=%1 particles=%2").arg(paintNs / 1000000.0, 0, 'f', 2).arg(m_particles->size()));
 			}
 		}
 	}
@@ -229,7 +221,11 @@ private:
 };
 
 fluid::fluid(QWidget* parent) :
-    ui(new Ui::fluid), m_paused(true), m_impl(std::make_unique<Impl>()), m_pointsPixmap(constants::maxwidth, constants::maxheight), m_pixmapSceneItem(nullptr)
+    ui(new Ui::fluid),
+    m_paused(true),
+    m_impl(std::make_unique<Impl>()),
+    m_pointsPixmap(constants::maxwidth, constants::maxheight),
+    m_pixmapSceneItem(nullptr)
 {
 	ui->setupUi(this);
 	resetPerformanceLog();
@@ -262,9 +258,7 @@ fluid::fluid(QWidget* parent) :
 }
 
 fluid::~fluid()
-{
-	delete ui;
-}
+{ delete ui; }
 
 void fluid::setupScene()
 {
@@ -275,13 +269,13 @@ void fluid::setupScene()
 	ParticleStore& particles = m_impl->f.particleMap;
 	for (std::size_t i = 0; i < constants::numX; i++) {
 		for (std::size_t j = 0; j < constants::numY; j++) {
-			const float posX = constants::particleStartX + constants::particleSpacingX * i + (j % 2 == 0 ? 0.0f : constants::particleStaggerX);
-			const float posY = constants::particleStartY + constants::particleRowSpacing * j;
+			const float posX                = constants::particleStartX + constants::particleSpacingX * i + (j % 2 == 0 ? 0.0f : constants::particleStaggerX);
+			const float posY                = constants::particleStartY + constants::particleRowSpacing * j;
 			const std::size_t particleIndex = i * constants::numY + j;
-			particles.posX[particleIndex] = posX;
-			particles.posY[particleIndex] = posY;
-			particles.velX[particleIndex] = 0.0f;
-			particles.velY[particleIndex] = 0.0f;
+			particles.posX[particleIndex]   = posX;
+			particles.posY[particleIndex]   = posY;
+			particles.velX[particleIndex]   = 0.0f;
+			particles.velY[particleIndex]   = 0.0f;
 			particles.colorR[particleIndex] = 0.0f;
 			particles.colorG[particleIndex] = 0.0f;
 			particles.colorB[particleIndex] = 1.0f;
@@ -366,10 +360,9 @@ void fluid::drawimage()
 
 void fluid::update()
 {
-
 	const bool refreshStatus = true;
-	float totalElapsed = refreshStatus ? m_timer.nsecsElapsed() * 0.000001f : 0.0f;
-	float frameIntervalMs = 0.0f;
+	float totalElapsed       = refreshStatus ? m_timer.nsecsElapsed() * 0.000001f : 0.0f;
+	float frameIntervalMs    = 0.0f;
 	QElapsedTimer frameWorkTimer;
 	if constexpr (performanceLoggingEnabled) {
 		frameIntervalMs = m_frameTimer.isValid() ? m_frameTimer.nsecsElapsed() * 0.000001f : 0.0f;
@@ -418,11 +411,10 @@ void fluid::update()
 			        .arg(frameWorkMs, 0, 'f', 2)
 			        .arg(simElapsed, 0, 'f', 2)
 			        .arg(simDrawElapsed, 0, 'f', 2));
-	}
+		}
 	}
 
 	m_timer.restart();
-
 }
 
 

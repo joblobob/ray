@@ -16,14 +16,8 @@ export constexpr int cellNumber(const float x, const float y, const Border& bord
 
 
 export constexpr bool isSolid(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Solid;
-}
+{ return cell.cellType == constants::CellType::Solid; }
 export constexpr bool isFluid(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Fluid;
-}
+{ return cell.cellType == constants::CellType::Fluid; }
 export constexpr bool isAir(const Cell& cell)
-{
-	return cell.cellType == constants::CellType::Air;
-}
+{ return cell.cellType == constants::CellType::Air; }

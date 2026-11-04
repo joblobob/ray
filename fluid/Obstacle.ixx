@@ -1,7 +1,7 @@
 module;
 
-#include <mdspan>
 #include <algorithm>
+#include <mdspan>
 #include <vector>
 
 export module Obstacle;

@@ -41,7 +41,7 @@ void setVelComponent(float& f, float& d, const float pv, const float delta, cons
 
 void parseVelocitiesU(std::vector<Cell>& gridCells, const ParticleStore& particleMap, const int id)
 {
-	const float particleMass = constants::particleDensityRatioForId(id);
+	const float particleMass = particleMap.massRatio[id];
 	const float x            = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const float y            = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
@@ -70,7 +70,7 @@ void parseVelocitiesU(std::vector<Cell>& gridCells, const ParticleStore& particl
 
 void parseVelocitiesV(std::vector<Cell>& gridCells, const ParticleStore& particleMap, const int id)
 {
-	const float particleMass = constants::particleDensityRatioForId(id);
+	const float particleMass = particleMap.massRatio[id];
 	const float x            = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 	const float y            = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 
@@ -127,7 +127,7 @@ export void transferVelocitiesToGrid(const ParticleStore& particleMap, std::vect
 		cellTypeRef.compare_exchange_strong(expected, constants::CellType::Fluid, std::memory_order_relaxed);
 
 		// parseVelocitiesU
-		const float particleMass = constants::particleDensityRatioForId(static_cast<int>(id));
+		const float particleMass = particleMap.massRatio[id];
 		const float x            = std::clamp(particleMap.posX[id], constants::cellHeight, (constants::fNumX - 1) * constants::cellHeight);
 		const float y            = std::clamp(particleMap.posY[id], constants::cellHeight, (constants::fNumY - 1) * constants::cellHeight);
 

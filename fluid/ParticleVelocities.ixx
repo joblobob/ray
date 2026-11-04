@@ -1,8 +1,8 @@
 module;
 
+#include "ParallelForEach.h"
 #include <algorithm>
 #include <vector>
-#include "ParallelForEach.h"
 
 export module ParticleVelocities;
 
@@ -68,13 +68,13 @@ export void transferVelocitiesToParticles(ParticleStore& particleMap, std::vecto
 		float d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0) {
-			auto picV = (valid0 * d0 * cell0.u + valid1 * d1 * cell1.u + valid2 * d2 * cell2.u + valid3 * d3 * cell3.u) / d;
-			auto corr = (valid0 * d0 * (cell0.u - cell0.prevU) + valid1 * d1 * (cell1.u - cell1.prevU) + valid2 * d2 * (cell2.u - cell2.prevU) +
-			                valid3 * d3 * (cell3.u - cell3.prevU)) /
-			            d;
+			auto picV  = (valid0 * d0 * cell0.u + valid1 * d1 * cell1.u + valid2 * d2 * cell2.u + valid3 * d3 * cell3.u) / d;
+			auto corr  = (valid0 * d0 * (cell0.u - cell0.prevU) + valid1 * d1 * (cell1.u - cell1.prevU) + valid2 * d2 * (cell2.u - cell2.prevU) +
+			                 valid3 * d3 * (cell3.u - cell3.prevU)) /
+			             d;
 			auto flipV = v + corr;
 
-			auto newVelValue = (1.0 - flipRatio) * picV + flipRatio * flipV;
+			auto newVelValue     = (1.0 - flipRatio) * picV + flipRatio * flipV;
 			particleMap.velX[id] = newVelValue;
 		}
 
@@ -128,13 +128,13 @@ export void transferVelocitiesToParticles(ParticleStore& particleMap, std::vecto
 		d = valid0 * d0 + valid1 * d1 + valid2 * d2 + valid3 * d3;
 
 		if (d > 0.0f) {
-			auto picV = (valid0 * d0 * cell0v.v + valid1 * d1 * cell1v.v + valid2 * d2 * cell2v.v + valid3 * d3 * cell3v.v) / d;
-			auto corr = (valid0 * d0 * (cell0v.v - cell0v.prevV) + valid1 * d1 * (cell1v.v - cell1v.prevV) + valid2 * d2 * (cell2v.v - cell2v.prevV) +
-			                valid3 * d3 * (cell3v.v - cell3v.prevV)) /
-			            d;
+			auto picV  = (valid0 * d0 * cell0v.v + valid1 * d1 * cell1v.v + valid2 * d2 * cell2v.v + valid3 * d3 * cell3v.v) / d;
+			auto corr  = (valid0 * d0 * (cell0v.v - cell0v.prevV) + valid1 * d1 * (cell1v.v - cell1v.prevV) + valid2 * d2 * (cell2v.v - cell2v.prevV) +
+			                 valid3 * d3 * (cell3v.v - cell3v.prevV)) /
+			             d;
 			auto flipV = v + corr;
 
-			auto newVelValue = (1.0f - flipRatio) * picV + flipRatio * flipV;
+			auto newVelValue     = (1.0f - flipRatio) * picV + flipRatio * flipV;
 			particleMap.velY[id] = newVelValue;
 		}
 	};

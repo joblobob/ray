@@ -1,8 +1,8 @@
 module;
 
+#include "ParallelForEach.h"
 #include <algorithm>
 #include <ranges>
-#include "ParallelForEach.h"
 
 export module ParticleCollision;
 
@@ -23,8 +23,8 @@ constexpr float topWall    = (constants::fNumY - 1) * constants::cellHeight - co
 export void handleParticleCollisions(ParticleStore& particleMap, const Obstacle obstacle)
 {
 	auto particleCollision = [&](const std::size_t id) {
-		const float x = particleMap.posX[id];
-		const float y = particleMap.posY[id];
+		const float x  = particleMap.posX[id];
+		const float y  = particleMap.posY[id];
 		const float dx = x - obstacle.x;
 		const float dy = y - obstacle.y;
 		const float d2 = dx * dx + dy * dy;
@@ -38,13 +38,13 @@ export void handleParticleCollisions(ParticleStore& particleMap, const Obstacle 
 		}
 
 		// wall collisions
-		bool hitsLeft  = x < LeftWall;
-		bool hitsRight = x > RightWall;
+		bool hitsLeft        = x < LeftWall;
+		bool hitsRight       = x > RightWall;
 		particleMap.posX[id] = std::ranges::clamp(x, LeftWall, RightWall);
 		particleMap.velX[id] = hitsLeft || hitsRight ? 0.0f : particleMap.velX[id];
 
-		bool hitsTop    = y > topWall;
-		bool hitsBottom = y < bottomWall;
+		bool hitsTop         = y > topWall;
+		bool hitsBottom      = y < bottomWall;
 		particleMap.posY[id] = std::ranges::clamp(y, bottomWall, topWall);
 		particleMap.velY[id] = hitsTop || hitsBottom ? 0.0f : particleMap.velY[id];
 	};

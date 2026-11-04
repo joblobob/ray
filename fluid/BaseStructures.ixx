@@ -22,6 +22,7 @@ export struct ParticleStore {
 	std::vector<float> colorR;
 	std::vector<float> colorG;
 	std::vector<float> colorB;
+	std::vector<float> massRatio;
 
 	explicit ParticleStore(const std::size_t count = 0) { resize(count); }
 
@@ -34,6 +35,13 @@ export struct ParticleStore {
 		colorR.resize(count);
 		colorG.resize(count);
 		colorB.resize(count);
+		massRatio.resize(count, 1.0f);
+	}
+
+	void initializeMassRatios()
+	{
+		for (std::size_t i = 0; i < massRatio.size(); ++i)
+			massRatio[i] = constants::particleDensityRatioForId(static_cast<int>(i));
 	}
 
 	[[nodiscard]] std::size_t size() const { return posX.size(); }

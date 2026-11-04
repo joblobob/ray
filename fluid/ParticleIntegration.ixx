@@ -1,8 +1,8 @@
 module;
 
+#include "ParallelForEach.h"
 #include <algorithm>
 #include <vector>
-#include "ParallelForEach.h"
 
 export module ParticleIntegration;
 

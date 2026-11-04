@@ -40,9 +40,14 @@ static const Border pBorder { .maxX = pNumX, .maxY = pNumY };
 
 export void pushParticlesApart(ParticleStore& particleMap, PushParticlesBuffers& buffers)
 {
-	buffers.particleCells.assign(pNumCells + 1, { 0, 0 });
-	buffers.cellNumbers.resize(constants::maxParticles);
-	buffers.cellParticleIds.resize(constants::maxParticles);
+	if (buffers.particleCells.size() != static_cast<std::size_t>(pNumCells + 1))
+		buffers.particleCells.resize(pNumCells + 1);
+	std::fill(buffers.particleCells.begin(), buffers.particleCells.end(), ParticleInCells { 0, 0 });
+
+	if (buffers.cellNumbers.size() != static_cast<std::size_t>(constants::maxParticles))
+		buffers.cellNumbers.resize(constants::maxParticles);
+	if (buffers.cellParticleIds.size() != static_cast<std::size_t>(constants::maxParticles))
+		buffers.cellParticleIds.resize(constants::maxParticles);
 
 	// Phase 1: count particles per cell (parallel with atomics)
 	const auto countParticlesInCell = [&](const int id) {
@@ -60,7 +65,7 @@ export void pushParticlesApart(ParticleStore& particleMap, PushParticlesBuffers&
 		pIncell.firstCellParticle = first;
 		first += count;
 	}
-	buffers.particleCells[pNumCells].firstCellParticle = first; // guard
+	buffers.particleCells[pNumCells].firstCellParticle = first;
 
 	// Phase 3: fill particles into cells (parallel with atomics)
 	const auto fillParticleIntoCell = [&](const int id) {
@@ -72,7 +77,8 @@ export void pushParticlesApart(ParticleStore& particleMap, PushParticlesBuffers&
 	fluidParallelForEachIndex(particleMap.size(), fillParticleIntoCell);
 
 	// Phase 4 & 5: gather and apply corrections (already parallel)
-	buffers.particleCorrections.resize(particleMap.size());
+	if (buffers.particleCorrections.size() != particleMap.size())
+		buffers.particleCorrections.resize(particleMap.size());
 	const auto gatherParticleCorrection = [&](const std::size_t particleIndex) {
 		const float px    = particleMap.posX[particleIndex];
 		const float py    = particleMap.posY[particleIndex];

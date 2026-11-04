@@ -1,5 +1,6 @@
 module;
 
+#include "ParallelForEach.h"
 #include <algorithm>
 #include <ranges>
 #include <vector>
@@ -8,6 +9,7 @@ export module CellColor;
 
 import BaseStructures;
 import CellCalculations;
+import Constants;
 
 void fluidColor(Cell& cell, float val, const float minVal, const float maxVal)
 {
@@ -64,18 +66,12 @@ void airCellColor(Cell& cell)
 
 export void updateCellColors(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
-	// Solid
-	//gridCells | std::views::filter(isSolid) | std::views::transform(solidCellColor) | std::ranges::to<std::vector>(); //slower, meh
-	for (Cell& cell : gridCells | std::views::filter(isSolid)) {
-		solidCellColor(cell);
-	}
-	// Air
-	for (Cell& cell : gridCells | std::views::filter(isAir)) {
-		airCellColor(cell);
-	}
-
-	// Fluid
-	for (Cell& cell : gridCells | std::views::filter(isFluid)) {
-		fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0f, 2.0f);
-	}
+	fluidParallelForEach(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
+		switch (cell.cellType) {
+			case constants::CellType::Solid: solidCellColor(cell); break;
+			case constants::CellType::Air: airCellColor(cell); break;
+			case constants::CellType::Fluid: fluidColor(cell, cell.particleDensity / particleRestDensity, 0.0f, 2.0f); break;
+			default: break;
+		}
+	});
 }
