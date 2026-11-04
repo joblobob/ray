@@ -7,7 +7,7 @@ export module Constants;
 export namespace constants {
 constexpr int maxwidth { 600 };
 constexpr int maxheight { 400 };
-constexpr float worldHeightMeters { 2.0f };
+constexpr float worldHeightMeters { 4.0f };
 
 enum CellType
 {

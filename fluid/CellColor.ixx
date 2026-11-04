@@ -66,7 +66,7 @@ void airCellColor(Cell& cell)
 
 export void updateCellColors(std::vector<Cell>& gridCells, const float particleRestDensity)
 {
-	fluidParallelForEach(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
+	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) {
 		switch (cell.cellType) {
 			case constants::CellType::Solid: solidCellColor(cell); break;
 			case constants::CellType::Air: airCellColor(cell); break;

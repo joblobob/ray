@@ -117,7 +117,7 @@ void setCellType(const ParticleStore& particleMap, const int id, std::vector<Cel
 
 export void transferVelocitiesToGrid(const ParticleStore& particleMap, std::vector<Cell>& gridCells, const Border& fBorder)
 {
-	fluidParallelForEach(gridCells.begin(), gridCells.end(), prepareCellType);
+	std::for_each(gridCells.begin(), gridCells.end(), prepareCellType);
 
 	const auto processParticle = [&](const std::size_t id) {
 		// setCellType
@@ -232,5 +232,5 @@ export void transferVelocitiesToGrid(const ParticleStore& particleMap, std::vect
 	};
 	fluidParallelForEachIndex(particleMap.size(), processParticle);
 
-	fluidParallelForEach(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
+	std::for_each(gridCells.begin(), gridCells.end(), [&](Cell& cell) { restoreCells(cell, gridCells); });
 }

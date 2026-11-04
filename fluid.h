@@ -54,7 +54,7 @@ private:
 	struct Impl;
 	std::unique_ptr<Impl> m_impl;
 
-	void simulate();
+	void simulate(float dt);
 	void draw();
 
 	int fps = 0;

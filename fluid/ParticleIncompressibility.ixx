@@ -1,6 +1,5 @@
 module;
 
-#include "ParallelForEach.h"
 #include <algorithm>
 #include <array>
 #include <vector>
@@ -84,7 +83,7 @@ export void solveIncompressibility(std::vector<Cell>& gridCells,
 		// velocities, so parallelize each color. The barrier between colors
 		// preserves the pressure update dependency.
 		for (const auto& colorCells : checkerboardCells) {
-			fluidParallelForEach(colorCells.cbegin(), colorCells.cend(), [&](const PressureCell& pressureCell) {
+			std::for_each(colorCells.cbegin(), colorCells.cend(), [&](const PressureCell& pressureCell) {
 				Cell& cell      = gridCells[pressureCell.index];
 				Cell& cellRight = gridCells[pressureCell.right];
 				Cell& cellTop   = gridCells[pressureCell.top];
